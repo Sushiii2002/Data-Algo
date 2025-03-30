@@ -5,9 +5,12 @@ import gameproject.controller.GameController;
 import javax.swing.*;
 
 /**
- * Main entry point for the SmartSortStory game
+ * Main class to launch the application
  */
 public class GameLauncher {
+    /**
+     * Main method to start the application
+     */
     public static void main(String[] args) {
         // Use the system look and feel
         try {
@@ -16,10 +19,10 @@ public class GameLauncher {
             e.printStackTrace();
         }
         
-        // Start the application on the Event Dispatch Thread
+        // Start the application using SwingUtilities to ensure thread safety
         SwingUtilities.invokeLater(() -> {
             GameController controller = new GameController();
-            controller.displayFrame();
+            controller.startApplication();
         });
     }
 }

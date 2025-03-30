@@ -6,24 +6,23 @@ import javax.swing.*;
 import java.awt.*;
 
 /**
- * Story view for the game
+ * View for the story mode screen
  */
 public class StoryView extends JPanel {
     private GameController controller;
-
+    
+    /**
+     * Constructor - Initialize the story view
+     */
     public StoryView(GameController controller) {
         this.controller = controller;
-        initializeComponents();
-    }
-
-    private void initializeComponents() {
         setLayout(new BorderLayout());
-
+       
         // Story title
         JLabel titleLabel = new JLabel("The Tale of SmartSortStory", SwingConstants.CENTER);
         titleLabel.setFont(new Font("Arial", Font.BOLD, 24));
         add(titleLabel, BorderLayout.NORTH);
-
+       
         // Story content
         JTextArea storyText = new JTextArea();
         storyText.setText("Once upon a time in the digital realm of Algorithmia, there was chaos in the " +
@@ -37,19 +36,18 @@ public class StoryView extends JPanel {
         storyText.setEditable(false);
         storyText.setFont(new Font("Arial", Font.PLAIN, 16));
         storyText.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
-
+       
         JScrollPane scrollPane = new JScrollPane(storyText);
         add(scrollPane, BorderLayout.CENTER);
-
+       
         // Buttons
         JPanel buttonPanel = new JPanel();
         JButton skipButton = new JButton("Skip Story");
         JButton continueButton = new JButton("Continue to Game");
-
-        skipButton.addActionListener(e -> controller.startLevel("Beginner", 1));
-
-        continueButton.addActionListener(e -> controller.startLevel("Beginner", 1));
-
+       
+        skipButton.addActionListener(e -> controller.skipStory());
+        continueButton.addActionListener(e -> controller.startInsertionSortChallenge());
+       
         buttonPanel.add(skipButton);
         buttonPanel.add(continueButton);
         add(buttonPanel, BorderLayout.SOUTH);
