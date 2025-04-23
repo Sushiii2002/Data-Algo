@@ -9,8 +9,8 @@ import java.awt.Dimension;
 public class GameConstants {
     // Game window
     public static final String GAME_TITLE = "SmartSortStory";
-    public static final int WINDOW_WIDTH = 900;
-    public static final int WINDOW_HEIGHT = 600;
+    public static final int WINDOW_WIDTH = 1024;
+    public static final int WINDOW_HEIGHT = 768;
     
     // Resources
     public static final String FONT_PATH = "/gameproject/resources/PixelifySans.ttf";

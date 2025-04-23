@@ -45,6 +45,7 @@ public class GameController {
         // Set up the main frame
         mainFrame = new JFrame(GameConstants.GAME_TITLE);
         mainFrame.setSize(GameConstants.WINDOW_WIDTH, GameConstants.WINDOW_HEIGHT);
+        mainFrame.setResizable(false);
         mainFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         mainFrame.setLocationRelativeTo(null);
         
@@ -67,14 +68,14 @@ public class GameController {
     }
     
     /**
-     * Initialize all views
-     */
-    private void initializeViews() {
-        mainMenuView = new MainMenuView(this);
-        levelSelectionView = new LevelSelectionView(this);
-        storyView = new StoryView(this);
-        gameView = new GameView(this);
-    }
+    * Initialize all views
+    */
+   private void initializeViews() {
+       mainMenuView = new MainMenuView(this);
+       levelSelectionView = new LevelSelectionView(this);
+       storyView = new StoryView(this);
+       gameView = new GameView(this);
+   }
     
     /**
      * Start the game application

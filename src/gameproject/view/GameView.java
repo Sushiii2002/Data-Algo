@@ -1,19 +1,22 @@
+// src/gameproject/view/GameView.java (updated)
+
 package gameproject.view;
 
 import gameproject.controller.GameController;
 import gameproject.model.LevelConfig;
-import gameproject.service.SortingService;
-import gameproject.service.SortingService.SortStep;
-import gameproject.ui.DraggableItem;
-import gameproject.ui.DraggableItem.DragListener;
+import gameproject.model.GameState;
+import gameproject.ui.GameGrid;
 import gameproject.util.GameConstants;
 import gameproject.util.ResourceManager;
+import javax.swing.plaf.basic.BasicButtonUI;
+
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.util.ArrayList;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.util.List;
 
 /**
@@ -22,22 +25,31 @@ import java.util.List;
 public class GameView extends JPanel {
     private GameController controller;
     private ResourceManager resourceManager;
-    private JLabel levelLabel;
-    private JPanel sortingArea;
+    private JPanel heartsPanel;
+    private JLabel[] heartLabels;
     private JLabel instructionsLabel;
     private JLabel timerLabel;
+    private JButton pauseButton;
     private JButton hintButton;
     private JButton checkButton;
-    private JButton nextButton;
-    private JButton restartButton;
-    private JButton menuButton;
+    private JButton nextLevelButton;
+    private GameGrid gameGrid;
     
-    private List<DraggableItem> draggableItems;
     private LevelConfig currentLevel;
-    private SortingService sortingService;
     private Timer gameTimer;
-    private int timeRemaining;
+    private int timeRemaining = 300; // 5 minutes in seconds
+    private int livesRemaining = 3;
     private boolean levelCompleted = false;
+    private ImageIcon backgroundImage;
+    private Font pixelifySansFont;
+    
+    // Button images
+    private ImageIcon pauseNormalIcon;
+    private ImageIcon pauseHoverIcon;
+    private ImageIcon hintNormalIcon;
+    private ImageIcon hintHoverIcon;
+    private ImageIcon heartFilledIcon;
+    private ImageIcon heartEmptyIcon;
     
     /**
      * Constructor - Initialize the enhanced game view
@@ -45,21 +57,17 @@ public class GameView extends JPanel {
     public GameView(GameController controller) {
         this.controller = controller;
         this.resourceManager = ResourceManager.getInstance();
-        this.sortingService = new SortingService();
-        this.draggableItems = new ArrayList<>();
         
-        setLayout(new BorderLayout());
+        // Use null layout to position components precisely
+        setLayout(null);
         
-        // Top panel with level info
-        createTopPanel();
+        // Load resources
+        loadResources();
         
-        // Main game area
-        createGameArea();
+        // Create UI components
+        createUIComponents();
         
-        // Bottom panel with action buttons
-        createBottomPanel();
-        
-        // Initialize timer
+        // Initialize timer to count down from 5 minutes
         gameTimer = new Timer(1000, new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -69,112 +77,480 @@ public class GameView extends JPanel {
     }
     
     /**
-     * Create the top panel with level info and controls
+     * Load all required resources
      */
-    private void createTopPanel() {
-        JPanel topPanel = new JPanel(new BorderLayout());
+    private void loadResources() {
+        // Load background image
+        backgroundImage = resourceManager.getImage("/gameproject/resources/forest_bg.png");
         
-        // Level info
-        levelLabel = new JLabel("Level 1 - Beginner");
-        levelLabel.setFont(resourceManager.getFont(GameConstants.FONT_PATH, 18f));
-        levelLabel.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 0));
+        // Load custom font
+        pixelifySansFont = resourceManager.getFont(GameConstants.FONT_PATH, 25f);
+        if (pixelifySansFont == null) {
+            // Fallback if custom font can't be loaded
+            pixelifySansFont = new Font("Arial", Font.BOLD, 25);
+        }
         
-        // Timer label
-        timerLabel = new JLabel("Time: --:--");
-        timerLabel.setFont(resourceManager.getFont(GameConstants.FONT_PATH, 16f));
-        timerLabel.setBorder(BorderFactory.createEmptyBorder(10, 0, 10, 20));
+        // Load button images
+        pauseNormalIcon = resourceManager.getImage("/gameproject/resources/pause_normal.png");
+        pauseHoverIcon = resourceManager.getImage("/gameproject/resources/pause_hover.png");
+        hintNormalIcon = resourceManager.getImage("/gameproject/resources/hint_normal.png");
+        hintHoverIcon = resourceManager.getImage("/gameproject/resources/hint_hover.png");
         
-        // Control buttons
-        JPanel controlPanel = new JPanel();
-        hintButton = new JButton("Hint");
-        restartButton = new JButton("Restart");
-        menuButton = new JButton("Main Menu");
+        // Scale button icons to 70x70 pixels
+        if (pauseNormalIcon != null) {
+            Image img = pauseNormalIcon.getImage().getScaledInstance(70, 70, Image.SCALE_SMOOTH);
+            pauseNormalIcon = new ImageIcon(img);
+        }
         
-        hintButton.addActionListener(e -> controller.showHint());
-        restartButton.addActionListener(e -> controller.restartLevel());
-        menuButton.addActionListener(e -> controller.showMainMenu());
+        if (pauseHoverIcon != null) {
+            Image img = pauseHoverIcon.getImage().getScaledInstance(70, 70, Image.SCALE_SMOOTH);
+            pauseHoverIcon = new ImageIcon(img);
+        }
         
-        // Style buttons
-        styleButton(hintButton);
-        styleButton(restartButton);
-        styleButton(menuButton);
+        if (hintNormalIcon != null) {
+            Image img = hintNormalIcon.getImage().getScaledInstance(70, 70, Image.SCALE_SMOOTH);
+            hintNormalIcon = new ImageIcon(img);
+        }
         
-        controlPanel.add(hintButton);
-        controlPanel.add(restartButton);
-        controlPanel.add(menuButton);
+        if (hintHoverIcon != null) {
+            Image img = hintHoverIcon.getImage().getScaledInstance(70, 70, Image.SCALE_SMOOTH);
+            hintHoverIcon = new ImageIcon(img);
+        }
         
-        // Assemble top panel
-        JPanel levelInfoPanel = new JPanel(new BorderLayout());
-        levelInfoPanel.add(levelLabel, BorderLayout.WEST);
-        levelInfoPanel.add(timerLabel, BorderLayout.EAST);
+        // Load heart images
+        heartFilledIcon = resourceManager.getImage("/gameproject/resources/heart_filled.png");
+        heartEmptyIcon = resourceManager.getImage("/gameproject/resources/heart_empty.png");
         
-        topPanel.add(levelInfoPanel, BorderLayout.WEST);
-        topPanel.add(controlPanel, BorderLayout.EAST);
+        // Scale heart images to 70x70 pixels
+        if (heartFilledIcon != null) {
+            Image img = heartFilledIcon.getImage().getScaledInstance(70, 70, Image.SCALE_SMOOTH);
+            heartFilledIcon = new ImageIcon(img);
+        }
         
-        add(topPanel, BorderLayout.NORTH);
+        if (heartEmptyIcon != null) {
+            Image img = heartEmptyIcon.getImage().getScaledInstance(70, 70, Image.SCALE_SMOOTH);
+            heartEmptyIcon = new ImageIcon(img);
+        }
     }
     
     /**
-     * Create the main game area
-     */
-    private void createGameArea() {
-        JPanel gameArea = new JPanel();
-        gameArea.setLayout(new BoxLayout(gameArea, BoxLayout.Y_AXIS));
-        gameArea.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
-        
-        // Instructions
-        instructionsLabel = new JLabel("Drag and drop the elements to sort them:");
-        instructionsLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
-        instructionsLabel.setFont(resourceManager.getFont(GameConstants.FONT_PATH, 16f));
-        
-        // Sorting visualization area
-        sortingArea = new JPanel(null); // Using null layout for precise positioning
-        sortingArea.setBackground(Color.LIGHT_GRAY);
-        sortingArea.setPreferredSize(new Dimension(800, 300));
-        sortingArea.setBorder(BorderFactory.createLineBorder(Color.DARK_GRAY, 2));
-        sortingArea.setAlignmentX(Component.LEFT_ALIGNMENT);
-        
-        // Add components to game area
-        gameArea.add(instructionsLabel);
-        gameArea.add(Box.createRigidArea(new Dimension(0, 20)));
-        gameArea.add(sortingArea);
-        
-        add(gameArea, BorderLayout.CENTER);
-    }
+    * Create and position all UI components - update for larger timer
+    */
+    private void createUIComponents() {
+       // Hearts panel for lives - place directly on background with proper spacing
+       heartsPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
+       heartsPanel.setBounds(20, 20, 240, 70);
+       heartsPanel.setOpaque(false);
+       add(heartsPanel);
+
+       // Initialize hearts with proper spacing
+       heartLabels = new JLabel[3];
+       for (int i = 0; i < 3; i++) {
+           heartLabels[i] = new JLabel(heartFilledIcon);
+           heartLabels[i].setOpaque(false);
+           heartsPanel.add(heartLabels[i]);
+       }
+
+       // Timer display centered at the top without any background and larger font
+       timerLabel = new JLabel("05:00", JLabel.CENTER); // Removed "Time: " prefix
+       timerLabel.setFont(pixelifySansFont.deriveFont(70f)); // Increased to 70 pixels
+       timerLabel.setForeground(Color.WHITE);
+       timerLabel.setOpaque(false); // No background
+       // Center the timer
+       timerLabel.setBounds((GameConstants.WINDOW_WIDTH - 200) / 2, 10, 200, 70);
+       add(timerLabel);
+
+       // Custom control buttons - positioned at top right with adequate spacing
+       pauseButton = createImageButton(pauseNormalIcon, pauseHoverIcon);
+       pauseButton.setBounds(GameConstants.WINDOW_WIDTH - 90, 20, 70, 70); // Now second (right position)
+       pauseButton.addActionListener(e -> showPauseMenu());
+       add(pauseButton);
+
+       hintButton = createImageButton(hintNormalIcon, hintHoverIcon);
+       hintButton.setBounds(GameConstants.WINDOW_WIDTH - 180, 20, 70, 70); // Now first (left position)
+       hintButton.addActionListener(e -> controller.showHint());
+       add(hintButton);
+
+       // Instructions with improved visibility
+       instructionsLabel = new JLabel("Sort these items by value using Insertion Sort. Move the smaller items to the left.", JLabel.CENTER);
+       instructionsLabel.setFont(new Font("Arial", Font.BOLD, 16));
+       instructionsLabel.setForeground(Color.BLACK);
+       instructionsLabel.setBackground(new Color(255, 255, 255, 180));
+       instructionsLabel.setOpaque(true);
+       instructionsLabel.setBounds(0, 100, GameConstants.WINDOW_WIDTH, 30);
+       add(instructionsLabel);
+
+       // Bottom buttons with proper spacing - no background panel
+       checkButton = new JButton("Check Solution");
+       checkButton.setBounds((GameConstants.WINDOW_WIDTH / 2) - 180, GameConstants.WINDOW_HEIGHT - 60, 150, 30);
+       styleButton(checkButton);
+       checkButton.addActionListener(e -> checkSolution());
+       add(checkButton);
+
+       nextLevelButton = new JButton("Next Level");
+       nextLevelButton.setBounds((GameConstants.WINDOW_WIDTH / 2) + 30, GameConstants.WINDOW_HEIGHT - 60, 150, 30);
+       styleButton(nextLevelButton);
+       nextLevelButton.setEnabled(false);
+       nextLevelButton.addActionListener(e -> controller.goToNextLevel());
+       add(nextLevelButton);
+   }
     
     /**
-     * Create the bottom panel with action buttons
+     * Create a button with normal and hover images
      */
-    private void createBottomPanel() {
-        JPanel bottomPanel = new JPanel();
-        checkButton = new JButton("Check Solution");
-        nextButton = new JButton("Next Step");
-        
-        checkButton.addActionListener(e -> checkSolution());
-        nextButton.addActionListener(e -> nextStep());
-        
-        styleButton(checkButton);
-        styleButton(nextButton);
-        
-        bottomPanel.add(checkButton);
-        bottomPanel.add(nextButton);
-        
-        add(bottomPanel, BorderLayout.SOUTH);
-    }
-    
-    /**
-     * Apply consistent styling to buttons
-     */
-    private void styleButton(JButton button) {
-        button.setFont(resourceManager.getFont(GameConstants.FONT_PATH, 14f));
+    private JButton createImageButton(ImageIcon normalIcon, ImageIcon hoverIcon) {
+        JButton button = new JButton(normalIcon);
+        button.setBorderPainted(false);
+        button.setContentAreaFilled(false);
         button.setFocusPainted(false);
+        button.setOpaque(false);
+        
+        button.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseEntered(MouseEvent e) {
+                if (hoverIcon != null) {
+                    button.setIcon(hoverIcon);
+                }
+            }
+            
+            @Override
+            public void mouseExited(MouseEvent e) {
+                if (normalIcon != null) {
+                    button.setIcon(normalIcon);
+                }
+            }
+        });
+        
+        return button;
+    }
+    
+    /**
+    * Display pause menu overlay - with semi-transparent dark background
+    */
+    private void showPauseMenu() {
+       // Pause the timer
+       gameTimer.stop();
+
+       // Create semi-transparent dark overlay panel
+       JPanel overlay = new JPanel() {
+           @Override
+           protected void paintComponent(Graphics g) {
+               super.paintComponent(g);
+               // Semi-transparent dark overlay (60% opacity black)
+               g.setColor(new Color(0, 0, 0, 153)); // 153 is ~60% opacity
+               g.fillRect(0, 0, getWidth(), getHeight());
+           }
+       };
+       overlay.setLayout(null);
+       overlay.setBounds(0, 0, GameConstants.WINDOW_WIDTH, GameConstants.WINDOW_HEIGHT);
+       overlay.setOpaque(false);
+       add(overlay, 0);
+
+       // Create menu container panel with same layout as before
+       JPanel menuPanel = new JPanel();
+       menuPanel.setLayout(new BoxLayout(menuPanel, BoxLayout.Y_AXIS));
+       menuPanel.setOpaque(false); // Transparent panel
+       menuPanel.setBorder(null); // No border
+       menuPanel.setBounds(GameConstants.WINDOW_WIDTH / 2 - 150, GameConstants.WINDOW_HEIGHT / 2 - 150, 300, 300);
+
+       // Use AnimatedButton from MainMenuView
+       AnimatedButton resumeButton = new AnimatedButton("RESUME GAME", 
+           resourceManager.getImage("/gameproject/resources/NormalButton.png"),
+           resourceManager.getImage("/gameproject/resources/HoverButton.png"),
+           resourceManager.getImage("/gameproject/resources/ClickedButton.png"));
+       resumeButton.setFont(pixelifySansFont.deriveFont(28f));
+       resumeButton.setForeground(Color.WHITE);
+       resumeButton.setMaximumSize(new Dimension(300, 70));
+       resumeButton.setPreferredSize(new Dimension(300, 70));
+       resumeButton.setAlignmentX(Component.CENTER_ALIGNMENT);
+       resumeButton.addActionListener(e -> {
+           remove(overlay);
+           repaint();
+           // Resume the timer when Resume button is pressed
+           gameTimer.start();
+       });
+
+       AnimatedButton restartButton = new AnimatedButton("RESTART", 
+           resourceManager.getImage("/gameproject/resources/NormalButton.png"),
+           resourceManager.getImage("/gameproject/resources/HoverButton.png"),
+           resourceManager.getImage("/gameproject/resources/ClickedButton.png"));
+       restartButton.setFont(pixelifySansFont.deriveFont(28f));
+       restartButton.setForeground(Color.WHITE);
+       restartButton.setMaximumSize(new Dimension(300, 70));
+       restartButton.setPreferredSize(new Dimension(300, 70));
+       restartButton.setAlignmentX(Component.CENTER_ALIGNMENT);
+       restartButton.addActionListener(e -> {
+           remove(overlay);
+           resetLevel();
+       });
+
+       AnimatedButton menuButton = new AnimatedButton("MAIN MENU", 
+           resourceManager.getImage("/gameproject/resources/NormalButton.png"),
+           resourceManager.getImage("/gameproject/resources/HoverButton.png"),
+           resourceManager.getImage("/gameproject/resources/ClickedButton.png"));
+       menuButton.setFont(pixelifySansFont.deriveFont(28f));
+       menuButton.setForeground(Color.WHITE);
+       menuButton.setMaximumSize(new Dimension(300, 70));
+       menuButton.setPreferredSize(new Dimension(300, 70));
+       menuButton.setAlignmentX(Component.CENTER_ALIGNMENT);
+       menuButton.addActionListener(e -> {
+           remove(overlay);
+           controller.showMainMenu();
+       });
+
+       // Add buttons to menu panel with spacing
+       menuPanel.add(Box.createVerticalGlue());
+       menuPanel.add(resumeButton);
+       menuPanel.add(Box.createRigidArea(new Dimension(0, 20)));
+       menuPanel.add(restartButton);
+       menuPanel.add(Box.createRigidArea(new Dimension(0, 20)));
+       menuPanel.add(menuButton);
+       menuPanel.add(Box.createVerticalGlue());
+
+       overlay.add(menuPanel);
+       revalidate();
+       repaint();
+    }
+
+   
+   
+   /**
+    * Custom button with animation states
+    */
+   private class AnimatedButton extends JButton {
+       private ImageIcon normalIcon;
+       private ImageIcon hoverIcon;
+       private ImageIcon clickedIcon;
+       private boolean isHovered = false;
+       private boolean isClicked = false;
+
+       public AnimatedButton(String text, ImageIcon normalIcon, ImageIcon hoverIcon, ImageIcon clickedIcon) {
+           super(text);
+
+           // Store the original icons
+           this.normalIcon = normalIcon;
+           this.hoverIcon = hoverIcon;
+           this.clickedIcon = clickedIcon;
+
+           // Configure the button appearance
+           setContentAreaFilled(false);
+           setBorderPainted(false);
+           setFocusPainted(false);
+           setOpaque(false);
+           setHorizontalTextPosition(JButton.CENTER);
+           setVerticalTextPosition(JButton.CENTER);
+
+           // Force the UI to respect our font
+           setUI(new BasicButtonUI());
+
+           // Set the initial icon
+           updateIcon();
+
+           // Add mouse listeners for hover and click effects
+           addMouseListener(new MouseAdapter() {
+               @Override
+               public void mouseEntered(MouseEvent e) {
+                   isHovered = true;
+                   updateIcon();
+               }
+
+               @Override
+               public void mouseExited(MouseEvent e) {
+                   isHovered = false;
+                   isClicked = false;
+                   updateIcon();
+               }
+
+               @Override
+               public void mousePressed(MouseEvent e) {
+                   isClicked = true;
+                   updateIcon();
+               }
+
+               @Override
+               public void mouseReleased(MouseEvent e) {
+                   isClicked = false;
+                   updateIcon();
+               }
+           });
+       }
+
+       @Override
+       public void setSize(Dimension d) {
+           super.setSize(d);
+           updateIcon();
+       }
+
+       @Override
+       public void setSize(int width, int height) {
+           super.setSize(width, height);
+           updateIcon();
+       }
+
+       @Override
+       public void setBounds(int x, int y, int width, int height) {
+           super.setBounds(x, y, width, height);
+           updateIcon();
+       }
+
+       /**
+        * Resize an ImageIcon to fit the button dimensions
+        */
+       private ImageIcon resizeIcon(ImageIcon icon) {
+           if (icon == null) return null;
+           if (getWidth() <= 0 || getHeight() <= 0) return icon;
+
+           Image img = icon.getImage();
+           Image resizedImg = img.getScaledInstance(getWidth(), getHeight(), Image.SCALE_SMOOTH);
+           return new ImageIcon(resizedImg);
+       }
+
+       /**
+        * Update the button icon based on current state
+        */
+       private void updateIcon() {
+           if (isClicked && clickedIcon != null) {
+               setIcon(resizeIcon(clickedIcon));
+           } else if (isHovered && hoverIcon != null) {
+               setIcon(resizeIcon(hoverIcon));
+           } else if (normalIcon != null) {
+               setIcon(resizeIcon(normalIcon));
+           }
+       }
+
+       @Override
+       public void paintComponent(Graphics g) {
+           // Ensure icon is properly sized before painting
+           updateIcon();
+           super.paintComponent(g);
+       }
+   }
+   
+   
+   
+   
+    
+    /**
+    * Show level failed screen with semi-transparent dark overlay
+    */
+    private void showLevelFailedScreen() {
+       // Stop the timer
+       gameTimer.stop();
+
+       // Create semi-transparent dark overlay panel
+       JPanel overlay = new JPanel() {
+           @Override
+           protected void paintComponent(Graphics g) {
+               super.paintComponent(g);
+               // Semi-transparent dark overlay (60% opacity black)
+               g.setColor(new Color(0, 0, 0, 153)); // 153 is ~60% opacity
+               g.fillRect(0, 0, getWidth(), getHeight());
+           }
+       };
+       overlay.setLayout(null);
+       overlay.setBounds(0, 0, GameConstants.WINDOW_WIDTH, GameConstants.WINDOW_HEIGHT);
+       overlay.setOpaque(false);
+       add(overlay, 0);
+
+       // Create "Level Failed" text
+       JLabel failedLabel = new JLabel("Level", JLabel.CENTER);
+       failedLabel.setFont(pixelifySansFont.deriveFont(50f));
+       failedLabel.setForeground(Color.WHITE);
+       failedLabel.setBounds(0, (GameConstants.WINDOW_HEIGHT / 2) - 80, GameConstants.WINDOW_WIDTH, 50);
+       overlay.add(failedLabel);
+
+       JLabel failedLabel2 = new JLabel("Failed", JLabel.CENTER);
+       failedLabel2.setFont(pixelifySansFont.deriveFont(50f));
+       failedLabel2.setForeground(Color.WHITE);
+       failedLabel2.setBounds(0, (GameConstants.WINDOW_HEIGHT / 2) - 30, GameConstants.WINDOW_WIDTH, 50);
+       overlay.add(failedLabel2);
+
+       // Create buttons with same styling as pause menu
+       AnimatedButton restartButton = new AnimatedButton("RESTART", 
+           resourceManager.getImage("/gameproject/resources/NormalButton.png"),
+           resourceManager.getImage("/gameproject/resources/HoverButton.png"),
+           resourceManager.getImage("/gameproject/resources/ClickedButton.png"));
+       restartButton.setFont(pixelifySansFont.deriveFont(28f));
+       restartButton.setForeground(Color.WHITE);
+       restartButton.setBounds((GameConstants.WINDOW_WIDTH / 2) - 220, (GameConstants.WINDOW_HEIGHT / 2) + 50, 200, 60);
+       restartButton.addActionListener(e -> {
+           remove(overlay);
+           resetLevel();
+       });
+       overlay.add(restartButton);
+
+       AnimatedButton menuButton = new AnimatedButton("MAIN MENU", 
+           resourceManager.getImage("/gameproject/resources/NormalButton.png"),
+           resourceManager.getImage("/gameproject/resources/HoverButton.png"),
+           resourceManager.getImage("/gameproject/resources/ClickedButton.png"));
+       menuButton.setFont(pixelifySansFont.deriveFont(28f));
+       menuButton.setForeground(Color.WHITE);
+       menuButton.setBounds((GameConstants.WINDOW_WIDTH / 2) + 20, (GameConstants.WINDOW_HEIGHT / 2) + 50, 200, 60);
+       menuButton.addActionListener(e -> {
+           remove(overlay);
+           controller.showMainMenu();
+       });
+       overlay.add(menuButton);
+
+       revalidate();
+       repaint();
+    }
+    
+    /**
+     * Create a pixelated style button with PixelifySans font
+     */
+    private JButton createPixelButton(String text, int width, int height) {
+        JButton button = new JButton(text);
+        button.setFont(pixelifySansFont);
+        button.setForeground(Color.WHITE);
+        button.setBackground(Color.BLACK);
+        button.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(Color.WHITE, 2),
+            BorderFactory.createEmptyBorder(5, 10, 5, 10)
+        ));
+        button.setFocusPainted(false);
+        
+        // Add hover effect
+        button.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseEntered(MouseEvent e) {
+                button.setBackground(new Color(80, 80, 80));
+            }
+            
+            @Override
+            public void mouseExited(MouseEvent e) {
+                button.setBackground(Color.BLACK);
+            }
+        });
+        
+        return button;
+    }
+    
+    /**
+     * Reset the current level completely
+     */
+    private void resetLevel() {
+        // Reset lives
+        resetLives();
+        
+        // Reset timer
+        timeRemaining = 300; // 5 minutes
+        updateTimerDisplay();
+        
+        // Restart the level
+        controller.restartLevel();
     }
     
     /**
      * Update the level information display
      */
     public void updateLevelInfo(String difficulty, int level) {
-        levelLabel.setText("Level " + level + " - " + difficulty);
+        // Reset lives to full
+        resetLives();
+        
+        // Reset timer to 5 minutes
+        timeRemaining = 300;
+        updateTimerDisplay();
         
         // Get the level configuration
         List<LevelConfig> allLevels = LevelConfig.createAllLevels();
@@ -191,185 +567,122 @@ public class GameView extends JPanel {
             
             // Initialize the level
             initializeLevel();
-        }
-    }
-    
-    /**
-     * Initialize the level with draggable items
-     */
-    private void initializeLevel() {
-        // Clear existing items
-        sortingArea.removeAll();
-        draggableItems.clear();
-        levelCompleted = false;
-        
-        // Get initial array
-        int[] initialArray = currentLevel.getInitialArray();
-        
-        // Create draggable items
-        int startX = 50;
-        int startY = 50;
-        int spacing = 60;
-        
-        for (int i = 0; i < initialArray.length; i++) {
-            int value = initialArray[i];
-            // Generate a color based on the value
-            Color itemColor = new Color(
-                    50 + (value * 10) % 150,
-                    80 + (value * 7) % 120,
-                    100 + (value * 13) % 155
-            );
             
-            DraggableItem item = new DraggableItem(value, itemColor);
-            
-            // Position the item
-            int x = startX + (i * spacing);
-            item.setLocation(x, startY);
-            item.setOriginalPosition(new Point(x, startY));
-            
-            // Set drag listener
-            item.setDragListener(new DragListener() {
-                @Override
-                public void onDragStart(DraggableItem item) {
-                    // Highlight if needed
-                }
-                
-                @Override
-                public void onDragEnd(DraggableItem item) {
-                    // Check for swap or reposition
-                    handleItemDrop(item);
-                }
-                
-                @Override
-                public void onDragging(DraggableItem item, Point currentPos) {
-                    // Real-time feedback if needed
-                }
-            });
-            
-            draggableItems.add(item);
-            sortingArea.add(item);
-        }
-        
-        // Set up timer if there's a time limit
-        if (currentLevel.getTimeLimit() > 0) {
-            timeRemaining = currentLevel.getTimeLimit();
-            updateTimerDisplay();
+            // Start timer automatically
             gameTimer.start();
-        } else {
-            timerLabel.setText("Time: --:--");
         }
-        
-        sortingArea.revalidate();
-        sortingArea.repaint();
     }
     
     /**
-     * Handle dropping a draggable item
+    * Initialize the level with the game grid - with smaller grid
+    */
+    private void initializeLevel() {
+       // Remove existing grid if any
+       if (gameGrid != null) {
+           remove(gameGrid);
+       }
+
+       // Reset level state
+       levelCompleted = false;
+       nextLevelButton.setEnabled(false);
+
+       // Load appropriate background based on level theme
+       String bgPath = "/gameproject/resources/" + currentLevel.getBackgroundTheme().toLowerCase() + "_bg.png";
+       backgroundImage = resourceManager.getImage(bgPath);
+       if (backgroundImage == null) {
+           backgroundImage = resourceManager.getImage("/gameproject/resources/default_bg.png");
+       }
+
+       // Create new game grid with smaller size
+       gameGrid = new GameGrid(currentLevel);
+       // Make grid smaller by reducing width and height
+       gameGrid.setBounds((GameConstants.WINDOW_WIDTH - 700) / 2, 150, 700, 450); // Reduced from 800x520
+       add(gameGrid);
+
+       revalidate();
+       repaint();
+    }
+    
+    /**
+     * Reset lives to full
      */
-    private void handleItemDrop(DraggableItem droppedItem) {
-        if (levelCompleted) return;
-        
-        // Find the closest position
-        int closestIndex = -1;
-        int minDistance = Integer.MAX_VALUE;
-        
-        for (int i = 0; i < draggableItems.size(); i++) {
-            DraggableItem item = draggableItems.get(i);
-            int distance = (int) droppedItem.getLocation().distance(item.getOriginalPosition());
-            
-            if (distance < minDistance) {
-                minDistance = distance;
-                closestIndex = i;
-            }
+    private void resetLives() {
+        livesRemaining = 3;
+        for (int i = 0; i < 3; i++) {
+            heartLabels[i].setIcon(heartFilledIcon);
         }
-        
-        if (closestIndex != -1) {
-            // Get the current index of the dropped item
-            int currentIndex = draggableItems.indexOf(droppedItem);
-            
-            // Swap positions if needed
-            if (currentIndex != closestIndex) {
-                // Save the target position
-                Point targetPos = draggableItems.get(closestIndex).getOriginalPosition();
-                
-                // Update the positions of all items in between
-                if (currentIndex < closestIndex) {
-                    // Shift items left
-                    for (int i = currentIndex + 1; i <= closestIndex; i++) {
-                        DraggableItem item = draggableItems.get(i);
-                        Point prevPos = draggableItems.get(i - 1).getOriginalPosition();
-                        item.setLocation(prevPos);
-                        item.setOriginalPosition(prevPos);
-                    }
-                } else {
-                    // Shift items right
-                    for (int i = currentIndex - 1; i >= closestIndex; i--) {
-                        DraggableItem item = draggableItems.get(i);
-                        Point nextPos = draggableItems.get(i + 1).getOriginalPosition();
-                        item.setLocation(nextPos);
-                        item.setOriginalPosition(nextPos);
-                    }
-                }
-                
-                // Move dropped item to target position
-                droppedItem.setLocation(targetPos);
-                droppedItem.setOriginalPosition(targetPos);
-                
-                // Update the list order
-                DraggableItem temp = draggableItems.remove(currentIndex);
-                draggableItems.add(closestIndex, temp);
-                
-                sortingArea.repaint();
-            } else {
-                // Just snap back to original position
-                droppedItem.setLocation(droppedItem.getOriginalPosition());
+    }
+    
+    /**
+    * Lose a life and check if all hearts are gone
+    */
+    private void loseLife() {
+        if (livesRemaining > 0) {
+            livesRemaining--;
+            heartLabels[livesRemaining].setIcon(heartEmptyIcon);
+
+            // Check if all hearts are depleted
+            if (livesRemaining == 0) {
+                // Show level failed screen when all hearts are gone
+                showLevelFailedScreen();
             }
         }
     }
     
     /**
-     * Check if the current solution is correct
+     * Apply consistent styling to buttons
      */
+    private void styleButton(JButton button) {
+        button.setFont(new Font("Arial", Font.BOLD, 16));
+        button.setFocusPainted(false);
+        button.setBackground(Color.WHITE);
+        button.setForeground(Color.BLACK);
+        button.setBorder(BorderFactory.createLineBorder(Color.BLACK, 1));
+        // Remove any internal padding that might create the white space
+        button.setMargin(new Insets(0, 0, 0, 0));
+    }
+    
+    /**
+    * Check if the current solution is correct
+    */
     private void checkSolution() {
         if (levelCompleted) return;
-        
-        // Extract values from draggable items
-        int[] currentArray = new int[draggableItems.size()];
-        for (int i = 0; i < draggableItems.size(); i++) {
-            currentArray[i] = draggableItems.get(i).getValue();
-        }
-        
+
+        // Get the current state from the grid
+        int[] currentArray = gameGrid.getCurrentState();
+
         // Check if solution is correct
         boolean isCorrect = currentLevel.validateSolution(currentArray);
-        
+
         if (isCorrect) {
             // Stop timer
-            if (gameTimer.isRunning()) {
-                gameTimer.stop();
-            }
-            
+            gameTimer.stop();
+
             // Calculate stars based on time and steps
             int stars = calculateStars();
-            
+
             // Mark level as completed
             levelCompleted = true;
-            
+            nextLevelButton.setEnabled(true);
+
             // Show success message
             JOptionPane.showMessageDialog(this,
                     "Congratulations! You've completed this level with " + stars + " stars!",
                     "Success", JOptionPane.INFORMATION_MESSAGE);
-            
+
             // Record progress
             controller.completeLevelWithStars(currentLevel.getDifficulty(), 
                     currentLevel.getLevelNumber(), stars);
-            
-            // Enable next button
-            nextButton.setEnabled(true);
         } else {
-            // Show error message
-            JOptionPane.showMessageDialog(this,
-                    "Not quite right yet. Keep trying!",
-                    "Try Again", JOptionPane.INFORMATION_MESSAGE);
+            // Lose a life
+            loseLife();
+
+            // Only show error message if not showing level failed screen
+            if (livesRemaining > 0) {
+                JOptionPane.showMessageDialog(this,
+                        "Not quite right yet. Keep trying!\nLives remaining: " + livesRemaining,
+                        "Try Again", JOptionPane.INFORMATION_MESSAGE);
+            }
         }
     }
     
@@ -380,63 +693,50 @@ public class GameView extends JPanel {
         // Base stars - completing gives at least 1 star
         int stars = 1;
         
-        // Check if we have time remaining (if there was a time limit)
-        if (currentLevel.getTimeLimit() > 0) {
-            // Time bonus - more than 50% time remaining gives extra star
-            float timePercentRemaining = (float) timeRemaining / currentLevel.getTimeLimit();
-            if (timePercentRemaining > 0.5) {
-                stars++;
-            }
-        }
+        // Add stars based on lives remaining
+        stars += livesRemaining;
         
-        // TODO: Add step count tracking for the third star
-        // For now, just give 3 stars for all completed levels
-        stars = 3;
-        
-        return stars;
+        // Cap at 3 stars
+        return Math.min(stars, 3);
     }
     
     /**
-     * Move to next level
-     */
-    private void nextStep() {
-        if (levelCompleted) {
-            controller.goToNextLevel();
-        } else {
-            // Just advance the current demonstration
-            JOptionPane.showMessageDialog(this,
-                    "Complete the current level first!",
-                    "Complete Level", JOptionPane.INFORMATION_MESSAGE);
-        }
-    }
-    
-    /**
-     * Update the timer
+     * Update the timer - now counting down from 5 minutes
      */
     private void updateTimer() {
         if (timeRemaining > 0) {
             timeRemaining--;
             updateTimerDisplay();
             
+            // Check if time is up
             if (timeRemaining <= 0) {
-                // Time's up
                 gameTimer.stop();
-                JOptionPane.showMessageDialog(this,
-                        "Time's up! Try again.",
-                        "Time Expired", JOptionPane.INFORMATION_MESSAGE);
-                
-                // Restart level
-                controller.restartLevel();
+                showLevelFailedScreen();
             }
         }
     }
     
     /**
-     * Update the timer display
-     */
+    * Update the timer display - no "Time: " prefix
+    */
     private void updateTimerDisplay() {
-        int minutes = timeRemaining / 60;
-        int seconds = timeRemaining % 60;
-        timerLabel.setText(String.format("Time: %02d:%02d", minutes, seconds));
+       int minutes = timeRemaining / 60;
+       int seconds = timeRemaining % 60;
+       timerLabel.setText(String.format("%02d:%02d", minutes, seconds)); // Removed "Time: " prefix
+    }
+
+    
+    @Override
+    protected void paintComponent(Graphics g) {
+        super.paintComponent(g);
+        
+        // Draw the background image to fill the entire panel
+        if (backgroundImage != null) {
+            g.drawImage(backgroundImage.getImage(), 0, 0, getWidth(), getHeight(), this);
+        } else {
+            // Fallback to solid color if image is not available
+            g.setColor(new Color(240, 240, 240));
+            g.fillRect(0, 0, getWidth(), getHeight());
+        }
     }
 }
