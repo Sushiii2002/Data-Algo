@@ -18,12 +18,11 @@ import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.List;
-
 /**
  * Enhanced view for the game screen showing sorting challenges
  */
 public class GameView extends JPanel {
-    private GameController controller;
+   private GameController controller;
     private ResourceManager resourceManager;
     private JPanel heartsPanel;
     private JLabel[] heartLabels;
@@ -134,65 +133,78 @@ public class GameView extends JPanel {
     }
     
     /**
-    * Create and position all UI components - update for larger timer
+    * Create and position all UI components - with updated button positions
     */
     private void createUIComponents() {
-       // Hearts panel for lives - place directly on background with proper spacing
-       heartsPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
-       heartsPanel.setBounds(20, 20, 240, 70);
-       heartsPanel.setOpaque(false);
-       add(heartsPanel);
+      // Hearts panel for lives - place directly on background with proper spacing
+      heartsPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
+      heartsPanel.setBounds(20, 20, 240, 70);
+      heartsPanel.setOpaque(false);
+      add(heartsPanel);
 
-       // Initialize hearts with proper spacing
-       heartLabels = new JLabel[3];
-       for (int i = 0; i < 3; i++) {
-           heartLabels[i] = new JLabel(heartFilledIcon);
-           heartLabels[i].setOpaque(false);
-           heartsPanel.add(heartLabels[i]);
-       }
+      // Initialize hearts with proper spacing
+      heartLabels = new JLabel[3];
+      for (int i = 0; i < 3; i++) {
+          heartLabels[i] = new JLabel(heartFilledIcon);
+          heartLabels[i].setOpaque(false);
+          heartsPanel.add(heartLabels[i]);
+      }
 
-       // Timer display centered at the top without any background and larger font
-       timerLabel = new JLabel("05:00", JLabel.CENTER); // Removed "Time: " prefix
-       timerLabel.setFont(pixelifySansFont.deriveFont(70f)); // Increased to 70 pixels
-       timerLabel.setForeground(Color.WHITE);
-       timerLabel.setOpaque(false); // No background
-       // Center the timer
-       timerLabel.setBounds((GameConstants.WINDOW_WIDTH - 200) / 2, 10, 200, 70);
-       add(timerLabel);
+      // Timer display centered at the top without any background and larger font
+      timerLabel = new JLabel("05:00", JLabel.CENTER); // Removed "Time: " prefix
+      timerLabel.setFont(pixelifySansFont.deriveFont(70f)); // Increased to 70 pixels
+      timerLabel.setForeground(Color.WHITE);
+      timerLabel.setOpaque(false); // No background
+      // Center the timer
+      timerLabel.setBounds((GameConstants.WINDOW_WIDTH - 200) / 2, 10, 200, 70);
+      add(timerLabel);
 
-       // Custom control buttons - positioned at top right with adequate spacing
-       pauseButton = createImageButton(pauseNormalIcon, pauseHoverIcon);
-       pauseButton.setBounds(GameConstants.WINDOW_WIDTH - 90, 20, 70, 70); // Now second (right position)
-       pauseButton.addActionListener(e -> showPauseMenu());
-       add(pauseButton);
+      // Custom control buttons - positioned at top right with adequate spacing
+      pauseButton = createImageButton(pauseNormalIcon, pauseHoverIcon);
+      pauseButton.setBounds(GameConstants.WINDOW_WIDTH - 90, 20, 70, 70); // Now second (right position)
+      pauseButton.addActionListener(e -> showPauseMenu());
+      add(pauseButton);
 
-       hintButton = createImageButton(hintNormalIcon, hintHoverIcon);
-       hintButton.setBounds(GameConstants.WINDOW_WIDTH - 180, 20, 70, 70); // Now first (left position)
-       hintButton.addActionListener(e -> controller.showHint());
-       add(hintButton);
+      hintButton = createImageButton(hintNormalIcon, hintHoverIcon);
+      hintButton.setBounds(GameConstants.WINDOW_WIDTH - 180, 20, 70, 70); // Now first (left position)
+      hintButton.addActionListener(e -> controller.showHint());
+      add(hintButton);
 
-       // Instructions with improved visibility
-       instructionsLabel = new JLabel("Sort these items by value using Insertion Sort. Move the smaller items to the left.", JLabel.CENTER);
-       instructionsLabel.setFont(new Font("Arial", Font.BOLD, 16));
-       instructionsLabel.setForeground(Color.BLACK);
-       instructionsLabel.setBackground(new Color(255, 255, 255, 180));
-       instructionsLabel.setOpaque(true);
-       instructionsLabel.setBounds(0, 100, GameConstants.WINDOW_WIDTH, 30);
-       add(instructionsLabel);
+      // Instructions with improved visibility
+      instructionsLabel = new JLabel("Sort these items by value using Insertion Sort. Move the smaller items to the left.", JLabel.CENTER);
+      instructionsLabel.setFont(new Font("Arial", Font.BOLD, 16));
+      instructionsLabel.setForeground(Color.BLACK);
+      instructionsLabel.setBackground(new Color(255, 255, 255, 180));
+      instructionsLabel.setOpaque(true);
+      instructionsLabel.setBounds(0, 100, GameConstants.WINDOW_WIDTH, 30);
+      add(instructionsLabel);
 
-       // Bottom buttons with proper spacing - no background panel
-       checkButton = new JButton("Check Solution");
-       checkButton.setBounds((GameConstants.WINDOW_WIDTH / 2) - 180, GameConstants.WINDOW_HEIGHT - 60, 150, 30);
-       styleButton(checkButton);
-       checkButton.addActionListener(e -> checkSolution());
-       add(checkButton);
+      // Bottom buttons with proper spacing - UPDATED Y-POSITION and HORIZONTAL SHIFT
+        int buttonsY = GameConstants.WINDOW_HEIGHT - 120;  // Vertical position
+        int horizontalShift = 140;  // Shift buttons to the right by 250 pixels
 
-       nextLevelButton = new JButton("Next Level");
-       nextLevelButton.setBounds((GameConstants.WINDOW_WIDTH / 2) + 30, GameConstants.WINDOW_HEIGHT - 60, 150, 30);
-       styleButton(nextLevelButton);
-       nextLevelButton.setEnabled(false);
-       nextLevelButton.addActionListener(e -> controller.goToNextLevel());
-       add(nextLevelButton);
+        checkButton = new JButton("Check Solution");
+        checkButton.setBounds(
+            (GameConstants.WINDOW_WIDTH / 2) - 180 + horizontalShift, 
+            buttonsY, 
+            150, 
+            30
+        );
+        styleButton(checkButton);
+        checkButton.addActionListener(e -> checkSolution());
+        add(checkButton);
+
+        nextLevelButton = new JButton("Next Level");
+        nextLevelButton.setBounds(
+            (GameConstants.WINDOW_WIDTH / 2) + 30 + horizontalShift, 
+            buttonsY, 
+            150, 
+            30
+        );
+        styleButton(nextLevelButton);
+        nextLevelButton.setEnabled(false);
+        nextLevelButton.addActionListener(e -> controller.goToNextLevel());
+        add(nextLevelButton);
    }
     
     /**
@@ -496,35 +508,7 @@ public class GameView extends JPanel {
        repaint();
     }
     
-    /**
-     * Create a pixelated style button with PixelifySans font
-     */
-    private JButton createPixelButton(String text, int width, int height) {
-        JButton button = new JButton(text);
-        button.setFont(pixelifySansFont);
-        button.setForeground(Color.WHITE);
-        button.setBackground(Color.BLACK);
-        button.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(Color.WHITE, 2),
-            BorderFactory.createEmptyBorder(5, 10, 5, 10)
-        ));
-        button.setFocusPainted(false);
-        
-        // Add hover effect
-        button.addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseEntered(MouseEvent e) {
-                button.setBackground(new Color(80, 80, 80));
-            }
-            
-            @Override
-            public void mouseExited(MouseEvent e) {
-                button.setBackground(Color.BLACK);
-            }
-        });
-        
-        return button;
-    }
+    
     
     /**
      * Reset the current level completely
