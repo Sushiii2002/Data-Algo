@@ -4,7 +4,9 @@ import gameproject.model.GameModel;
 import gameproject.model.GameState;
 import gameproject.model.LevelConfig;
 import gameproject.model.ProgressTracker;
+import gameproject.model.NarrativeSystem;
 import gameproject.view.*;
+import gameproject.ui.TimSortVisualization;
 import gameproject.util.ResourceManager;
 import gameproject.util.GameConstants;
 
@@ -13,20 +15,23 @@ import java.awt.*;
 import java.util.List;
 
 /**
- * Enhanced controller class that handles game logic and user interactions
+ * Enhanced controller class that integrates the narrative system for the TimSort RPG
  */
 public class GameController {
     private GameModel model;
     private ProgressTracker progressTracker;
     private ResourceManager resourceManager;
+    private NarrativeSystem narrativeSystem;
+    
     private JFrame mainFrame;
     private JPanel mainPanel;
     private CardLayout cardLayout;
     
     private MainMenuView mainMenuView;
     private LevelSelectionView levelSelectionView;
-    private StoryView storyView;
+    private EnhancedStoryView enhancedStoryView;
     private GameView gameView;
+    private TimSortVisualization timSortVisualization;
     
     private List<LevelConfig> allLevels;
     
@@ -37,7 +42,11 @@ public class GameController {
         // Initialize singletons
         this.resourceManager = ResourceManager.getInstance();
         this.progressTracker = ProgressTracker.getInstance();
+        this.narrativeSystem = NarrativeSystem.getInstance();
         this.model = new GameModel();
+        
+        // Initialize narrative system with controller reference
+        this.narrativeSystem.initialize(this);
         
         // Load all level configurations
         this.allLevels = LevelConfig.createAllLevels();
@@ -60,22 +69,24 @@ public class GameController {
         // Add views to the card layout
         mainPanel.add(mainMenuView, "mainMenu");
         mainPanel.add(levelSelectionView, "levelSelection");
-        mainPanel.add(storyView, "story");
+        mainPanel.add(enhancedStoryView, "enhancedStory");
         mainPanel.add(gameView, "game");
+        mainPanel.add(timSortVisualization, "timSortVisualization");
         
         // Add main panel to the frame
         mainFrame.add(mainPanel);
     }
     
     /**
-    * Initialize all views
-    */
-   private void initializeViews() {
-       mainMenuView = new MainMenuView(this);
-       levelSelectionView = new LevelSelectionView(this);
-       storyView = new StoryView(this);
-       gameView = new GameView(this);
-   }
+     * Initialize all views
+     */
+    private void initializeViews() {
+        mainMenuView = new MainMenuView(this);
+        levelSelectionView = new LevelSelectionView(this);
+        enhancedStoryView = new EnhancedStoryView(this);
+        gameView = new GameView(this);
+        timSortVisualization = new TimSortVisualization(this);
+    }
     
     /**
      * Start the game application
@@ -104,25 +115,114 @@ public class GameController {
     }
     
     /**
-     * Start the story mode
+     * Start the story mode with enhanced narrative
      */
     public void startGame() {
         model.setCurrentState(GameState.STORY_MODE);
-        cardLayout.show(mainPanel, "story");
+        cardLayout.show(mainPanel, "enhancedStory");
+        enhancedStoryView.startStory();
     }
     
     /**
-     * Skip the story and go to the game
+     * Skip the story and go directly to Phase 1
      */
     public void skipStory() {
-        startLevel("Beginner", 1);
+        startPhaseGameplay(1);
     }
     
     /**
-     * Start the insertion sort challenge
+     * Start a specific algorithm phase gameplay
      */
-    public void startInsertionSortChallenge() {
-        startLevel("Beginner", 1);
+    public void startPhaseGameplay(int phase) {
+        switch (phase) {
+            case 1:
+                // Eye of Pattern phase
+                model.setCurrentState(GameState.TIMSORT_CHALLENGE);
+                model.setCurrentLevel(1);
+                
+                // Show TimSort visualization for phase 1
+                cardLayout.show(mainPanel, "timSortVisualization");
+                break;
+                
+            case 2:
+                // Hand of Balance phase
+                model.setCurrentState(GameState.TIMSORT_CHALLENGE);
+                model.setCurrentLevel(2);
+                
+                // Show TimSort visualization for phase 2
+                cardLayout.show(mainPanel, "timSortVisualization");
+                break;
+                
+            case 3:
+                // Mind of Unity phase
+                model.setCurrentState(GameState.TIMSORT_CHALLENGE);
+                model.setCurrentLevel(3);
+                
+                // Show TimSort visualization for phase 3
+                cardLayout.show(mainPanel, "timSortVisualization");
+                break;
+                
+            default:
+                // Invalid phase - show story view
+                model.setCurrentState(GameState.STORY_MODE);
+                cardLayout.show(mainPanel, "enhancedStory");
+                break;
+        }
+    }
+    
+    /**
+     * Handle dialogue sequence completion
+     */
+    public void onDialogueSequenceEnded() {
+        // Check current game state to determine action
+        if (model.getCurrentState() == GameState.STORY_MODE) {
+            // Determine next action based on narrative system state
+            GameState nextPhase = narrativeSystem.getCurrentAlgorithmPhase();
+            
+            if (nextPhase != null) {
+                model.setCurrentState(nextPhase);
+                
+                // Determine which phase to start
+                if (nextPhase == GameState.TIMSORT_CHALLENGE) {
+                    int phaseNumber = model.getCurrentLevel();
+                    startPhaseGameplay(phaseNumber);
+                }
+            }
+        }
+    }
+    
+    /**
+     * Return to story mode after completing a phase
+     */
+    public void returnToStoryMode() {
+        model.setCurrentState(GameState.STORY_MODE);
+        cardLayout.show(mainPanel, "enhancedStory");
+        
+        // Get current phase for dialogue key
+        int currentPhase = model.getCurrentLevel();
+        String dialogueKey = "phase" + currentPhase + "_end";
+        
+        // Show appropriate dialogue
+        enhancedStoryView.startPhaseDialogue(currentPhase - 1, dialogueKey);
+        
+        // Increment current level to prepare for next phase
+        model.setCurrentLevel(currentPhase + 1);
+    }
+    
+    /**
+     * Handle boss battle completion
+     */
+    public void onBossBattleComplete(boolean success, int bossLevel) {
+        model.setCurrentState(GameState.STORY_MODE);
+        cardLayout.show(mainPanel, "enhancedStory");
+        
+        // Show appropriate dialogue based on outcome
+        enhancedStoryView.showBossBattleResult(success, bossLevel);
+        
+        // Record progress if successful
+        if (success) {
+            progressTracker.completeLevel("Beginner", bossLevel, 3);
+        }
     }
     
     /**
@@ -140,8 +240,14 @@ public class GameController {
             }
         }
         
-        gameView.updateLevelInfo(difficulty, level);
-        cardLayout.show(mainPanel, "game");
+        // For Level 1, start the story
+        if (difficulty.equals("Beginner") && level == 1) {
+            startGame();
+        } else {
+            // For other levels, go directly to game view
+            gameView.updateLevelInfo(difficulty, level);
+            cardLayout.show(mainPanel, "game");
+        }
     }
     
     /**
@@ -189,7 +295,14 @@ public class GameController {
      * Show a hint for the current level
      */
     public void showHint() {
-        // Find the current level configuration
+        // If in TimSort visualization, use the narrative system's hints
+        if (model.getCurrentState() == GameState.TIMSORT_CHALLENGE) {
+            String hint = narrativeSystem.getCurrentHint();
+            JOptionPane.showMessageDialog(mainFrame, hint, "Hint", JOptionPane.INFORMATION_MESSAGE);
+            return;
+        }
+        
+        // Otherwise, look up hint in level config
         for (LevelConfig config : allLevels) {
             if (config.getDifficulty().equals(model.getCurrentDifficulty()) && 
                 config.getLevelNumber() == model.getCurrentLevel()) {
@@ -220,38 +333,37 @@ public class GameController {
 
         // Previous level must be completed
         return progressTracker.isLevelCompleted(difficulty, level - 1);
-    }  // <-- Add this closing brace
-
-    
-    
-    
+    }
     
     /**
-    * Show help information
-    */
-   public void showHelp() {
-       JOptionPane.showMessageDialog(mainFrame,
-           "SmartSortStory is an interactive game to learn sorting algorithms.\n\n" +
-           "- Drag and drop elements to sort them (Insertion Sort)\n" +
-           "- Merge sorted runs by selecting correct pairs (Merge Sort)\n" +
-           "- Progress through levels from Beginner to Advanced\n" +
-           "- Follow the story to complete the game\n\n" +
-           "Each level can earn up to 3 stars based on your performance!",
-           "How to Play", JOptionPane.INFORMATION_MESSAGE);
-   }
+     * Show help information
+     */
+    public void showHelp() {
+        JOptionPane.showMessageDialog(mainFrame,
+            "The Alchemist's Path is an interactive RPG that teaches the TimSort algorithm through potion crafting.\n\n" +
+            "Three essential abilities you'll master:\n" +
+            "- The Eye of Pattern: Identify natural sequences in ingredients\n" +
+            "- The Hand of Balance: Sort small groups of ingredients\n" +
+            "- The Mind of Unity: Merge ordered ingredients to craft potions\n\n" +
+            "Create the right potions to defeat three powerful bosses:\n" +
+            "- Flameclaw: A fire elemental that burns everything\n" +
+            "- Toxitar: A poison beast that spreads corruption\n" +
+            "- Lord Chaosa: A reality-warping final boss\n\n" +
+            "Follow the story and character hints to choose the correct potions!",
+            "How to Play", JOptionPane.INFORMATION_MESSAGE);
+    }
 
-   /**
-    * Exit the game
-    */
-   public void exitGame() {
-       int response = JOptionPane.showConfirmDialog(mainFrame,
-               "Are you sure you want to exit? Your progress is saved.",
-               "Exit Game", JOptionPane.YES_NO_OPTION);
+    /**
+     * Exit the game
+     */
+    public void exitGame() {
+        int response = JOptionPane.showConfirmDialog(mainFrame,
+                "Are you sure you want to exit? Your progress is saved.",
+                "Exit Game", JOptionPane.YES_NO_OPTION);
 
-       if (response == JOptionPane.YES_OPTION) {
-           // If you've implemented ProgressTracker, uncomment this line
-           // ProgressTracker.getInstance().saveProgress();
-           System.exit(0);
-       }
-   }
+        if (response == JOptionPane.YES_OPTION) {
+            progressTracker.saveProgress();
+            System.exit(0);
+        }
+    }
 }
