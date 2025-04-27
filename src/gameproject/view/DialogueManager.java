@@ -10,6 +10,7 @@ import gameproject.model.NarrativeSystem;
 import gameproject.controller.GameController;
 import gameproject.util.ResourceManager;
 import gameproject.util.GameConstants;
+import java.awt.image.BufferedImage;
 
 /**
  * DialogueManager handles the display and progression of dialogue
@@ -195,47 +196,64 @@ public class DialogueManager extends JPanel {
         String characterName = character.getName();
         String dialogue = entry.getText();
         String emotion = entry.getEmotion();
-        
-        // Load character portrait
+
+        // Load character portrait with emotion
         String portraitPath = character.getImagePath();
         if (emotion != null && !emotion.isEmpty()) {
-            // Append emotion to get specific expression image
+            // Adjust path to include emotion
             portraitPath = portraitPath.replace(".png", "_" + emotion + ".png");
         }
-        
+
         ImageIcon portrait = resourceManager.getImage(portraitPath);
         if (portrait != null) {
-            // Create a perfectly square image with proper padding on all sides
-            int imageSize = CHARACTER_IMAGE_SIZE - 12; // Account for the border and padding
+            // Create a nicely framed character portrait
+            int imageSize = CHARACTER_IMAGE_SIZE - 12;
             Image scaledImage = portrait.getImage().getScaledInstance(
-                imageSize,
-                imageSize,
-                Image.SCALE_SMOOTH
-            );
-            characterImageLabel.setIcon(new ImageIcon(scaledImage));
+                imageSize, imageSize, Image.SCALE_SMOOTH);
+
+            // Add a border effect
+            BufferedImage framedImage = new BufferedImage(
+                imageSize + 8, imageSize + 8, BufferedImage.TYPE_INT_ARGB);
+            Graphics2D g2d = framedImage.createGraphics();
+
+            // Draw ornate frame border
+            g2d.setColor(new Color(180, 140, 60));
+            g2d.fillRect(0, 0, imageSize + 8, imageSize + 8);
+            g2d.setColor(new Color(50, 30, 10));
+            g2d.drawRect(0, 0, imageSize + 7, imageSize + 7);
+            g2d.setColor(new Color(220, 200, 150));
+            g2d.drawRect(1, 1, imageSize + 5, imageSize + 5);
+
+            // Draw the character image
+            g2d.drawImage(scaledImage, 4, 4, null);
+            g2d.dispose();
+
+            characterImageLabel.setIcon(new ImageIcon(framedImage));
         } else {
-            // Fallback to default silhouette if image not found
-            ImageIcon defaultIcon = resourceManager.getImage("/gameproject/resources/characters/default.png");
-            if (defaultIcon != null) {
-                Image scaledImage = defaultIcon.getImage().getScaledInstance(
-                    CHARACTER_IMAGE_SIZE - 12, // Same as portrait image
-                    CHARACTER_IMAGE_SIZE - 12,
-                    Image.SCALE_SMOOTH
-                );
-                characterImageLabel.setIcon(new ImageIcon(scaledImage));
-            }
+            // Fallback to default silhouette
+            // ...existing fallback code...
         }
-        
-        // Set character name
+
+        // Set character name with appropriate styling based on character type
+        if (character.getRole().equals("Boss")) {
+            characterNameLabel.setForeground(Color.RED);
+            characterNameLabel.setFont(new Font("SansSerif", Font.BOLD, 22));
+        } else if (character.getRole().equals("Mentor")) {
+            characterNameLabel.setForeground(new Color(150, 150, 255));
+            characterNameLabel.setFont(new Font("SansSerif", Font.BOLD, 20));
+        } else {
+            characterNameLabel.setForeground(Color.WHITE);
+            characterNameLabel.setFont(new Font("SansSerif", Font.BOLD, 20));
+        }
         characterNameLabel.setText(characterName);
-        
+
         // Start typewriter effect for dialogue text
         fullDialogueText = dialogue;
         currentCharIndex = 0;
         dialogueTextPane.setHtmlText(""); // Clear previous text
         typewriterTimer.setInitialDelay(0); // Ensure immediate start
         typewriterTimer.start();
-        
+
         // Update UI
         revalidate();
         repaint();

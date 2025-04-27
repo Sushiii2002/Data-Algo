@@ -3,6 +3,7 @@
     <editor-bookmarks xmlns="http://www.netbeans.org/ns/editor-bookmarks/2" lastBookmarkId="0"/>
     <open-files xmlns="http://www.netbeans.org/ns/projectui-open-files/2">
         <group>
+            <file>file:/C:/Users/Russel/Documents/NetBeansProjects/GameProject/src/gameproject/ui/TimSortVisualization.java</file>
             <file>file:/C:/Users/Russel/Documents/NetBeansProjects/GameProject/src/gameproject/util/GameConstants.java</file>
             <file>file:/C:/Users/Russel/Documents/NetBeansProjects/GameProject/src/gameproject/view/DialogueManager.java</file>
             <file>file:/C:/Users/Russel/Documents/NetBeansProjects/GameProject/src/gameproject/view/LevelSelectionView.java</file>
@@ -16,7 +17,9 @@
             <file>file:/C:/Users/Russel/Documents/NetBeansProjects/GameProject/src/gameproject/view/MainMenuView.java</file>
             <file>file:/C:/Users/Russel/Documents/NetBeansProjects/GameProject/src/gameproject/ui/GameGrid.java</file>
             <file>file:/C:/Users/Russel/Documents/NetBeansProjects/GameProject/src/gameproject/main/GameLauncher.java</file>
+            <file>file:/C:/Users/Russel/Documents/NetBeansProjects/GameProject/src/gameproject/model/NarrativeSystem.java</file>
             <file>file:/C:/Users/Russel/Documents/NetBeansProjects/GameProject/src/gameproject/controller/GameController.java</file>
+            <file>file:/C:/Users/Russel/Documents/NetBeansProjects/GameProject/src/gameproject/view/EnhancedStoryView.java</file>
         </group>
     </open-files>
 </project-private>

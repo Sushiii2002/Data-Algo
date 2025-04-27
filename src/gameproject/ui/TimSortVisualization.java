@@ -10,7 +10,9 @@ import javax.swing.plaf.basic.BasicButtonUI;
 import java.awt.*;
 import java.awt.event.*;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Random;
 
 /**
  * This class handles the visualization and interaction for the TimSort algorithm phases
@@ -67,9 +69,9 @@ public class TimSortVisualization extends JPanel {
     
     // Constants
     private static final int GRID_ROWS = 5;
-    private static final int GRID_COLS = 8;
+    private static final int GRID_COLS = 4;
     private static final int MAX_SELECTIONS = 10;
-    private static final int INGREDIENT_SIZE = 64;
+    private static final int INGREDIENT_SIZE = 100;
     private static final int GROUP_SIZE = 5; // Size of each group in phase 2
     
     /**
@@ -105,47 +107,32 @@ public class TimSortVisualization extends JPanel {
             // Fallback if custom font can't be loaded
             pixelifySansFont = new Font("Arial", Font.BOLD, 25);
         }
-        
+
         // Load button images
         pauseNormalIcon = resourceManager.getImage("/gameproject/resources/pause_normal.png");
         pauseHoverIcon = resourceManager.getImage("/gameproject/resources/pause_hover.png");
         hintNormalIcon = resourceManager.getImage("/gameproject/resources/hint_normal.png");
         hintHoverIcon = resourceManager.getImage("/gameproject/resources/hint_hover.png");
-        
+
         // Scale button icons to 70x70 pixels
         if (pauseNormalIcon != null) {
             Image img = pauseNormalIcon.getImage().getScaledInstance(70, 70, Image.SCALE_SMOOTH);
             pauseNormalIcon = new ImageIcon(img);
         }
-        
+
         if (pauseHoverIcon != null) {
             Image img = pauseHoverIcon.getImage().getScaledInstance(70, 70, Image.SCALE_SMOOTH);
             pauseHoverIcon = new ImageIcon(img);
         }
-        
+
         if (hintNormalIcon != null) {
             Image img = hintNormalIcon.getImage().getScaledInstance(70, 70, Image.SCALE_SMOOTH);
             hintNormalIcon = new ImageIcon(img);
         }
-        
+
         if (hintHoverIcon != null) {
             Image img = hintHoverIcon.getImage().getScaledInstance(70, 70, Image.SCALE_SMOOTH);
             hintHoverIcon = new ImageIcon(img);
-        }
-        
-        // Load heart images
-        heartFilledIcon = resourceManager.getImage("/gameproject/resources/heart_filled.png");
-        heartEmptyIcon = resourceManager.getImage("/gameproject/resources/heart_empty.png");
-        
-        // Scale heart images to 70x70 pixels
-        if (heartFilledIcon != null) {
-            Image img = heartFilledIcon.getImage().getScaledInstance(70, 70, Image.SCALE_SMOOTH);
-            heartFilledIcon = new ImageIcon(img);
-        }
-        
-        if (heartEmptyIcon != null) {
-            Image img = heartEmptyIcon.getImage().getScaledInstance(70, 70, Image.SCALE_SMOOTH);
-            heartEmptyIcon = new ImageIcon(img);
         }
     }
     
@@ -153,83 +140,76 @@ public class TimSortVisualization extends JPanel {
      * Initialize all UI components
      */
     private void initializeUI() {
-        // Hearts panel for lives
-        heartsPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
-        heartsPanel.setBounds(20, 20, 240, 70);
-        heartsPanel.setOpaque(false);
-        add(heartsPanel);
+        // Keep only the hint and pause buttons
+        hintButton = createImageButton(hintNormalIcon, hintHoverIcon);
+        hintButton.setBounds(GameConstants.WINDOW_WIDTH - 180, 20, 70, 70);
+        hintButton.addActionListener(e -> showHint());
+        add(hintButton);
 
-        // Initialize hearts with proper spacing
-        heartLabels = new JLabel[3];
-        for (int i = 0; i < 3; i++) {
-            heartLabels[i] = new JLabel(heartFilledIcon);
-            heartLabels[i].setOpaque(false);
-            heartsPanel.add(heartLabels[i]);
-        }
-
-        // Timer display centered at the top
-        timerLabel = new JLabel("05:00", JLabel.CENTER);
-        timerLabel.setFont(pixelifySansFont.deriveFont(70f));
-        timerLabel.setForeground(Color.WHITE);
-        timerLabel.setOpaque(false);
-        timerLabel.setBounds((GameConstants.WINDOW_WIDTH - 200) / 2, 10, 200, 70);
-        add(timerLabel);
-
-        // Control buttons - positioned at top right
         pauseButton = createImageButton(pauseNormalIcon, pauseHoverIcon);
         pauseButton.setBounds(GameConstants.WINDOW_WIDTH - 90, 20, 70, 70);
         pauseButton.addActionListener(e -> showPauseMenu());
         add(pauseButton);
 
-        hintButton = createImageButton(hintNormalIcon, hintHoverIcon);
-        hintButton.setBounds(GameConstants.WINDOW_WIDTH - 180, 20, 70, 70);
-        hintButton.addActionListener(e -> showHint());
-        add(hintButton);
-        
-        // Main heading/phase display - MOVED DOWN to avoid overlap
+        // Main heading/phase display
         phaseLabel = new JLabel("Phase 1: The Eye of Pattern", JLabel.CENTER);
         phaseLabel.setFont(pixelifySansFont.deriveFont(24f));
         phaseLabel.setForeground(Color.WHITE);
-        phaseLabel.setBounds(0, 90, GameConstants.WINDOW_WIDTH, 40); // Moved from 20 to 90
+        phaseLabel.setBounds(0, 90, GameConstants.WINDOW_WIDTH, 40);
         add(phaseLabel);
-        
-        // Instructions - MOVED DOWN to avoid overlap
+
+        // Instructions
         instructionLabel = new JLabel(
             "Use your 'Eye of Pattern' ability to identify ingredient sequences (runs).", 
             JLabel.CENTER
         );
         instructionLabel.setFont(new Font("SansSerif", Font.PLAIN, 16));
         instructionLabel.setForeground(Color.WHITE);
-        instructionLabel.setBounds(0, 130, GameConstants.WINDOW_WIDTH, 30); // Moved from 60 to 130
+        instructionLabel.setBounds(0, 130, GameConstants.WINDOW_WIDTH, 30);
         add(instructionLabel);
-        
-        // Grid panel for ingredients - MOVED DOWN to avoid overlap
-        gridPanel = new JPanel(null); // Use null layout for precise positioning
-        gridPanel.setBounds(
-            (GameConstants.WINDOW_WIDTH - (GRID_COLS * INGREDIENT_SIZE)) / 2, 
-            170, // Moved from 100 to 170
-            GRID_COLS * INGREDIENT_SIZE, 
-            GRID_ROWS * INGREDIENT_SIZE
-        );
+
+        // Calculate grid dimensions and position for 4×5 layout
+        int gridWidth = GRID_COLS * INGREDIENT_SIZE;
+        int gridHeight = GRID_ROWS * INGREDIENT_SIZE;
+
+        // Center the grid
+        int gridX = (GameConstants.WINDOW_WIDTH - gridWidth) / 2;
+        int gridY = 180; // Adjusted position
+
+        // Grid panel for ingredients
+        gridPanel = new JPanel(null) {
+            @Override
+            protected void paintComponent(Graphics g) {
+                super.paintComponent(g);
+
+                // Draw grid background image
+                ImageIcon gridBgImage = resourceManager.getImage("/gameproject/resources/grid_bg.png");
+                if (gridBgImage != null) {
+                    // Scale to fit gridPanel
+                    g.drawImage(gridBgImage.getImage(), 0, 0, getWidth(), getHeight(), this);
+                }
+            }
+        };
+        gridPanel.setBounds(gridX, gridY, gridWidth, gridHeight);
         gridPanel.setOpaque(false);
         add(gridPanel);
-        
+
         // Control panel
         controlPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 20, 10));
         controlPanel.setBounds(0, GameConstants.WINDOW_HEIGHT - 100, GameConstants.WINDOW_WIDTH, 80);
         controlPanel.setOpaque(false);
-        
+
         // Ability button
         abilityButton = createStyledButton("Use Eye of Pattern");
         abilityButton.addActionListener(e -> useAbility());
         controlPanel.add(abilityButton);
-        
+
         // Check button
         checkButton = createStyledButton("Check Selection");
         checkButton.addActionListener(e -> checkPhaseCompletion());
         checkButton.setEnabled(false);
         controlPanel.add(checkButton);
-        
+
         add(controlPanel);
     }
     
@@ -485,30 +465,99 @@ public class TimSortVisualization extends JPanel {
     private void generateIngredients() {
         allIngredients.clear();
         selectedIngredients.clear();
-        
+
         // Clear the grid panel
         gridPanel.removeAll();
-        
-        // Create three sequences of ingredients with natural runs
-        // Run 1: Blue ingredients (values 1-4)
-        addIngredientsRun(1, 4, "blue");
-        
-        // Run 2: Red ingredients (values 5-8)
-        addIngredientsRun(5, 8, "red");
-        
-        // Run 3: Green ingredients (values 9-12)
-        addIngredientsRun(9, 12, "green");
-        
-        // Add some random ingredients to fill the grid
-        addRandomIngredients(40 - allIngredients.size());
-        
+
+        // We need exactly 20 ingredients for a 4×5 grid
+
+        // Create sets of ingredients for each potion type
+        // Fire Resistance Potion (values 1-5)
+        String[] fireIngredients = {"pumpkin", "apples", "peppers", "dragon_fire_glands", "fire_crystal"};
+        for (int i = 0; i < 5; i++) {
+            IngredientItem ingredient = new IngredientItem(i + 1, "red");
+            ingredient.setIngredientName(fireIngredients[i]);
+            ingredient.setPotionType("fire");
+            allIngredients.add(ingredient);
+        }
+
+        // Cold Resistance Potion (values 6-10)
+        String[] coldIngredients = {"strawberries", "wasabi", "mint", "dragon_ice_glands", "ice_crystal"};
+        for (int i = 0; i < 5; i++) {
+            IngredientItem ingredient = new IngredientItem(i + 6, "blue");
+            ingredient.setIngredientName(coldIngredients[i]);
+            ingredient.setPotionType("cold");
+            allIngredients.add(ingredient);
+        }
+
+        // Strength Potion (values 11-15)
+        String[] strengthIngredients = {"corn", "powdered_giant_insect", "troll_sweat", "powdered_minotaur_horn", "dragon_bone"};
+        for (int i = 0; i < 5; i++) {
+            IngredientItem ingredient = new IngredientItem(i + 11, "green");
+            ingredient.setIngredientName(strengthIngredients[i]);
+            ingredient.setPotionType("strength");
+            allIngredients.add(ingredient);
+        }
+
+        // Dexterity Potion (values 16-20)
+        String[] dexterityIngredients = {"banana_leaf", "maple_sap", "powdered_jackalope_antlers", "griffon_feathers", "dragon_sinew"};
+        for (int i = 0; i < 5; i++) {
+            IngredientItem ingredient = new IngredientItem(i + 16, "yellow");
+            ingredient.setIngredientName(dexterityIngredients[i]);
+            ingredient.setPotionType("dexterity");
+            allIngredients.add(ingredient);
+        }
+
         // Randomly position ingredients in the grid
-        positionIngredientsRandomly();
-        
+        Collections.shuffle(allIngredients);
+        positionIngredientsInGrid();
+
         // Repaint
         gridPanel.revalidate();
         gridPanel.repaint();
     }
+    
+    
+    /**
+    * Position ingredients in the 4×5 grid
+    */
+    private void positionIngredientsInGrid() {
+        for (int i = 0; i < allIngredients.size(); i++) {
+            IngredientItem ingredient = allIngredients.get(i);
+
+            // Calculate grid positions for 4×5 layout
+            int row = i / GRID_COLS;
+            int col = i % GRID_COLS;
+
+            // Position in grid
+            ingredient.setBounds(
+                col * INGREDIENT_SIZE,
+                row * INGREDIENT_SIZE,
+                INGREDIENT_SIZE,
+                INGREDIENT_SIZE
+            );
+
+            // Add to grid panel
+            gridPanel.add(ingredient);
+
+            // Add click listener
+            ingredient.addMouseListener(new MouseAdapter() {
+                @Override
+                public void mouseClicked(MouseEvent e) {
+                    handleIngredientClick(ingredient);
+                }
+            });
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
     
     /**
      * Add a run of ingredients with sequential values
@@ -538,13 +587,16 @@ public class TimSortVisualization extends JPanel {
      * Position ingredients randomly in the grid
      */
     private void positionIngredientsRandomly() {
+        // Shuffle the ingredients list for random placement
+        Collections.shuffle(allIngredients);
+
         for (int i = 0; i < allIngredients.size(); i++) {
             IngredientItem ingredient = allIngredients.get(i);
-            
+
             // Calculate grid positions 
             int row = i / GRID_COLS;
             int col = i % GRID_COLS;
-            
+
             // Position in grid
             ingredient.setBounds(
                 col * INGREDIENT_SIZE,
@@ -552,10 +604,10 @@ public class TimSortVisualization extends JPanel {
                 INGREDIENT_SIZE,
                 INGREDIENT_SIZE
             );
-            
+
             // Add to grid panel
             gridPanel.add(ingredient);
-            
+
             // Add click listener
             ingredient.addMouseListener(new MouseAdapter() {
                 @Override
@@ -739,31 +791,40 @@ public class TimSortVisualization extends JPanel {
      */
     private void highlightNaturalRuns() {
         identifiedRuns.clear();
-        
-        // Find runs of blue ingredients
-        List<IngredientItem> blueRun = findRunByColor("blue");
-        if (blueRun.size() >= 3) {
-            identifiedRuns.add(blueRun);
-            highlightRun(blueRun, new Color(0, 0, 255, 80));
+
+        // Find runs for each potion type
+        List<IngredientItem> fireRun = findRunByPotionType("fire");
+        if (!fireRun.isEmpty()) {
+            identifiedRuns.add(fireRun);
+            highlightRun(fireRun, new Color(255, 50, 50, 80)); // Red highlight
         }
-        
-        // Find runs of red ingredients
-        List<IngredientItem> redRun = findRunByColor("red");
-        if (redRun.size() >= 3) {
-            identifiedRuns.add(redRun);
-            highlightRun(redRun, new Color(255, 0, 0, 80));
+
+        List<IngredientItem> coldRun = findRunByPotionType("cold");
+        if (!coldRun.isEmpty()) {
+            identifiedRuns.add(coldRun);
+            highlightRun(coldRun, new Color(50, 50, 255, 80)); // Blue highlight
         }
-        
-        // Find runs of green ingredients
-        List<IngredientItem> greenRun = findRunByColor("green");
-        if (greenRun.size() >= 3) {
-            identifiedRuns.add(greenRun);
-            highlightRun(greenRun, new Color(0, 255, 0, 80));
+
+        List<IngredientItem> strengthRun = findRunByPotionType("strength");
+        if (!strengthRun.isEmpty()) {
+            identifiedRuns.add(strengthRun);
+            highlightRun(strengthRun, new Color(50, 200, 50, 80)); // Green highlight
         }
-        
+
+        List<IngredientItem> dexterityRun = findRunByPotionType("dexterity");
+        if (!dexterityRun.isEmpty()) {
+            identifiedRuns.add(dexterityRun);
+            highlightRun(dexterityRun, new Color(255, 200, 50, 80)); // Yellow highlight
+        }
+
+        // Make all grid boxes visible
+        for (IngredientItem ingredient : allIngredients) {
+            ingredient.setBoxVisible(true);
+        }
+
         // Update instruction
         instructionLabel.setText("Natural runs highlighted! Select exactly 10 ingredients that form sequences.");
-        
+
         // Enable check button if exactly 10 ingredients are selected
         checkButton.setEnabled(selectedIngredients.size() == MAX_SELECTIONS);
     }
@@ -771,22 +832,20 @@ public class TimSortVisualization extends JPanel {
     /**
      * Find a run of ingredients by color
      */
-    private List<IngredientItem> findRunByColor(String color) {
+    private List<IngredientItem> findRunByPotionType(String potionType) {
         List<IngredientItem> run = new ArrayList<>();
-        
-        // Get all ingredients of this color
-        List<IngredientItem> colorIngredients = new ArrayList<>();
+
+        // Get all ingredients of this potion type
         for (IngredientItem ingredient : allIngredients) {
-            if (ingredient.getColor().equals(color)) {
-                colorIngredients.add(ingredient);
+            if (ingredient.getPotionType().equals(potionType)) {
+                run.add(ingredient);
             }
         }
-        
-        // Sort by value
-        colorIngredients.sort((a, b) -> Integer.compare(a.getValue(), b.getValue()));
-        
-        // Return sorted run
-        return colorIngredients;
+
+        // Sort by value to ensure they're in the correct order
+        run.sort((a, b) -> Integer.compare(a.getValue(), b.getValue()));
+
+        return run;
     }
     
     /**
@@ -854,71 +913,108 @@ public class TimSortVisualization extends JPanel {
     }
     
     /**
-     * Display potion options in Phase 3
-     */
+    * Display potion options in Phase 3
+    */
     private void displayPotionOptions() {
         // Clear the grid panel
         gridPanel.removeAll();
-        
+
         // Create potion option labels
         IngredientItem frostPotion = new IngredientItem(1, "blue");
         frostPotion.setPotionType("Fire Resistance Potion");
         frostPotion.setGroupLabel(true);
-        frostPotion.setLocation(GameConstants.WINDOW_WIDTH / 4 - INGREDIENT_SIZE, 250);  // Moved from 200 to 250
+        frostPotion.setLocation(GameConstants.WINDOW_WIDTH / 4 - INGREDIENT_SIZE, 250);
         frostPotion.setSize(INGREDIENT_SIZE * 2, INGREDIENT_SIZE * 2);
         gridPanel.add(frostPotion);
-        
+
         IngredientItem strengthPotion = new IngredientItem(2, "red");
         strengthPotion.setPotionType("Strength Potion");
         strengthPotion.setGroupLabel(true);
-        strengthPotion.setLocation((GameConstants.WINDOW_WIDTH * 3) / 4 - INGREDIENT_SIZE, 250);  // Moved from 200 to 250
+        strengthPotion.setLocation((GameConstants.WINDOW_WIDTH * 3) / 4 - INGREDIENT_SIZE, 250);
         strengthPotion.setSize(INGREDIENT_SIZE * 2, INGREDIENT_SIZE * 2);
         gridPanel.add(strengthPotion);
-        
-        // Add descriptions
+
+        // Load and display potion images with labels
+        ImageIcon frostPotionImg = resourceManager.getImage("/gameproject/resources/potions/fire_resistance_potion.png");
+        ImageIcon strengthPotionImg = resourceManager.getImage("/gameproject/resources/potions/strength_potion.png");
+
+        if (frostPotionImg != null) {
+            JLabel frostImgLabel = new JLabel(new ImageIcon(frostPotionImg.getImage().getScaledInstance(120, 120, Image.SCALE_SMOOTH)));
+            frostImgLabel.setBounds(GameConstants.WINDOW_WIDTH / 4 - 60, 180, 120, 120);
+            gridPanel.add(frostImgLabel);
+        }
+
+        if (strengthPotionImg != null) {
+            JLabel strengthImgLabel = new JLabel(new ImageIcon(strengthPotionImg.getImage().getScaledInstance(120, 120, Image.SCALE_SMOOTH)));
+            strengthImgLabel.setBounds((GameConstants.WINDOW_WIDTH * 3) / 4 - 60, 180, 120, 120);
+            gridPanel.add(strengthImgLabel);
+        }
+
+        // Add descriptions with better styling
         JLabel frostLabel = new JLabel("Fire Resistance Potion", JLabel.CENTER);
         frostLabel.setFont(new Font("SansSerif", Font.BOLD, 16));
         frostLabel.setForeground(Color.CYAN);
-        frostLabel.setBounds(GameConstants.WINDOW_WIDTH / 4 - 150, 400, 300, 30);  // Moved from 350 to 400
+        frostLabel.setBounds(GameConstants.WINDOW_WIDTH / 4 - 150, 400, 300, 30);
         gridPanel.add(frostLabel);
-        
+
         JLabel strengthLabel = new JLabel("Strength Potion", JLabel.CENTER);
         strengthLabel.setFont(new Font("SansSerif", Font.BOLD, 16));
         strengthLabel.setForeground(Color.RED);
-        strengthLabel.setBounds((GameConstants.WINDOW_WIDTH * 3) / 4 - 150, 400, 300, 30);  // Moved from 350 to 400
+        strengthLabel.setBounds((GameConstants.WINDOW_WIDTH * 3) / 4 - 150, 400, 300, 30);
         gridPanel.add(strengthLabel);
-        
+
+        // Add potion descriptions
+        JTextArea frostDesc = new JTextArea("Protects against fire attacks and extreme heat.");
+        frostDesc.setEditable(false);
+        frostDesc.setWrapStyleWord(true);
+        frostDesc.setLineWrap(true);
+        frostDesc.setOpaque(false);
+        frostDesc.setForeground(Color.WHITE);
+        frostDesc.setFont(new Font("SansSerif", Font.PLAIN, 14));
+        frostDesc.setBounds(GameConstants.WINDOW_WIDTH / 4 - 150, 430, 300, 60);
+        gridPanel.add(frostDesc);
+
+        JTextArea strengthDesc = new JTextArea("Enhances physical strength and combat abilities.");
+        strengthDesc.setEditable(false);
+        strengthDesc.setWrapStyleWord(true);
+        strengthDesc.setLineWrap(true);
+        strengthDesc.setOpaque(false);
+        strengthDesc.setForeground(Color.WHITE);
+        strengthDesc.setFont(new Font("SansSerif", Font.PLAIN, 14));
+        strengthDesc.setBounds((GameConstants.WINDOW_WIDTH * 3) / 4 - 150, 430, 300, 60);
+        gridPanel.add(strengthDesc);
+
         // Update instruction
         instructionLabel.setText("Use your 'Mind of Unity' to choose which potion to craft. Click on a potion to select it.");
-        
+
         // Disable check button until a potion is selected
         checkButton.setEnabled(false);
-        
+
         // Update UI
         gridPanel.revalidate();
         gridPanel.repaint();
     }
     
     /**
-     * Check if the current phase is completed
-     */
+    * Check if the current phase is completed
+    */
     private void checkPhaseCompletion() {
         if (currentPhase == 1) {
             // Check if exactly 10 ingredients are selected
             if (selectedIngredients.size() == MAX_SELECTIONS) {
                 // Check if selected ingredients form valid runs
                 boolean hasValidRuns = checkValidRuns();
-                
+
                 if (hasValidRuns) {
                     JOptionPane.showMessageDialog(this,
                         "Well done! Your Eye of Pattern has identified natural sequences!",
                         "Phase 1 Complete",
                         JOptionPane.INFORMATION_MESSAGE
                     );
-                    
+
                     // Mark phase as completed
                     phaseCompleted = true;
-                    
+
                     // Move to next phase after delay
                     Timer transitionTimer = new Timer(1500, e -> {
                         advanceToNextPhase();
@@ -931,7 +1027,7 @@ public class TimSortVisualization extends JPanel {
                         "Try Again",
                         JOptionPane.WARNING_MESSAGE
                     );
-                    
+
                     // Lose a life for incorrect solution
                     loseLife();
                 }
@@ -940,17 +1036,17 @@ public class TimSortVisualization extends JPanel {
             // Check if both groups are properly sorted
             isLeftGroupSorted = isGroupSorted(leftGroup);
             isRightGroupSorted = isGroupSorted(rightGroup);
-            
+
             if (isLeftGroupSorted && isRightGroupSorted) {
                 JOptionPane.showMessageDialog(this,
                     "Well done! Your Hand of Balance has arranged the ingredients perfectly!",
                     "Phase 2 Complete",
                     JOptionPane.INFORMATION_MESSAGE
                 );
-                
+
                 // Mark phase as completed
                 phaseCompleted = true;
-                
+
                 // Move to next phase after delay
                 Timer transitionTimer = new Timer(1500, e -> {
                     advanceToNextPhase();
@@ -963,37 +1059,166 @@ public class TimSortVisualization extends JPanel {
                     "Try Again",
                     JOptionPane.WARNING_MESSAGE
                 );
-                
+
                 // Lose a life for incorrect solution
                 loseLife();
             }
         } else if (currentPhase == 3) {
             // Check if a potion has been selected
             if (craftedPotion != null) {
-                boolean correctChoice = "Fire Resistance Potion".equals(craftedPotion);
-                
-                if (correctChoice) {
-                    JOptionPane.showMessageDialog(this,
-                        "Excellent choice! The Fire Resistance Potion will protect you from Flameclaw's attacks!",
-                        "Success!",
-                        JOptionPane.INFORMATION_MESSAGE
-                    );
-                    
-                    // Signal successful boss battle
-                    controller.onBossBattleComplete(true, 1);
-                } else {
-                    JOptionPane.showMessageDialog(this,
-                        "Oh no! The Strength Potion isn't effective against Flameclaw's flames!",
-                        "Failure",
-                        JOptionPane.WARNING_MESSAGE
-                    );
-                    
-                    // Signal failed boss battle
-                    controller.onBossBattleComplete(false, 1);
-                }
+                // Start the boss battle visualization first
+                startBossBattle("Flameclaw");
+
+                // Result handling is now in the startBossBattle method
+                // No need for additional code here
             }
         }
     }
+    
+    
+    
+    
+    /**
+    * Display boss battle and determine the outcome after animation
+    */
+    private void startBossBattle(String bossName) {
+        // Create semi-transparent overlay
+        JPanel battleOverlay = new JPanel() {
+            @Override
+            protected void paintComponent(Graphics g) {
+                super.paintComponent(g);
+                // Dark battle background
+                g.setColor(new Color(0, 0, 0, 200));
+                g.fillRect(0, 0, getWidth(), getHeight());
+            }
+        };
+        battleOverlay.setLayout(null);
+        battleOverlay.setBounds(0, 0, GameConstants.WINDOW_WIDTH, GameConstants.WINDOW_HEIGHT);
+        battleOverlay.setOpaque(false);
+        add(battleOverlay, 0);
+
+        // Load boss image
+        String bossImagePath = "/gameproject/resources/characters/" + bossName.toLowerCase() + ".png";
+        ImageIcon bossImage = resourceManager.getImage(bossImagePath);
+
+        if (bossImage != null) {
+            // Scale boss image
+            Image scaledBossImage = bossImage.getImage().getScaledInstance(300, 300, Image.SCALE_SMOOTH);
+            JLabel bossLabel = new JLabel(new ImageIcon(scaledBossImage));
+            bossLabel.setBounds((GameConstants.WINDOW_WIDTH - 300) / 2, 100, 300, 300);
+            battleOverlay.add(bossLabel);
+
+            // Add boss name
+            JLabel bossNameLabel = new JLabel(bossName, JLabel.CENTER);
+            bossNameLabel.setFont(new Font("SansSerif", Font.BOLD, 36));
+            bossNameLabel.setForeground(Color.RED);
+            bossNameLabel.setBounds(0, 420, GameConstants.WINDOW_WIDTH, 40);
+            battleOverlay.add(bossNameLabel);
+
+            // Add battle text
+            JLabel battleText = new JLabel("Battle in progress...", JLabel.CENTER);
+            battleText.setFont(new Font("SansSerif", Font.BOLD, 24));
+            battleText.setForeground(Color.WHITE);
+            battleText.setBounds(0, 470, GameConstants.WINDOW_WIDTH, 30);
+            battleOverlay.add(battleText);
+
+            // Add animated battle effects
+            startBattleEffects(battleOverlay);
+        }
+
+        // After a delay, show battle outcome
+        Timer battleTimer = new Timer(5000, e -> {
+            remove(battleOverlay);
+
+            // Determine the battle outcome
+            boolean correctChoice = "Fire Resistance Potion".equals(craftedPotion);
+
+            if (correctChoice) {
+                JOptionPane.showMessageDialog(this,
+                    "Excellent choice! The Fire Resistance Potion protected you from Flameclaw's attacks!",
+                    "Success!",
+                    JOptionPane.INFORMATION_MESSAGE
+                );
+
+                // Signal successful boss battle
+                controller.onBossBattleComplete(true, 1);
+            } else {
+                JOptionPane.showMessageDialog(this,
+                    "Oh no! The Strength Potion wasn't effective against Flameclaw's flames!",
+                    "Failure",
+                    JOptionPane.WARNING_MESSAGE
+                );
+
+                // Signal failed boss battle
+                controller.onBossBattleComplete(false, 1);
+            }
+        });
+        battleTimer.setRepeats(false);
+        battleTimer.start();
+    }
+    
+    
+    
+    
+
+    private void startBattleEffects(JPanel overlay) {
+        // Create animated battle effects
+        Random rand = new Random();
+
+        // Create flame/spark effects for a fire boss
+        Timer effectsTimer = new Timer(100, new ActionListener() {
+            int count = 0;
+
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if (count > 50) {
+                    ((Timer)e.getSource()).stop();
+                    return;
+                }
+
+                // Create a new effect
+                JPanel effect = new JPanel() {
+                    Color color = new Color(
+                        rand.nextInt(100) + 155, 
+                        rand.nextInt(100), 
+                        rand.nextInt(50),
+                        rand.nextInt(100) + 155);
+                    int size = rand.nextInt(20) + 10;
+
+                    @Override
+                    protected void paintComponent(Graphics g) {
+                        g.setColor(color);
+                        g.fillOval(0, 0, size, size);
+                    }
+                };
+
+                // Set random position around boss
+                int x = (GameConstants.WINDOW_WIDTH / 2) + rand.nextInt(300) - 150;
+                int y = 250 + rand.nextInt(200) - 100;
+                effect.setBounds(x, y, 30, 30);
+                effect.setOpaque(false);
+
+                overlay.add(effect);
+                overlay.revalidate();
+                overlay.repaint();
+
+                // Remove effect after a delay
+                Timer remover = new Timer(rand.nextInt(1000) + 500, event -> {
+                    overlay.remove(effect);
+                    overlay.repaint();
+                });
+                remover.setRepeats(false);
+                remover.start();
+
+                count++;
+            }
+        });
+
+        effectsTimer.start();
+    }
+    
+    
+    
     
     /**
      * Check if selected ingredients form valid runs
@@ -1292,55 +1517,174 @@ public class TimSortVisualization extends JPanel {
     private class IngredientItem extends JPanel {
         private int value;
         private String color;
+        private String ingredientName;
+        private String potionType;
         private boolean isSelected = false;
         private boolean isHighlighted = false;
+        private boolean isBoxVisible = false;
         private Color highlightColor = new Color(255, 255, 0, 80);
         private boolean isGroupLabel = false;
-        private String potionType = null;
+
+        private ImageIcon ingredientImage = null;
+        private ImageIcon gridBoxImage = null;
         
         public IngredientItem(int value, String color) {
             this.value = value;
             this.color = color;
-            
+
             setOpaque(false);
             setSize(INGREDIENT_SIZE, INGREDIENT_SIZE);
             setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+
+            // Load grid box image
+            gridBoxImage = resourceManager.getImage("/gameproject/resources/grid_box.png");
         }
         
+        
+        public void setIngredientName(String name) {
+            this.ingredientName = name;
+            // Load ingredient image
+            loadIngredientImage();
+        }
+
+        public String getPotionType() {
+            return potionType;
+        }
+
+        public void setPotionType(String type) {
+            this.potionType = type;
+        }
+
+        public void setBoxVisible(boolean visible) {
+            this.isBoxVisible = visible;
+            repaint();
+        }
+        
+         
+        
+        // New method to load ingredient image using your actual filenames
+        private void loadIngredientImage() {
+            if (ingredientName == null) return;
+
+            String imagePath = "/gameproject/resources/ingredients/" + ingredientName + ".png";
+            ingredientImage = resourceManager.getImage(imagePath);
+        }
+    
         @Override
         protected void paintComponent(Graphics g) {
             super.paintComponent(g);
-            
+
             Graphics2D g2d = (Graphics2D) g;
             g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-            
-            // Draw background for selections and highlights
+
+            // Only draw the grid box if it's visible (after Eye of Pattern is used)
+            if (isBoxVisible && gridBoxImage != null) {
+                g2d.drawImage(gridBoxImage.getImage(), 0, 0, getWidth(), getHeight(), this);
+            }
+
+            // Draw highlight if applicable
             if (isHighlighted) {
                 g2d.setColor(highlightColor);
-                g2d.fillRoundRect(2, 2, getWidth() - 4, getHeight() - 4, 10, 10);
+                g2d.fillRoundRect(5, 5, getWidth() - 10, getHeight() - 10, 10, 10);
             }
-            
+
+            // Draw selection indicator
             if (isSelected) {
                 g2d.setColor(new Color(255, 255, 255, 100));
-                g2d.fillRoundRect(1, 1, getWidth() - 2, getHeight() - 2, 10, 10);
+                g2d.fillRoundRect(5, 5, getWidth() - 10, getHeight() - 10, 10, 10);
                 g2d.setColor(Color.WHITE);
-                g2d.drawRoundRect(1, 1, getWidth() - 2, getHeight() - 2, 10, 10);
+                g2d.drawRoundRect(5, 5, getWidth() - 10, getHeight() - 10, 10, 10);
             }
-            
-            // Draw the ingredient or potion
-            if (isGroupLabel) {
-                // Draw a potion bottle
-                drawPotion(g2d);
-            } else {
-                // Draw a regular ingredient
-                drawIngredient(g2d);
+
+            // Draw the ingredient image
+            if (ingredientImage != null) {
+                // Calculate size to maintain aspect ratio
+                Image img = ingredientImage.getImage();
+                int imgWidth = img.getWidth(this);
+                int imgHeight = img.getHeight(this);
+
+                // Skip if image hasn't loaded
+                if (imgWidth <= 0 || imgHeight <= 0) return;
+
+                // Scale image to fit within panel with margins
+                double scale = Math.min(
+                    (getWidth() - 20) / (double)imgWidth,
+                    (getHeight() - 20) / (double)imgHeight
+                );
+
+                int scaledWidth = (int)(imgWidth * scale);
+                int scaledHeight = (int)(imgHeight * scale);
+
+                // Center the image
+                int x = (getWidth() - scaledWidth) / 2;
+                int y = (getHeight() - scaledHeight) / 2;
+
+                // Draw the image
+                g2d.drawImage(img, x, y, scaledWidth, scaledHeight, this);
+
+                // Optionally draw a small value indicator
+                g2d.setColor(new Color(0, 0, 0, 180));
+                g2d.fillOval(getWidth() - 20, getHeight() - 20, 16, 16);
+                g2d.setColor(Color.WHITE);
+                g2d.setFont(new Font("SansSerif", Font.BOLD, 11));
+
+                String valueStr = String.valueOf(value);
+                FontMetrics fm = g2d.getFontMetrics();
+                int textX = getWidth() - 20 + (16 - fm.stringWidth(valueStr)) / 2;
+                int textY = getHeight() - 20 + ((16 - fm.getHeight()) / 2) + fm.getAscent();
+
+                g2d.drawString(valueStr, textX, textY);
             }
         }
         
+        
+        
+        // New method to draw ingredient image with proper sizing
+        private void drawIngredientImage(Graphics2D g2d) {
+            // Calculate the size to maintain aspect ratio
+            Image img = ingredientImage.getImage();
+            int imgWidth = img.getWidth(this);
+            int imgHeight = img.getHeight(this);
+
+            // Skip if image hasn't loaded yet
+            if (imgWidth <= 0 || imgHeight <= 0) return;
+
+            // Scale to fit within the panel with some margin
+            double scale = Math.min(
+                (getWidth() - 20) / (double)imgWidth,
+                (getHeight() - 20) / (double)imgHeight
+            );
+
+            int scaledWidth = (int)(imgWidth * scale);
+            int scaledHeight = (int)(imgHeight * scale);
+
+            // Center the image
+            int x = (getWidth() - scaledWidth) / 2;
+            int y = (getHeight() - scaledHeight) / 2;
+
+            // Draw the image
+            g2d.drawImage(img, x, y, scaledWidth, scaledHeight, this);
+
+            // Draw value in the corner for debugging or reference
+            g2d.setColor(new Color(0, 0, 0, 180));
+            g2d.fillOval(getWidth() - 20, getHeight() - 20, 16, 16);
+            g2d.setColor(Color.WHITE);
+            g2d.setFont(new Font("SansSerif", Font.BOLD, 11));
+
+            String valueStr = String.valueOf(value);
+            FontMetrics fm = g2d.getFontMetrics();
+            int textX = getWidth() - 20 + (16 - fm.stringWidth(valueStr)) / 2;
+            int textY = getHeight() - 20 + ((16 - fm.getHeight()) / 2) + fm.getAscent();
+
+            g2d.drawString(valueStr, textX, textY);
+        }
+        
+
         /**
          * Draw a regular ingredient
          */
         private void drawIngredient(Graphics2D g2d) {
+            // Original drawing code for fallback
             // Map color string to actual color
             Color actualColor;
             switch (color.toLowerCase()) {
@@ -1351,22 +1695,22 @@ public class TimSortVisualization extends JPanel {
                 case "purple": actualColor = new Color(200, 100, 255); break;
                 default: actualColor = Color.GRAY;
             }
-            
+
             // Draw ingredient shape (circle)
             g2d.setColor(actualColor);
             g2d.fillOval(8, 8, getWidth() - 16, getHeight() - 16);
             g2d.setColor(Color.WHITE);
             g2d.drawOval(8, 8, getWidth() - 16, getHeight() - 16);
-            
+
             // Draw value
             g2d.setColor(Color.WHITE);
             g2d.setFont(new Font("SansSerif", Font.BOLD, 14));
-            
+
             String valueStr = String.valueOf(value);
             FontMetrics fm = g2d.getFontMetrics();
             int textX = (getWidth() - fm.stringWidth(valueStr)) / 2;
             int textY = (getHeight() - fm.getHeight()) / 2 + fm.getAscent();
-            
+
             g2d.drawString(valueStr, textX, textY);
         }
         
@@ -1466,9 +1810,5 @@ public class TimSortVisualization extends JPanel {
             return isGroupLabel;
         }
         
-        public void setPotionType(String potionType) {
-            this.potionType = potionType;
-            repaint();
-        }
     }
 }
