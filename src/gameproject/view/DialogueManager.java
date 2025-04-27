@@ -25,7 +25,7 @@ public class DialogueManager extends JPanel {
     private JPanel dialoguePanel;
     private JLabel characterImageLabel;
     private JLabel characterNameLabel;
-    private JLabel dialogueTextLabel;
+    private TransparentTextPane dialogueTextPane; // Changed from JLabel to TransparentTextPane
     private JButton nextButton;
     private JButton skipButton;
     
@@ -40,11 +40,11 @@ public class DialogueManager extends JPanel {
     private int currentCharIndex = 0;
     private static final int TYPING_SPEED = 30; // milliseconds per character
     
-    // Fixed dimensions
+    // Fixed dimensions with proper spacing to prevent cutoff
     private static final int DIALOGUE_WIDTH = 850;
     private static final int DIALOGUE_HEIGHT = 250;
-    private static final int CHARACTER_IMAGE_SIZE = 250;
-    private static final int BOTTOM_MARGIN = 120; // Increased bottom margin to move dialogue box higher
+    private static final int CHARACTER_IMAGE_SIZE = 200;
+    private static final int BOTTOM_MARGIN = 120;
     
     /**
      * Constructor - Initialize the dialogue manager
@@ -65,58 +65,53 @@ public class DialogueManager extends JPanel {
      * Create the dialogue panel with character portrait and text area
      */
     private void createDialoguePanel() {
-        // Main dialogue panel with fixed width
+        // Main dialogue panel with fixed width and semi-transparent background
         dialoguePanel = new JPanel();
-        dialoguePanel.setLayout(new BorderLayout());
-        dialoguePanel.setBackground(new Color(0, 0, 0, 200)); // Semi-transparent black
+        dialoguePanel.setLayout(new BorderLayout(10, 0));
+        dialoguePanel.setBackground(new Color(0, 0, 0, 180)); // Lighter semi-transparent black
         dialoguePanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
         
         // Position dialoguePanel at the bottom of the screen with proper margins
-        // MOVED UP: Increased bottom margin from 80 to 120 pixels
         int x = (GameConstants.WINDOW_WIDTH - DIALOGUE_WIDTH) / 2;
         int y = GameConstants.WINDOW_HEIGHT - DIALOGUE_HEIGHT - BOTTOM_MARGIN;
         dialoguePanel.setBounds(x, y, DIALOGUE_WIDTH, DIALOGUE_HEIGHT);
         
-        // FIXED: Use a fixed-size panel with absolute layout for the character image
-        JPanel imagePanel = new JPanel(null);
+        // Create a fixed-size panel for the character image with a consistent border on all sides
+        JPanel imagePanel = new JPanel(new BorderLayout());
         imagePanel.setOpaque(false);
         imagePanel.setPreferredSize(new Dimension(CHARACTER_IMAGE_SIZE, CHARACTER_IMAGE_SIZE));
-        imagePanel.setMinimumSize(new Dimension(CHARACTER_IMAGE_SIZE, CHARACTER_IMAGE_SIZE));
-        imagePanel.setMaximumSize(new Dimension(CHARACTER_IMAGE_SIZE, CHARACTER_IMAGE_SIZE));
+        imagePanel.setBorder(BorderFactory.createEmptyBorder(4, 4, 4, 4)); // Even padding on all sides
         
-        // Character image with explicit size constraints
+        // Character image with consistent border on all sides
         characterImageLabel = new JLabel();
         characterImageLabel.setBorder(BorderFactory.createLineBorder(new Color(100, 100, 100), 2));
-        characterImageLabel.setBounds(0, 0, CHARACTER_IMAGE_SIZE, CHARACTER_IMAGE_SIZE);
-        characterImageLabel.setPreferredSize(new Dimension(CHARACTER_IMAGE_SIZE, CHARACTER_IMAGE_SIZE));
-        characterImageLabel.setMinimumSize(new Dimension(CHARACTER_IMAGE_SIZE, CHARACTER_IMAGE_SIZE));
-        characterImageLabel.setMaximumSize(new Dimension(CHARACTER_IMAGE_SIZE, CHARACTER_IMAGE_SIZE));
+        characterImageLabel.setHorizontalAlignment(JLabel.CENTER);
+        characterImageLabel.setVerticalAlignment(JLabel.CENTER);
         
-        // Add the character image label to its panel
-        imagePanel.add(characterImageLabel);
+        // Add the character image label to its panel with proper constraints
+        imagePanel.add(characterImageLabel, BorderLayout.CENTER);
         
-        // Character name and dialogue panel
+        // Character name and dialogue panel with transparent background
         JPanel textPanel = new JPanel(new BorderLayout(0, 10));
-        textPanel.setOpaque(false);
+        textPanel.setOpaque(false); // Keep it transparent to show the dialogue panel background
         textPanel.setBorder(BorderFactory.createEmptyBorder(0, 15, 0, 0));
         
-        // Character name
+        // Character name with matching transparency
         characterNameLabel = new JLabel();
         characterNameLabel.setFont(new Font("SansSerif", Font.BOLD, 20));
         characterNameLabel.setForeground(Color.WHITE);
+        characterNameLabel.setOpaque(false); // Ensure transparency
         
-        // Dialogue text
-        dialogueTextLabel = new JLabel();
-        dialogueTextLabel.setFont(new Font("SansSerif", Font.PLAIN, 18));
-        dialogueTextLabel.setForeground(Color.WHITE);
-        dialogueTextLabel.setVerticalAlignment(JLabel.TOP);
+        // Use our custom TransparentTextPane instead of JLabel
+        dialogueTextPane = new TransparentTextPane();
+        dialogueTextPane.setPreferredSize(new Dimension(480, 150));
         
         // Add text components to the text panel
         textPanel.add(characterNameLabel, BorderLayout.NORTH);
-        textPanel.add(dialogueTextLabel, BorderLayout.CENTER);
+        textPanel.add(dialogueTextPane, BorderLayout.CENTER);
         
-        // Create button panel - improved spacing
-        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 5)); // Added vertical padding
+        // Create button panel with improved spacing
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 5));
         buttonPanel.setOpaque(false);
         
         skipButton = new JButton("Skip All");
@@ -132,7 +127,7 @@ public class DialogueManager extends JPanel {
         buttonPanel.add(skipButton);
         buttonPanel.add(nextButton);
         
-        // Add components to the dialogue panel
+        // Add components to the dialogue panel with proper constraints
         dialoguePanel.add(imagePanel, BorderLayout.WEST);
         dialoguePanel.add(textPanel, BorderLayout.CENTER);
         dialoguePanel.add(buttonPanel, BorderLayout.SOUTH);
@@ -143,7 +138,8 @@ public class DialogueManager extends JPanel {
         // Set up typewriter timer
         typewriterTimer = new Timer(TYPING_SPEED, e -> {
             if (currentCharIndex < fullDialogueText.length()) {
-                dialogueTextLabel.setText("<html><div style='width:500px'>" + fullDialogueText.substring(0, currentCharIndex + 1) + "</div></html>");
+                // Use the TransparentTextPane's setHtmlText method
+                dialogueTextPane.setHtmlText(fullDialogueText.substring(0, currentCharIndex + 1));
                 currentCharIndex++;
             } else {
                 typewriterTimer.stop();
@@ -151,12 +147,12 @@ public class DialogueManager extends JPanel {
         });
         
         // Add click listener to dialogue area to speed up text
-        dialogueTextLabel.addMouseListener(new MouseAdapter() {
+        dialogueTextPane.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
                 if (typewriterTimer.isRunning()) {
                     // Show all text immediately when clicked
-                    dialogueTextLabel.setText("<html><div style='width:500px'>" + fullDialogueText + "</div></html>");
+                    dialogueTextPane.setHtmlText(fullDialogueText);
                     currentCharIndex = fullDialogueText.length();
                     typewriterTimer.stop();
                 } else {
@@ -209,10 +205,11 @@ public class DialogueManager extends JPanel {
         
         ImageIcon portrait = resourceManager.getImage(portraitPath);
         if (portrait != null) {
-            // Create a perfectly square image at the exact size
+            // Create a perfectly square image with proper padding on all sides
+            int imageSize = CHARACTER_IMAGE_SIZE - 12; // Account for the border and padding
             Image scaledImage = portrait.getImage().getScaledInstance(
-                CHARACTER_IMAGE_SIZE - 4, // Account for the border width
-                CHARACTER_IMAGE_SIZE - 4, // Account for the border width
+                imageSize,
+                imageSize,
                 Image.SCALE_SMOOTH
             );
             characterImageLabel.setIcon(new ImageIcon(scaledImage));
@@ -221,8 +218,8 @@ public class DialogueManager extends JPanel {
             ImageIcon defaultIcon = resourceManager.getImage("/gameproject/resources/characters/default.png");
             if (defaultIcon != null) {
                 Image scaledImage = defaultIcon.getImage().getScaledInstance(
-                    CHARACTER_IMAGE_SIZE - 4,
-                    CHARACTER_IMAGE_SIZE - 4,
+                    CHARACTER_IMAGE_SIZE - 12, // Same as portrait image
+                    CHARACTER_IMAGE_SIZE - 12,
                     Image.SCALE_SMOOTH
                 );
                 characterImageLabel.setIcon(new ImageIcon(scaledImage));
@@ -235,7 +232,8 @@ public class DialogueManager extends JPanel {
         // Start typewriter effect for dialogue text
         fullDialogueText = dialogue;
         currentCharIndex = 0;
-        dialogueTextLabel.setText("");
+        dialogueTextPane.setHtmlText(""); // Clear previous text
+        typewriterTimer.setInitialDelay(0); // Ensure immediate start
         typewriterTimer.start();
         
         // Update UI
@@ -297,12 +295,11 @@ public class DialogueManager extends JPanel {
     }
     
     /**
-     * Paint the component with NO overlay background
+     * Paint the component without any additional background
      */
     @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
-        
         // No overlay - removed to prevent text rendering issues with the background
     }
 }
