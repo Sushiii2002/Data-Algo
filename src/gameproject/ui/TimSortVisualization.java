@@ -15,7 +15,6 @@ import java.util.List;
 /**
  * This class handles the visualization and interaction for the TimSort algorithm phases
  * in the RPG game, with UI controls from the original game.
- * Timer and hearts have been removed as requested.
  */
 public class TimSortVisualization extends JPanel {
     // References
@@ -31,8 +30,16 @@ public class TimSortVisualization extends JPanel {
     private JButton checkButton;
     private JButton hintButton;
     
-    // UI controls
+    // Timer and UI controls from original game
+    private JLabel timerLabel;
     private JButton pauseButton;
+    private JPanel heartsPanel;
+    private JLabel[] heartLabels;
+    private Timer gameTimer;
+    private int timeRemaining = 300; // 5 minutes in seconds
+    private int livesRemaining = 3;
+    private ImageIcon heartFilledIcon;
+    private ImageIcon heartEmptyIcon;
     private ImageIcon pauseNormalIcon;
     private ImageIcon pauseHoverIcon;
     private ImageIcon hintNormalIcon;
@@ -84,26 +91,8 @@ public class TimSortVisualization extends JPanel {
         // Generate initial ingredients
         generateIngredients();
         
-        // Add keyboard shortcut for pause (ESC key)
-        InputMap inputMap = getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW);
-        ActionMap actionMap = getActionMap();
-        
-        inputMap.put(KeyStroke.getKeyStroke("ESCAPE"), "showPause");
-        actionMap.put("showPause", new AbstractAction() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                showPauseMenu();
-            }
-        });
-        
-        // Add keyboard shortcut for hint (H key)
-        inputMap.put(KeyStroke.getKeyStroke("H"), "showHint");
-        actionMap.put("showHint", new AbstractAction() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                showHint();
-            }
-        });
+        // Initialize timer to count down from 5 minutes
+        gameTimer = new Timer(1000, e -> updateTimer());
     }
     
     /**
@@ -143,37 +132,82 @@ public class TimSortVisualization extends JPanel {
             Image img = hintHoverIcon.getImage().getScaledInstance(70, 70, Image.SCALE_SMOOTH);
             hintHoverIcon = new ImageIcon(img);
         }
+        
+        // Load heart images
+        heartFilledIcon = resourceManager.getImage("/gameproject/resources/heart_filled.png");
+        heartEmptyIcon = resourceManager.getImage("/gameproject/resources/heart_empty.png");
+        
+        // Scale heart images to 70x70 pixels
+        if (heartFilledIcon != null) {
+            Image img = heartFilledIcon.getImage().getScaledInstance(70, 70, Image.SCALE_SMOOTH);
+            heartFilledIcon = new ImageIcon(img);
+        }
+        
+        if (heartEmptyIcon != null) {
+            Image img = heartEmptyIcon.getImage().getScaledInstance(70, 70, Image.SCALE_SMOOTH);
+            heartEmptyIcon = new ImageIcon(img);
+        }
     }
     
     /**
      * Initialize all UI components
-     * Timer, hearts, and top-right buttons have been removed
      */
     private void initializeUI() {
-        // Top-right buttons (pause and hint) have been removed
+        // Hearts panel for lives
+        heartsPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
+        heartsPanel.setBounds(20, 20, 240, 70);
+        heartsPanel.setOpaque(false);
+        add(heartsPanel);
+
+        // Initialize hearts with proper spacing
+        heartLabels = new JLabel[3];
+        for (int i = 0; i < 3; i++) {
+            heartLabels[i] = new JLabel(heartFilledIcon);
+            heartLabels[i].setOpaque(false);
+            heartsPanel.add(heartLabels[i]);
+        }
+
+        // Timer display centered at the top
+        timerLabel = new JLabel("05:00", JLabel.CENTER);
+        timerLabel.setFont(pixelifySansFont.deriveFont(70f));
+        timerLabel.setForeground(Color.WHITE);
+        timerLabel.setOpaque(false);
+        timerLabel.setBounds((GameConstants.WINDOW_WIDTH - 200) / 2, 10, 200, 70);
+        add(timerLabel);
+
+        // Control buttons - positioned at top right
+        pauseButton = createImageButton(pauseNormalIcon, pauseHoverIcon);
+        pauseButton.setBounds(GameConstants.WINDOW_WIDTH - 90, 20, 70, 70);
+        pauseButton.addActionListener(e -> showPauseMenu());
+        add(pauseButton);
+
+        hintButton = createImageButton(hintNormalIcon, hintHoverIcon);
+        hintButton.setBounds(GameConstants.WINDOW_WIDTH - 180, 20, 70, 70);
+        hintButton.addActionListener(e -> showHint());
+        add(hintButton);
         
-        // Main heading/phase display
+        // Main heading/phase display - MOVED DOWN to avoid overlap
         phaseLabel = new JLabel("Phase 1: The Eye of Pattern", JLabel.CENTER);
-        phaseLabel.setFont(pixelifySansFont.deriveFont(30f)); // Increased size since we have more space
+        phaseLabel.setFont(pixelifySansFont.deriveFont(24f));
         phaseLabel.setForeground(Color.WHITE);
-        phaseLabel.setBounds(0, 40, GameConstants.WINDOW_WIDTH, 40); // Moved up since we have more space
+        phaseLabel.setBounds(0, 90, GameConstants.WINDOW_WIDTH, 40); // Moved from 20 to 90
         add(phaseLabel);
         
-        // Instructions
+        // Instructions - MOVED DOWN to avoid overlap
         instructionLabel = new JLabel(
             "Use your 'Eye of Pattern' ability to identify ingredient sequences (runs).", 
             JLabel.CENTER
         );
-        instructionLabel.setFont(new Font("SansSerif", Font.PLAIN, 18)); // Increased font size
+        instructionLabel.setFont(new Font("SansSerif", Font.PLAIN, 16));
         instructionLabel.setForeground(Color.WHITE);
-        instructionLabel.setBounds(0, 90, GameConstants.WINDOW_WIDTH, 30);
+        instructionLabel.setBounds(0, 130, GameConstants.WINDOW_WIDTH, 30); // Moved from 60 to 130
         add(instructionLabel);
         
-        // Grid panel for ingredients
+        // Grid panel for ingredients - MOVED DOWN to avoid overlap
         gridPanel = new JPanel(null); // Use null layout for precise positioning
         gridPanel.setBounds(
             (GameConstants.WINDOW_WIDTH - (GRID_COLS * INGREDIENT_SIZE)) / 2, 
-            140, // Moved up since we removed timer and hearts
+            170, // Moved from 100 to 170
             GRID_COLS * INGREDIENT_SIZE, 
             GRID_ROWS * INGREDIENT_SIZE
         );
@@ -188,16 +222,12 @@ public class TimSortVisualization extends JPanel {
         // Ability button
         abilityButton = createStyledButton("Use Eye of Pattern");
         abilityButton.addActionListener(e -> useAbility());
-        abilityButton.setPreferredSize(new Dimension(180, 40)); // Wider button
-        abilityButton.setFont(new Font("SansSerif", Font.BOLD, 16)); // Larger font
         controlPanel.add(abilityButton);
         
         // Check button
         checkButton = createStyledButton("Check Selection");
         checkButton.addActionListener(e -> checkPhaseCompletion());
         checkButton.setEnabled(false);
-        checkButton.setPreferredSize(new Dimension(180, 40)); // Wider button
-        checkButton.setFont(new Font("SansSerif", Font.BOLD, 16)); // Larger font
         controlPanel.add(checkButton);
         
         add(controlPanel);
@@ -236,6 +266,9 @@ public class TimSortVisualization extends JPanel {
      * Display pause menu overlay with semi-transparent dark background
      */
     private void showPauseMenu() {
+        // Pause the timer
+        gameTimer.stop();
+
         // Create semi-transparent dark overlay panel
         JPanel overlay = new JPanel() {
             @Override
@@ -271,6 +304,8 @@ public class TimSortVisualization extends JPanel {
         resumeButton.addActionListener(e -> {
             remove(overlay);
             repaint();
+            // Resume the timer when Resume button is pressed
+            gameTimer.start();
         });
 
         AnimatedButton restartButton = new AnimatedButton("RESTART", 
@@ -319,6 +354,13 @@ public class TimSortVisualization extends JPanel {
      * Reset the current phase
      */
     private void resetPhase() {
+        // Reset timer
+        timeRemaining = 300;
+        updateTimerDisplay();
+        
+        // Reset lives
+        resetLives();
+        
         // Reset phase-specific state
         if (currentPhase == 1) {
             // Reset Eye of Pattern phase
@@ -341,6 +383,98 @@ public class TimSortVisualization extends JPanel {
         checkButton.setEnabled(false);
         
         // Update UI
+        revalidate();
+        repaint();
+    }
+    
+    /**
+     * Reset lives to full
+     */
+    private void resetLives() {
+        livesRemaining = 3;
+        for (int i = 0; i < 3; i++) {
+            heartLabels[i].setIcon(heartFilledIcon);
+        }
+    }
+    
+    /**
+     * Lose a life and check if all hearts are gone
+     */
+    private void loseLife() {
+        if (livesRemaining > 0) {
+            livesRemaining--;
+            heartLabels[livesRemaining].setIcon(heartEmptyIcon);
+
+            // Check if all hearts are depleted
+            if (livesRemaining == 0) {
+                // Show level failed screen when all hearts are gone
+                showLevelFailedScreen();
+            }
+        }
+    }
+    
+    /**
+     * Show level failed screen with semi-transparent dark overlay
+     */
+    private void showLevelFailedScreen() {
+        // Stop the timer
+        gameTimer.stop();
+
+        // Create semi-transparent dark overlay panel
+        JPanel overlay = new JPanel() {
+            @Override
+            protected void paintComponent(Graphics g) {
+                super.paintComponent(g);
+                // Semi-transparent dark overlay (60% opacity black)
+                g.setColor(new Color(0, 0, 0, 153));
+                g.fillRect(0, 0, getWidth(), getHeight());
+            }
+        };
+        overlay.setLayout(null);
+        overlay.setBounds(0, 0, GameConstants.WINDOW_WIDTH, GameConstants.WINDOW_HEIGHT);
+        overlay.setOpaque(false);
+        add(overlay, 0);
+
+        // Create "Level Failed" text
+        JLabel failedLabel = new JLabel("Level", JLabel.CENTER);
+        failedLabel.setFont(pixelifySansFont.deriveFont(50f));
+        failedLabel.setForeground(Color.WHITE);
+        failedLabel.setBounds(0, (GameConstants.WINDOW_HEIGHT / 2) - 80, GameConstants.WINDOW_WIDTH, 50);
+        overlay.add(failedLabel);
+
+        JLabel failedLabel2 = new JLabel("Failed", JLabel.CENTER);
+        failedLabel2.setFont(pixelifySansFont.deriveFont(50f));
+        failedLabel2.setForeground(Color.WHITE);
+        failedLabel2.setBounds(0, (GameConstants.WINDOW_HEIGHT / 2) - 30, GameConstants.WINDOW_WIDTH, 50);
+        overlay.add(failedLabel2);
+
+        // Create buttons with same styling as pause menu
+        AnimatedButton restartButton = new AnimatedButton("RESTART", 
+            resourceManager.getImage("/gameproject/resources/NormalButton.png"),
+            resourceManager.getImage("/gameproject/resources/HoverButton.png"),
+            resourceManager.getImage("/gameproject/resources/ClickedButton.png"));
+        restartButton.setFont(pixelifySansFont.deriveFont(28f));
+        restartButton.setForeground(Color.WHITE);
+        restartButton.setBounds((GameConstants.WINDOW_WIDTH / 2) - 220, (GameConstants.WINDOW_HEIGHT / 2) + 50, 200, 60);
+        restartButton.addActionListener(e -> {
+            remove(overlay);
+            resetPhase();
+        });
+        overlay.add(restartButton);
+
+        AnimatedButton menuButton = new AnimatedButton("MAIN MENU", 
+            resourceManager.getImage("/gameproject/resources/NormalButton.png"),
+            resourceManager.getImage("/gameproject/resources/HoverButton.png"),
+            resourceManager.getImage("/gameproject/resources/ClickedButton.png"));
+        menuButton.setFont(pixelifySansFont.deriveFont(28f));
+        menuButton.setForeground(Color.WHITE);
+        menuButton.setBounds((GameConstants.WINDOW_WIDTH / 2) + 20, (GameConstants.WINDOW_HEIGHT / 2) + 50, 200, 60);
+        menuButton.addActionListener(e -> {
+            remove(overlay);
+            controller.showMainMenu();
+        });
+        overlay.add(menuButton);
+
         revalidate();
         repaint();
     }
@@ -546,7 +680,7 @@ public class TimSortVisualization extends JPanel {
             // Position in left group
             ingredient.setLocation(
                 50 + (i * INGREDIENT_SIZE),
-                250
+                250  // Moved from 200 to 250
             );
         }
         
@@ -557,7 +691,7 @@ public class TimSortVisualization extends JPanel {
             // Position in right group
             ingredient.setLocation(
                 450 + (i * INGREDIENT_SIZE),
-                250
+                250  // Moved from 200 to 250
             );
         }
     }
@@ -680,13 +814,13 @@ public class TimSortVisualization extends JPanel {
         JLabel leftHeader = new JLabel("Frost Ingredients", JLabel.CENTER);
         leftHeader.setFont(new Font("SansSerif", Font.BOLD, 16));
         leftHeader.setForeground(Color.CYAN);
-        leftHeader.setBounds(50, 200, 300, 30);
+        leftHeader.setBounds(50, 200, 300, 30); // Moved from 150 to 200
         gridPanel.add(leftHeader);
         
         JLabel rightHeader = new JLabel("Power Ingredients", JLabel.CENTER);
         rightHeader.setFont(new Font("SansSerif", Font.BOLD, 16));
         rightHeader.setForeground(Color.RED);
-        rightHeader.setBounds(450, 200, 300, 30);
+        rightHeader.setBounds(450, 200, 300, 30); // Moved from 150 to 200
         gridPanel.add(rightHeader);
         
         // Add ingredients that were selected in Phase 1
@@ -730,14 +864,14 @@ public class TimSortVisualization extends JPanel {
         IngredientItem frostPotion = new IngredientItem(1, "blue");
         frostPotion.setPotionType("Fire Resistance Potion");
         frostPotion.setGroupLabel(true);
-        frostPotion.setLocation(GameConstants.WINDOW_WIDTH / 4 - INGREDIENT_SIZE, 250);
+        frostPotion.setLocation(GameConstants.WINDOW_WIDTH / 4 - INGREDIENT_SIZE, 250);  // Moved from 200 to 250
         frostPotion.setSize(INGREDIENT_SIZE * 2, INGREDIENT_SIZE * 2);
         gridPanel.add(frostPotion);
         
         IngredientItem strengthPotion = new IngredientItem(2, "red");
         strengthPotion.setPotionType("Strength Potion");
         strengthPotion.setGroupLabel(true);
-        strengthPotion.setLocation((GameConstants.WINDOW_WIDTH * 3) / 4 - INGREDIENT_SIZE, 250);
+        strengthPotion.setLocation((GameConstants.WINDOW_WIDTH * 3) / 4 - INGREDIENT_SIZE, 250);  // Moved from 200 to 250
         strengthPotion.setSize(INGREDIENT_SIZE * 2, INGREDIENT_SIZE * 2);
         gridPanel.add(strengthPotion);
         
@@ -745,13 +879,13 @@ public class TimSortVisualization extends JPanel {
         JLabel frostLabel = new JLabel("Fire Resistance Potion", JLabel.CENTER);
         frostLabel.setFont(new Font("SansSerif", Font.BOLD, 16));
         frostLabel.setForeground(Color.CYAN);
-        frostLabel.setBounds(GameConstants.WINDOW_WIDTH / 4 - 150, 400, 300, 30);
+        frostLabel.setBounds(GameConstants.WINDOW_WIDTH / 4 - 150, 400, 300, 30);  // Moved from 350 to 400
         gridPanel.add(frostLabel);
         
         JLabel strengthLabel = new JLabel("Strength Potion", JLabel.CENTER);
         strengthLabel.setFont(new Font("SansSerif", Font.BOLD, 16));
         strengthLabel.setForeground(Color.RED);
-        strengthLabel.setBounds((GameConstants.WINDOW_WIDTH * 3) / 4 - 150, 400, 300, 30);
+        strengthLabel.setBounds((GameConstants.WINDOW_WIDTH * 3) / 4 - 150, 400, 300, 30);  // Moved from 350 to 400
         gridPanel.add(strengthLabel);
         
         // Update instruction
@@ -798,7 +932,8 @@ public class TimSortVisualization extends JPanel {
                         JOptionPane.WARNING_MESSAGE
                     );
                     
-                    // No lives to lose now, just allow retrying
+                    // Lose a life for incorrect solution
+                    loseLife();
                 }
             }
         } else if (currentPhase == 2) {
@@ -829,7 +964,8 @@ public class TimSortVisualization extends JPanel {
                     JOptionPane.WARNING_MESSAGE
                 );
                 
-                // No lives to lose now, just allow retrying
+                // Lose a life for incorrect solution
+                loseLife();
             }
         } else if (currentPhase == 3) {
             // Check if a potion has been selected
@@ -848,14 +984,12 @@ public class TimSortVisualization extends JPanel {
                 } else {
                     JOptionPane.showMessageDialog(this,
                         "Oh no! The Strength Potion isn't effective against Flameclaw's flames!",
-                        "Incorrect Choice",
+                        "Failure",
                         JOptionPane.WARNING_MESSAGE
                     );
                     
-                    // Allow the player to try again since we've removed lives
-                    craftedPotion = null;
-                    checkButton.setEnabled(false);
-                    phaseCompleted = false;
+                    // Signal failed boss battle
+                    controller.onBossBattleComplete(false, 1);
                 }
             }
         }
@@ -942,6 +1076,40 @@ public class TimSortVisualization extends JPanel {
     }
     
     /**
+     * Update the timer - counting down from 5 minutes
+     */
+    private void updateTimer() {
+        if (timeRemaining > 0) {
+            timeRemaining--;
+            updateTimerDisplay();
+            
+            // Check if time is up
+            if (timeRemaining <= 0) {
+                gameTimer.stop();
+                showLevelFailedScreen();
+            }
+        }
+    }
+    
+    /**
+     * Update the timer display
+     */
+    private void updateTimerDisplay() {
+       int minutes = timeRemaining / 60;
+       int seconds = timeRemaining % 60;
+       timerLabel.setText(String.format("%02d:%02d", minutes, seconds));
+    }
+    
+    /**
+     * Start the timer for this phase
+     */
+    public void startTimer() {
+        timeRemaining = 300; // Reset to 5 minutes
+        updateTimerDisplay();
+        gameTimer.start();
+    }
+    
+    /**
      * Create a styled button
      */
     private JButton createStyledButton(String text) {
@@ -977,8 +1145,32 @@ public class TimSortVisualization extends JPanel {
         g.setColor(new Color(25, 25, 50));
         g.fillRect(0, 0, getWidth(), getHeight());
         
-        // Removed decorative elements that were in top right corner
-        // No phase symbols will be drawn now
+        // Draw decorative elements based on current phase
+        Graphics2D g2d = (Graphics2D) g;
+        g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        
+        if (currentPhase == 1) {
+            // Draw eye symbol
+            g2d.setColor(new Color(100, 100, 255, 100));
+            g2d.fillOval(getWidth() - 100, 30, 60, 60);
+            g2d.setColor(new Color(255, 255, 255, 180));
+            g2d.drawOval(getWidth() - 100, 30, 60, 60);
+            g2d.fillOval(getWidth() - 80, 45, 20, 30);
+        } else if (currentPhase == 2) {
+            // Draw balance symbol
+            g2d.setColor(new Color(255, 200, 100, 100));
+            g2d.fillRect(getWidth() - 100, 30, 60, 10);
+            g2d.fillRect(getWidth() - 80, 30, 20, 60);
+        } else if (currentPhase == 3) {
+            // Draw unity symbol
+            g2d.setColor(new Color(100, 255, 100, 100));
+            g2d.fillOval(getWidth() - 90, 40, 40, 40);
+            g2d.setColor(new Color(255, 100, 100, 100));
+            g2d.fillOval(getWidth() - 110, 40, 40, 40);
+            g2d.setColor(new Color(255, 255, 255, 180));
+            g2d.drawOval(getWidth() - 90, 40, 40, 40);
+            g2d.drawOval(getWidth() - 110, 40, 40, 40);
+        }
     }
     
     /**
