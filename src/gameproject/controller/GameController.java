@@ -6,7 +6,7 @@ import gameproject.model.LevelConfig;
 import gameproject.model.ProgressTracker;
 import gameproject.model.NarrativeSystem;
 import gameproject.view.*;
-import gameproject.ui.TimSortVisualization;
+import gameproject.ui.TimSortVisualization; // This import is correct
 import gameproject.util.ResourceManager;
 import gameproject.util.GameConstants;
 
