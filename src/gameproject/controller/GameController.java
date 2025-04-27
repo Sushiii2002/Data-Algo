@@ -16,6 +16,7 @@ import java.util.List;
 
 /**
  * Enhanced controller class that integrates the narrative system for the TimSort RPG
+ * Modified to remove timer and lives system from visualization
  */
 public class GameController {
     private GameModel model;
