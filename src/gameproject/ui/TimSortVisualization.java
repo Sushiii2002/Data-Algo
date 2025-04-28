@@ -139,8 +139,9 @@ public class TimSortVisualization extends JPanel {
     /**
      * Initialize all UI components
      */
+
     private void initializeUI() {
-        // Keep only the hint and pause buttons
+        // Keep the hint and pause buttons
         hintButton = createImageButton(hintNormalIcon, hintHoverIcon);
         hintButton.setBounds(GameConstants.WINDOW_WIDTH - 180, 20, 70, 70);
         hintButton.addActionListener(e -> showHint());
@@ -155,7 +156,7 @@ public class TimSortVisualization extends JPanel {
         phaseLabel = new JLabel("Phase 1: The Eye of Pattern", JLabel.CENTER);
         phaseLabel.setFont(pixelifySansFont.deriveFont(24f));
         phaseLabel.setForeground(Color.WHITE);
-        phaseLabel.setBounds(0, 90, GameConstants.WINDOW_WIDTH, 40);
+        phaseLabel.setBounds(0, 55, GameConstants.WINDOW_WIDTH, 40);
         add(phaseLabel);
 
         // Instructions
@@ -165,36 +166,49 @@ public class TimSortVisualization extends JPanel {
         );
         instructionLabel.setFont(new Font("SansSerif", Font.PLAIN, 16));
         instructionLabel.setForeground(Color.WHITE);
-        instructionLabel.setBounds(0, 130, GameConstants.WINDOW_WIDTH, 30);
+        instructionLabel.setBounds(0, 95, GameConstants.WINDOW_WIDTH, 30);
         add(instructionLabel);
 
-        // Calculate grid dimensions and position for 4×5 layout
-        int gridWidth = GRID_COLS * INGREDIENT_SIZE;
-        int gridHeight = GRID_ROWS * INGREDIENT_SIZE;
-
-        // Center the grid
-        int gridX = (GameConstants.WINDOW_WIDTH - gridWidth) / 2;
-        int gridY = 180; // Adjusted position
-
-        // Grid panel for ingredients
-        gridPanel = new JPanel(null) {
+        // FIXED GRID LAYOUT - More precise calculations
+        // The grid should be a perfect 5x4 grid
+        int GRID_PADDING = 12; // Border padding around grid
+        gridPanel = new JPanel() {
             @Override
             protected void paintComponent(Graphics g) {
                 super.paintComponent(g);
 
-                // Draw grid background image
+                // Draw background image first - ensure it fits the entire panel
                 ImageIcon gridBgImage = resourceManager.getImage("/gameproject/resources/grid_bg.png");
                 if (gridBgImage != null) {
-                    // Scale to fit gridPanel
                     g.drawImage(gridBgImage.getImage(), 0, 0, getWidth(), getHeight(), this);
+                } else {
+                    // Fallback color if image is missing
+                    g.setColor(new Color(165, 120, 95)); // Reddish background
+                    g.fillRect(0, 0, getWidth(), getHeight());
                 }
             }
         };
-        gridPanel.setBounds(gridX, gridY, gridWidth, gridHeight);
+
+        // Calculate exact measurements for grid layout
+        int cellSize = INGREDIENT_SIZE; // Each ingredient cell size
+        int gridWidth = GRID_COLS * cellSize; 
+        int gridHeight = GRID_ROWS * cellSize;
+
+        // Add padding for the border/frame
+        int totalWidth = gridWidth + (GRID_PADDING * 2);
+        int totalHeight = gridHeight + (GRID_PADDING * 2);
+
+        // Center the grid on screen and position it vertically
+        int gridX = (GameConstants.WINDOW_WIDTH - totalWidth) / 2;
+        int gridY = 135;
+
+        // Position the grid panel including the border padding
+        gridPanel.setBounds(gridX, gridY, totalWidth, totalHeight);
+        gridPanel.setLayout(null); // Use absolute positioning
         gridPanel.setOpaque(false);
         add(gridPanel);
 
-        // Control panel
+        // Control panel - keep position at bottom
         controlPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 20, 10));
         controlPanel.setBounds(0, GameConstants.WINDOW_HEIGHT - 100, GameConstants.WINDOW_WIDTH, 80);
         controlPanel.setOpaque(false);
@@ -469,8 +483,6 @@ public class TimSortVisualization extends JPanel {
         // Clear the grid panel
         gridPanel.removeAll();
 
-        // We need exactly 20 ingredients for a 4×5 grid
-
         // Create sets of ingredients for each potion type
         // Fire Resistance Potion (values 1-5)
         String[] fireIngredients = {"pumpkin", "apples", "peppers", "dragon_fire_glands", "fire_crystal"};
@@ -512,6 +524,11 @@ public class TimSortVisualization extends JPanel {
         Collections.shuffle(allIngredients);
         positionIngredientsInGrid();
 
+        // IMPORTANT: Make grid boxes visible by default without waiting for the ability
+        for (IngredientItem ingredient : allIngredients) {
+            ingredient.setBoxVisible(true);
+        }
+
         // Repaint
         gridPanel.revalidate();
         gridPanel.repaint();
@@ -522,6 +539,9 @@ public class TimSortVisualization extends JPanel {
     * Position ingredients in the 4×5 grid
     */
     private void positionIngredientsInGrid() {
+        // Define the grid padding (space between grid edge and first ingredients)
+        int GRID_PADDING = 12;
+
         for (int i = 0; i < allIngredients.size(); i++) {
             IngredientItem ingredient = allIngredients.get(i);
 
@@ -529,10 +549,10 @@ public class TimSortVisualization extends JPanel {
             int row = i / GRID_COLS;
             int col = i % GRID_COLS;
 
-            // Position in grid
+            // Position in grid - add padding to align with background
             ingredient.setBounds(
-                col * INGREDIENT_SIZE,
-                row * INGREDIENT_SIZE,
+                GRID_PADDING + (col * INGREDIENT_SIZE),
+                GRID_PADDING + (row * INGREDIENT_SIZE),
                 INGREDIENT_SIZE,
                 INGREDIENT_SIZE
             );
@@ -817,12 +837,8 @@ public class TimSortVisualization extends JPanel {
             highlightRun(dexterityRun, new Color(255, 200, 50, 80)); // Yellow highlight
         }
 
-        // Make all grid boxes visible
-        for (IngredientItem ingredient : allIngredients) {
-            ingredient.setBoxVisible(true);
-        }
-
-        // Update instruction
+        // No need to make grid boxes visible here since they're visible by default now
+        // Just update the instruction
         instructionLabel.setText("Natural runs highlighted! Select exactly 10 ingredients that form sequences.");
 
         // Enable check button if exactly 10 ingredients are selected
@@ -1365,22 +1381,22 @@ public class TimSortVisualization extends JPanel {
     @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
-        
+
         // Draw background
         g.setColor(new Color(25, 25, 50));
         g.fillRect(0, 0, getWidth(), getHeight());
-        
+
         // Draw decorative elements based on current phase
         Graphics2D g2d = (Graphics2D) g;
         g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-        
+
         if (currentPhase == 1) {
-            // Draw eye symbol
-            g2d.setColor(new Color(100, 100, 255, 100));
-            g2d.fillOval(getWidth() - 100, 30, 60, 60);
-            g2d.setColor(new Color(255, 255, 255, 180));
-            g2d.drawOval(getWidth() - 100, 30, 60, 60);
-            g2d.fillOval(getWidth() - 80, 45, 20, 30);
+            // Draw larger eye symbol in top right - THIS IS THE CIRCULAR ELEMENT
+            g2d.setColor(new Color(100, 100, 255, 150)); // Make more visible with higher opacity
+            g2d.fillOval(getWidth() - 110, 25, 80, 80); // Larger and positioned to be visible
+            g2d.setColor(new Color(255, 255, 255, 200)); // Brighter white
+            g2d.drawOval(getWidth() - 110, 25, 80, 80); // Match the outer bounds
+            g2d.fillOval(getWidth() - 85, 45, 30, 40); // Adjust pupil size to match
         } else if (currentPhase == 2) {
             // Draw balance symbol
             g2d.setColor(new Color(255, 200, 100, 100));
@@ -1538,6 +1554,9 @@ public class TimSortVisualization extends JPanel {
 
             // Load grid box image
             gridBoxImage = resourceManager.getImage("/gameproject/resources/grid_box.png");
+
+            // Set grid boxes always visible
+            this.isBoxVisible = true;
         }
         
         
@@ -1577,9 +1596,26 @@ public class TimSortVisualization extends JPanel {
             Graphics2D g2d = (Graphics2D) g;
             g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
-            // Only draw the grid box if it's visible (after Eye of Pattern is used)
-            if (isBoxVisible && gridBoxImage != null) {
+            // Always draw the grid box
+            if (gridBoxImage != null) {
                 g2d.drawImage(gridBoxImage.getImage(), 0, 0, getWidth(), getHeight(), this);
+            } else {
+                // Fallback colors if image is missing
+                Color boxColor;
+                // Alternate colors based on position to create a checkerboard effect
+                int row = getY() / INGREDIENT_SIZE;
+                int col = getX() / INGREDIENT_SIZE;
+                if ((row + col) % 2 == 0) {
+                    boxColor = new Color(230, 195, 155); // Light tan
+                } else {
+                    boxColor = new Color(215, 180, 140); // Darker tan
+                }
+                g2d.setColor(boxColor);
+                g2d.fillRect(0, 0, getWidth(), getHeight());
+
+                // Draw border
+                g2d.setColor(new Color(165, 120, 95));
+                g2d.drawRect(0, 0, getWidth()-1, getHeight()-1);
             }
 
             // Draw highlight if applicable
@@ -1622,7 +1658,7 @@ public class TimSortVisualization extends JPanel {
                 // Draw the image
                 g2d.drawImage(img, x, y, scaledWidth, scaledHeight, this);
 
-                // Optionally draw a small value indicator
+                // Draw value indicator
                 g2d.setColor(new Color(0, 0, 0, 180));
                 g2d.fillOval(getWidth() - 20, getHeight() - 20, 16, 16);
                 g2d.setColor(Color.WHITE);
@@ -1636,6 +1672,7 @@ public class TimSortVisualization extends JPanel {
                 g2d.drawString(valueStr, textX, textY);
             }
         }
+
         
         
         
