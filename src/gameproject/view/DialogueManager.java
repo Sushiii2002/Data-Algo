@@ -62,9 +62,9 @@ public class DialogueManager extends JPanel {
     private static final int BOTTOM_MARGIN = 120;
     
     // Font sizes - increased base size
-    private static final float DIALOGUE_FONT_SIZE = 22.0f; // Increased from 18 to 22
-    private static final float CHARACTER_NAME_FONT_SIZE = 24.0f; // Increased from 20 to 24
-    private static final float CHARACTER_NAME_BOSS_FONT_SIZE = 26.0f; // Increased from 22 to 26
+    private static final float DIALOGUE_FONT_SIZE = 26.0f; // Increased from 22 to 26
+    private static final float CHARACTER_NAME_FONT_SIZE = 28.0f; // Increased from 24 to 28
+    private static final float CHARACTER_NAME_BOSS_FONT_SIZE = 30.0f; // Increased from 26 to 30
     
     /**
      * Custom panel for drawing portraits with themed borders
@@ -281,7 +281,7 @@ public class DialogueManager extends JPanel {
         characterNameLabel = new JLabel();
         characterNameLabel.setFont(new Font("SansSerif", Font.BOLD, (int)CHARACTER_NAME_FONT_SIZE));
         characterNameLabel.setForeground(Color.WHITE);
-        characterNameLabel.setBounds(CHARACTER_IMAGE_SIZE + 25, 10, 400, 30);
+        characterNameLabel.setBounds(CHARACTER_IMAGE_SIZE + 25, 10, 400, 35); // Increased height slightly for bigger font
         characterNameLabel.setOpaque(false); // No background
         dialoguePanel.add(characterNameLabel);
         
@@ -291,13 +291,13 @@ public class DialogueManager extends JPanel {
         dialogueTextLabel.setForeground(Color.WHITE);
         dialogueTextLabel.setVerticalAlignment(JLabel.TOP);
         
-        // IMPORTANT: The text area takes up all remaining width in the dialogue panel
-        // This ensures text doesn't get cut off on the right side
+        // CRITICAL FIX: Reduce the width significantly to prevent text from being cut off on the right edge
+        // And increase the height to accommodate the larger font size
         dialogueTextLabel.setBounds(
             CHARACTER_IMAGE_SIZE + 25,       // Start after portrait with padding
             45,                              // Top position
-            DIALOGUE_WIDTH - CHARACTER_IMAGE_SIZE - 35,  // Use ALL available width
-            150                              // Height
+            DIALOGUE_WIDTH - CHARACTER_IMAGE_SIZE - 70,  // Reduced width by 35px to prevent cutoff
+            160                              // Increased height to accommodate larger font
         );
         dialogueTextLabel.setOpaque(false); // No background
         dialoguePanel.add(dialogueTextLabel);
@@ -423,7 +423,7 @@ public class DialogueManager extends JPanel {
         
         // Calculate the correct width for text wrapping
         // This is critical to prevent text cutoff
-        int textWidth = dialogueTextLabel.getWidth() - 10; // Small margin for safety
+        int textWidth = dialogueTextLabel.getWidth() - 150; // Increased margin from 10 to 40 for greater safety
         
         // Create HTML with specific width to force proper text wrapping
         StringBuilder html = new StringBuilder();
