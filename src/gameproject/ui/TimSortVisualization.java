@@ -882,134 +882,144 @@ public class TimSortVisualization extends JPanel {
     * Arrange ingredients for sorting in Phase 2 - Revised version
     */
     private void arrangeIngredientsForSorting() {
-        // DEBUGGING - add a console message to verify this method is actually running
-        System.out.println("PHASE 2: arrangeIngredientsForSorting is running");
+    // DEBUGGING - add a console message to verify this method is actually running
+    System.out.println("PHASE 2: arrangeIngredientsForSorting is running");
 
-        // Clear groups
-        leftGroup.clear();
-        rightGroup.clear();
+    // Clear groups
+    leftGroup.clear();
+    rightGroup.clear();
 
-        // Clear the grid panel - COMPLETELY REMOVE ALL ELEMENTS
-        gridPanel.removeAll();
+    // Clear the grid panel - COMPLETELY REMOVE ALL ELEMENTS
+    gridPanel.removeAll();
 
-        // Make sure grid panel has no background
-        gridPanel.setBackground(new Color(0, 0, 0, 0));
-        gridPanel.setOpaque(false);
+    // Make sure grid panel has no background
+    gridPanel.setBackground(new Color(0, 0, 0, 0));
+    gridPanel.setOpaque(false);
 
-        // Update ability button text and instruction
-        abilityButton.setText("Use Hand of Balance");
+    // CRITICAL FIX: Move grid panel to cover entire screen instead of being centered
+    // This allows absolute positioning of ingredients anywhere on screen
+    gridPanel.setBounds(0, 0, GameConstants.WINDOW_WIDTH, GameConstants.WINDOW_HEIGHT);
 
-        // CORRECTED: Start with the right instruction that doesn't claim sorting is done
-        instructionLabel.setText("Use your 'Hand of Balance' to sort ingredients into two groups.");
+    // Update ability button text and instruction
+    abilityButton.setText("Use Hand of Balance");
 
-        checkButton.setEnabled(false);
+    // Start with the right instruction that doesn't claim sorting is done
+    instructionLabel.setText("Use your 'Hand of Balance' to sort ingredients into two groups.");
 
-        // Create group headers (initially invisible)
-        JLabel leftHeader = new JLabel("Frost Ingredients", JLabel.CENTER);
-        leftHeader.setFont(new Font("SansSerif", Font.BOLD, 16));
-        leftHeader.setForeground(Color.CYAN);
-        leftHeader.setBounds(50, 200, 300, 30);
-        leftHeader.setVisible(false); // Initially invisible
-        gridPanel.add(leftHeader);
+    checkButton.setEnabled(false);
 
-        JLabel rightHeader = new JLabel("Power Ingredients", JLabel.CENTER);
-        rightHeader.setFont(new Font("SansSerif", Font.BOLD, 16));
-        rightHeader.setForeground(Color.RED);
-        rightHeader.setBounds(450, 200, 300, 30);
-        rightHeader.setVisible(false); // Initially invisible
-        gridPanel.add(rightHeader);
+    // Create group headers (initially invisible) - use absolute positions now
+    JLabel leftHeader = new JLabel("Frost Ingredients", JLabel.CENTER);
+    leftHeader.setFont(new Font("SansSerif", Font.BOLD, 16));
+    leftHeader.setForeground(Color.CYAN);
+    leftHeader.setBounds(150, 200, 300, 30); // Absolute position
+    leftHeader.setVisible(false); // Initially invisible
+    gridPanel.add(leftHeader);
 
-        // Check if we have selected ingredients from Phase 1
-        if (selectedIngredients.isEmpty() && currentPhase == 2) {
-            // If no ingredients were selected in Phase 1, generate backup ingredients
-            createBackupIngredients();
-        }
+    JLabel rightHeader = new JLabel("Power Ingredients", JLabel.CENTER);
+    rightHeader.setFont(new Font("SansSerif", Font.BOLD, 16));
+    rightHeader.setForeground(Color.RED);
+    rightHeader.setBounds(550, 200, 300, 30); // Absolute position
+    rightHeader.setVisible(false); // Initially invisible
+    gridPanel.add(rightHeader);
 
-        // Define safe areas to prevent ingredients from overlapping UI elements
-        int safeTopMargin = 150; 
-        int safeBottomMargin = 120;
-        int safeLeftMargin = 150;
-        int safeRightMargin = 150;
-
-        // Calculate available area
-        int availableWidth = GameConstants.WINDOW_WIDTH - safeLeftMargin - safeRightMargin;
-        int availableHeight = GameConstants.WINDOW_HEIGHT - safeTopMargin - safeBottomMargin;
-
-        // Use only the selected ingredients from Phase 1 (limited to 10)
-        List<IngredientItem> ingredientsToUse = new ArrayList<>();
-        for (int i = 0; i < Math.min(selectedIngredients.size(), 10); i++) {
-            // CRITICAL: Create NEW IngredientItem objects rather than reusing old ones
-            IngredientItem originalItem = selectedIngredients.get(i);
-            IngredientItem newItem = new IngredientItem(originalItem.getValue(), originalItem.getColor());
-
-            // Copy important properties
-            newItem.setPotionType(originalItem.getPotionType());
-            newItem.setIngredientName(originalItem.getIngredientName());
-
-            // CRITICAL: Make sure the box isn't visible
-            newItem.setBoxVisible(false);
-
-            ingredientsToUse.add(newItem);
-        }
-
-        // If we didn't get 10, add from our backup
-        if (ingredientsToUse.size() < 10 && allIngredients.size() >= 10) {
-            for (int i = 0; i < 10 - ingredientsToUse.size(); i++) {
-                if (i < allIngredients.size()) {
-                    IngredientItem originalItem = allIngredients.get(i);
-                    IngredientItem newItem = new IngredientItem(originalItem.getValue(), originalItem.getColor());
-                    newItem.setPotionType(originalItem.getPotionType());
-                    newItem.setIngredientName(originalItem.getIngredientName());
-                    newItem.setBoxVisible(false);
-                    ingredientsToUse.add(newItem);
-                }
-            }
-        }
-
-        // Assign to left/right groups
-        for (int i = 0; i < ingredientsToUse.size(); i++) {
-            IngredientItem ingredient = ingredientsToUse.get(i);
-
-            // Ensure nothing from Phase 1 is showing
-            ingredient.setSelected(false);
-            ingredient.setHighlighted(false);
-            ingredient.setBoxVisible(false);
-
-            // Add to appropriate group
-            if (i < 5) {
-                leftGroup.add(ingredient);
-            } else if (i < 10) {
-                rightGroup.add(ingredient);
-            }
-
-            // Generate random position
-            int randomX = safeLeftMargin + (int)(Math.random() * availableWidth);
-            int randomY = safeTopMargin + (int)(Math.random() * availableHeight);
-
-            // Store original position for animation
-            ingredient.setOriginalPosition(new Point(randomX, randomY));
-            ingredient.setLocation(randomX, randomY);
-
-            // Add to grid panel
-            gridPanel.add(ingredient);
-
-            // Remove mouse listeners - prevent clicking
-            for (MouseListener listener : ingredient.getMouseListeners()) {
-                ingredient.removeMouseListener(listener);
-            }
-        }
-
-        // Sort the groups (not visible yet)
-        sortGroup(leftGroup);
-        sortGroup(rightGroup);
-
-        // Enable the ability button
-        abilityButton.setEnabled(true);
-
-        // Force UI refresh
-        gridPanel.revalidate();
-        gridPanel.repaint();
+    // Check if we have selected ingredients from Phase 1
+    if (selectedIngredients.isEmpty() && currentPhase == 2) {
+        // If no ingredients were selected in Phase 1, generate backup ingredients
+        createBackupIngredients();
     }
+
+    // Create a list of ingredients to use in Phase 2
+    List<IngredientItem> ingredientsToUse = new ArrayList<>();
+    
+    // Get up to 10 ingredients from Phase 1 selection
+    int numToTake = Math.min(selectedIngredients.size(), 10);
+    for (int i = 0; i < numToTake; i++) {
+        IngredientItem originalItem = selectedIngredients.get(i);
+        IngredientItem newItem = new IngredientItem(originalItem.getValue(), originalItem.getColor());
+        
+        // Copy important properties
+        newItem.setPotionType(originalItem.getPotionType());
+        newItem.setIngredientName(originalItem.getIngredientName());
+        newItem.setBoxVisible(false);
+        ingredientsToUse.add(newItem);
+    }
+
+    // If we didn't get 10, add from our backup
+    if (ingredientsToUse.size() < 10 && allIngredients.size() >= 10) {
+        for (int i = 0; i < 10 - ingredientsToUse.size(); i++) {
+            if (i < allIngredients.size()) {
+                IngredientItem originalItem = allIngredients.get(i);
+                IngredientItem newItem = new IngredientItem(originalItem.getValue(), originalItem.getColor());
+                newItem.setPotionType(originalItem.getPotionType());
+                newItem.setIngredientName(originalItem.getIngredientName());
+                newItem.setBoxVisible(false);
+                ingredientsToUse.add(newItem);
+            }
+        }
+    }
+
+    // FIXED: Use absolute positions that are truly to the left side of the screen
+    // These are now absolute screen coordinates, not relative to grid
+    int[][] positions = new int[][] {
+        // Left side positions (5 ingredients) - TRULY LEFT
+        {50, 180}, {100, 150}, {150, 210}, {200, 240}, {250, 270},
+        // Right side positions (5 ingredients) - CENTER-RIGHT
+        {550, 180}, {600, 150}, {650, 210}, {700, 240}, {750, 270}
+    };
+
+    // Assign ingredients to groups and position them
+    for (int i = 0; i < ingredientsToUse.size() && i < positions.length; i++) {
+        IngredientItem ingredient = ingredientsToUse.get(i);
+        
+        // Reset visual state
+        ingredient.setSelected(false);
+        ingredient.setHighlighted(false);
+        ingredient.setBoxVisible(false);
+        
+        // Add to appropriate group (first 5 to left, next 5 to right)
+        if (i < 5) {
+            leftGroup.add(ingredient);
+        } else if (i < 10) {
+            rightGroup.add(ingredient);
+        }
+        
+        // Position based on predefined coordinates - now absolute
+        int posX = positions[i][0];
+        int posY = positions[i][1];
+        
+        // Store original position for animation
+        ingredient.setOriginalPosition(new Point(posX, posY));
+        ingredient.setLocation(posX, posY);
+        
+        // Add to grid panel
+        gridPanel.add(ingredient);
+        
+        // Add click listeners for item interaction
+        ingredient.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                handleIngredientClick(ingredient);
+            }
+        });
+    }
+
+    // Sort the groups (not visible yet)
+    sortGroup(leftGroup);
+    sortGroup(rightGroup);
+
+    // Enable the ability button
+    abilityButton.setEnabled(true);
+    
+    // Make sure grid panel is on top of other components
+    if (getComponentZOrder(gridPanel) > 0) {
+        setComponentZOrder(gridPanel, 0);
+    }
+
+    // Force UI refresh
+    gridPanel.revalidate();
+    gridPanel.repaint();
+}
     
     /**
     * Create backup ingredients if needed
@@ -1049,95 +1059,104 @@ public class TimSortVisualization extends JPanel {
     * Apply the Hand of Balance ability to sort ingredients
     */
     private void applyHandOfBalanceAbility() {
-        // First, show the group headers
-        for (Component c : gridPanel.getComponents()) {
-            if (c instanceof JLabel && !(c instanceof IngredientItem)) {
-                c.setVisible(true);
-            }
+    // First, show the group headers
+    for (Component c : gridPanel.getComponents()) {
+        if (c instanceof JLabel && !(c instanceof IngredientItem)) {
+            c.setVisible(true);
         }
+    }
 
-        // Disable the ability button during animation
-        abilityButton.setEnabled(false);
+    // Disable the ability button during animation
+    abilityButton.setEnabled(false);
 
-        // Define target positions for ingredients
-        // Calculate positions for organized grid
-        int leftGroupStartX = 50;
-        int rightGroupStartX = 450;
-        int groupsY = 250; // Y position for both groups
-        int columnWidth = INGREDIENT_SIZE + 10; // Add 10px spacing
+    // FIXED: Use absolute coordinates that match the headers
+    int leftGroupStartX = 150;  // Match left header
+    int rightGroupStartX = 550; // Match right header
+    int groupsY = 250;
+    int columnWidth = INGREDIENT_SIZE + 10; // 110px spacing between ingredients
 
-        // Create animation timer
-        final int animationDuration = 2000; // 2 seconds
-        final int fps = 60; // frames per second
-        final int totalFrames = animationDuration / (1000 / fps);
-        final int[] currentFrame = {0};
+    // Create animation timer
+    final int animationDuration = 2000; // 2 seconds
+    final int fps = 60; // frames per second
+    final int totalFrames = animationDuration / (1000 / fps);
+    final int[] currentFrame = {0};
 
-        Timer animationTimer = new Timer(1000 / fps, new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                currentFrame[0]++;
+    Timer animationTimer = new Timer(1000 / fps, new ActionListener() {
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            currentFrame[0]++;
 
-                // Calculate animation progress (0.0 to 1.0)
-                float progress = (float) currentFrame[0] / totalFrames;
+            // Calculate animation progress (0.0 to 1.0)
+            float progress = (float) currentFrame[0] / totalFrames;
 
-                // Apply easing function (ease out)
-                float easedProgress = 1.0f - (1.0f - progress) * (1.0f - progress);
+            // Apply easing function (ease out)
+            float easedProgress = 1.0f - (1.0f - progress) * (1.0f - progress);
 
-                // Animate left group
-                for (int i = 0; i < leftGroup.size(); i++) {
-                    IngredientItem ingredient = leftGroup.get(i);
-                    if (ingredient.getOriginalPosition() == null) {
-                        // Skip if no original position (shouldn't happen, but just in case)
-                        continue;
-                    }
-                    Point originalPos = ingredient.getOriginalPosition();
-                    int targetX = leftGroupStartX + (i * columnWidth);
-                    int targetY = groupsY;
-
-                    // Calculate current position based on progress
-                    int currentX = originalPos.x + (int)((targetX - originalPos.x) * easedProgress);
-                    int currentY = originalPos.y + (int)((targetY - originalPos.y) * easedProgress);
-
-                    ingredient.setLocation(currentX, currentY);
+            // Animate left group
+            for (int i = 0; i < leftGroup.size(); i++) {
+                IngredientItem ingredient = leftGroup.get(i);
+                if (ingredient.getOriginalPosition() == null) {
+                    // Skip if no original position (shouldn't happen, but just in case)
+                    continue;
                 }
+                Point originalPos = ingredient.getOriginalPosition();
+                int targetX = leftGroupStartX + (i * columnWidth);
+                int targetY = groupsY;
 
-                // Animate right group
-                for (int i = 0; i < rightGroup.size(); i++) {
-                    IngredientItem ingredient = rightGroup.get(i);
-                    if (ingredient.getOriginalPosition() == null) {
-                        // Skip if no original position
-                        continue;
-                    }
-                    Point originalPos = ingredient.getOriginalPosition();
-                    int targetX = rightGroupStartX + (i * columnWidth);
-                    int targetY = groupsY;
+                // Calculate current position based on progress
+                int currentX = originalPos.x + (int)((targetX - originalPos.x) * easedProgress);
+                int currentY = originalPos.y + (int)((targetY - originalPos.y) * easedProgress);
 
-                    // Calculate current position based on progress
-                    int currentX = originalPos.x + (int)((targetX - originalPos.x) * easedProgress);
-                    int currentY = originalPos.y + (int)((targetY - originalPos.y) * easedProgress);
+                ingredient.setLocation(currentX, currentY);
+                
+                // Ensure ingredient is visible by bringing it to front
+                gridPanel.setComponentZOrder(ingredient, 0);
+            }
 
-                    ingredient.setLocation(currentX, currentY);
+            // Animate right group
+            for (int i = 0; i < rightGroup.size(); i++) {
+                IngredientItem ingredient = rightGroup.get(i);
+                if (ingredient.getOriginalPosition() == null) {
+                    // Skip if no original position
+                    continue;
                 }
+                Point originalPos = ingredient.getOriginalPosition();
+                int targetX = rightGroupStartX + (i * columnWidth);
+                int targetY = groupsY;
 
-                // If animation is complete
-                if (currentFrame[0] >= totalFrames) {
-                    ((Timer)e.getSource()).stop();
+                // Calculate current position based on progress
+                int currentX = originalPos.x + (int)((targetX - originalPos.x) * easedProgress);
+                int currentY = originalPos.y + (int)((targetY - originalPos.y) * easedProgress);
 
-                    // Enable check button
-                    checkButton.setEnabled(true);
+                ingredient.setLocation(currentX, currentY);
+                
+                // Ensure ingredient is visible by bringing it to front
+                gridPanel.setComponentZOrder(ingredient, 0);
+            }
 
-                    // Update instructional text
-                    instructionLabel.setText("The ingredients have been sorted. Check your results.");
-                }
+            // If animation is complete
+            if (currentFrame[0] >= totalFrames) {
+                ((Timer)e.getSource()).stop();
 
-                // Repaint
+                // Enable check button
+                checkButton.setEnabled(true);
+
+                // Update instructional text
+                instructionLabel.setText("The ingredients have been sorted. Check your results.");
+                
+                // Force repaint to ensure everything is visible
+                gridPanel.revalidate();
                 gridPanel.repaint();
             }
-        });
 
-        // Start animation
-        animationTimer.start();
-    }
+            // Repaint
+            gridPanel.repaint();
+        }
+    });
+
+    // Start animation
+    animationTimer.start();
+}
     
     
     
@@ -2170,6 +2189,11 @@ public class TimSortVisualization extends JPanel {
         public int getValue() {
             return value;
         }
+        
+        public String getIngredientName() {
+            return ingredientName;
+        }
+        
         
         public String getColor() {
             return color;
