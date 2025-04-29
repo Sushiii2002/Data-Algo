@@ -882,134 +882,170 @@ public class TimSortVisualization extends JPanel {
     * Arrange ingredients for sorting in Phase 2 - Revised version
     */
     private void arrangeIngredientsForSorting() {
-        // DEBUGGING - add a console message to verify this method is actually running
-        System.out.println("PHASE 2: arrangeIngredientsForSorting is running");
+    // DEBUGGING - add a console message to verify this method is actually running
+    System.out.println("PHASE 2: arrangeIngredientsForSorting is running");
 
-        // Clear groups
-        leftGroup.clear();
-        rightGroup.clear();
+    // Clear groups
+    leftGroup.clear();
+    rightGroup.clear();
 
-        // Clear the grid panel - COMPLETELY REMOVE ALL ELEMENTS
-        gridPanel.removeAll();
+    // Clear the grid panel - COMPLETELY REMOVE ALL ELEMENTS
+    gridPanel.removeAll();
 
-        // Make sure grid panel has no background
-        gridPanel.setBackground(new Color(0, 0, 0, 0));
-        gridPanel.setOpaque(false);
+    // Make sure grid panel has no background
+    gridPanel.setBackground(new Color(0, 0, 0, 0));
+    gridPanel.setOpaque(false);
 
-        // Update ability button text and instruction
-        abilityButton.setText("Use Hand of Balance");
+    // Make grid panel cover the entire screen
+    gridPanel.setBounds(0, 0, GameConstants.WINDOW_WIDTH, GameConstants.WINDOW_HEIGHT);
 
-        // CORRECTED: Start with the right instruction that doesn't claim sorting is done
-        instructionLabel.setText("Use your 'Hand of Balance' to sort ingredients into two groups.");
+    // Update ability button text and instruction
+    abilityButton.setText("Use Hand of Balance");
 
-        checkButton.setEnabled(false);
+    // Start with the right instruction that doesn't claim sorting is done
+    instructionLabel.setText("Use your 'Hand of Balance' to sort ingredients into two groups.");
 
-        // Create group headers (initially invisible)
-        JLabel leftHeader = new JLabel("Frost Ingredients", JLabel.CENTER);
-        leftHeader.setFont(new Font("SansSerif", Font.BOLD, 16));
-        leftHeader.setForeground(Color.CYAN);
-        leftHeader.setBounds(50, 200, 300, 30);
-        leftHeader.setVisible(false); // Initially invisible
-        gridPanel.add(leftHeader);
+    checkButton.setEnabled(false);
 
-        JLabel rightHeader = new JLabel("Power Ingredients", JLabel.CENTER);
-        rightHeader.setFont(new Font("SansSerif", Font.BOLD, 16));
-        rightHeader.setForeground(Color.RED);
-        rightHeader.setBounds(450, 200, 300, 30);
-        rightHeader.setVisible(false); // Initially invisible
-        gridPanel.add(rightHeader);
+    // Create group headers (initially invisible)
+    JLabel leftHeader = new JLabel("Frost Ingredients", JLabel.CENTER);
+    leftHeader.setFont(new Font("SansSerif", Font.BOLD, 16));
+    leftHeader.setForeground(Color.CYAN);
+    leftHeader.setBounds(150, 200, 300, 30);
+    leftHeader.setVisible(false); // Initially invisible
+    gridPanel.add(leftHeader);
 
-        // Check if we have selected ingredients from Phase 1
-        if (selectedIngredients.isEmpty() && currentPhase == 2) {
-            // If no ingredients were selected in Phase 1, generate backup ingredients
-            createBackupIngredients();
-        }
+    JLabel rightHeader = new JLabel("Power Ingredients", JLabel.CENTER);
+    rightHeader.setFont(new Font("SansSerif", Font.BOLD, 16));
+    rightHeader.setForeground(Color.RED);
+    rightHeader.setBounds(550, 200, 300, 30);
+    rightHeader.setVisible(false); // Initially invisible
+    gridPanel.add(rightHeader);
 
-        // Define safe areas to prevent ingredients from overlapping UI elements
-        int safeTopMargin = 150; 
-        int safeBottomMargin = 120;
-        int safeLeftMargin = 150;
-        int safeRightMargin = 150;
-
-        // Calculate available area
-        int availableWidth = GameConstants.WINDOW_WIDTH - safeLeftMargin - safeRightMargin;
-        int availableHeight = GameConstants.WINDOW_HEIGHT - safeTopMargin - safeBottomMargin;
-
-        // Use only the selected ingredients from Phase 1 (limited to 10)
-        List<IngredientItem> ingredientsToUse = new ArrayList<>();
-        for (int i = 0; i < Math.min(selectedIngredients.size(), 10); i++) {
-            // CRITICAL: Create NEW IngredientItem objects rather than reusing old ones
-            IngredientItem originalItem = selectedIngredients.get(i);
-            IngredientItem newItem = new IngredientItem(originalItem.getValue(), originalItem.getColor());
-
-            // Copy important properties
-            newItem.setPotionType(originalItem.getPotionType());
-            newItem.setIngredientName(originalItem.getIngredientName());
-
-            // CRITICAL: Make sure the box isn't visible
-            newItem.setBoxVisible(false);
-
-            ingredientsToUse.add(newItem);
-        }
-
-        // If we didn't get 10, add from our backup
-        if (ingredientsToUse.size() < 10 && allIngredients.size() >= 10) {
-            for (int i = 0; i < 10 - ingredientsToUse.size(); i++) {
-                if (i < allIngredients.size()) {
-                    IngredientItem originalItem = allIngredients.get(i);
-                    IngredientItem newItem = new IngredientItem(originalItem.getValue(), originalItem.getColor());
-                    newItem.setPotionType(originalItem.getPotionType());
-                    newItem.setIngredientName(originalItem.getIngredientName());
-                    newItem.setBoxVisible(false);
-                    ingredientsToUse.add(newItem);
-                }
-            }
-        }
-
-        // Assign to left/right groups
-        for (int i = 0; i < ingredientsToUse.size(); i++) {
-            IngredientItem ingredient = ingredientsToUse.get(i);
-
-            // Ensure nothing from Phase 1 is showing
-            ingredient.setSelected(false);
-            ingredient.setHighlighted(false);
-            ingredient.setBoxVisible(false);
-
-            // Add to appropriate group
-            if (i < 5) {
-                leftGroup.add(ingredient);
-            } else if (i < 10) {
-                rightGroup.add(ingredient);
-            }
-
-            // Generate random position
-            int randomX = safeLeftMargin + (int)(Math.random() * availableWidth);
-            int randomY = safeTopMargin + (int)(Math.random() * availableHeight);
-
-            // Store original position for animation
-            ingredient.setOriginalPosition(new Point(randomX, randomY));
-            ingredient.setLocation(randomX, randomY);
-
-            // Add to grid panel
-            gridPanel.add(ingredient);
-
-            // Remove mouse listeners - prevent clicking
-            for (MouseListener listener : ingredient.getMouseListeners()) {
-                ingredient.removeMouseListener(listener);
-            }
-        }
-
-        // Sort the groups (not visible yet)
-        sortGroup(leftGroup);
-        sortGroup(rightGroup);
-
-        // Enable the ability button
-        abilityButton.setEnabled(true);
-
-        // Force UI refresh
-        gridPanel.revalidate();
-        gridPanel.repaint();
+    // Check if we have selected ingredients from Phase 1
+    if (selectedIngredients.isEmpty() && currentPhase == 2) {
+        // If no ingredients were selected in Phase 1, generate backup ingredients
+        createBackupIngredients();
     }
+
+    // Create a list of ingredients to use in Phase 2
+    List<IngredientItem> ingredientsToUse = new ArrayList<>();
+    
+    // Get up to 10 ingredients from Phase 1 selection
+    int numToTake = Math.min(selectedIngredients.size(), 10);
+    for (int i = 0; i < numToTake; i++) {
+        IngredientItem originalItem = selectedIngredients.get(i);
+        IngredientItem newItem = new IngredientItem(originalItem.getValue(), originalItem.getColor());
+        
+        // Copy important properties
+        newItem.setPotionType(originalItem.getPotionType());
+        newItem.setIngredientName(originalItem.getIngredientName());
+        newItem.setBoxVisible(false);
+        ingredientsToUse.add(newItem);
+    }
+
+    // If we didn't get 10, add from our backup
+    if (ingredientsToUse.size() < 10 && allIngredients.size() >= 10) {
+        for (int i = 0; i < 10 - ingredientsToUse.size(); i++) {
+            if (i < allIngredients.size()) {
+                IngredientItem originalItem = allIngredients.get(i);
+                IngredientItem newItem = new IngredientItem(originalItem.getValue(), originalItem.getColor());
+                newItem.setPotionType(originalItem.getPotionType());
+                newItem.setIngredientName(originalItem.getIngredientName());
+                newItem.setBoxVisible(false);
+                ingredientsToUse.add(newItem);
+            }
+        }
+    }
+
+    // NEW: Create more randomized positions across the screen
+    // Define safe areas to keep ingredients visible
+    int safeTop = 150;    // Stay below the title
+    int safeBottom = 650; // Stay above the buttons
+    int safeLeft = 50;    // Stay away from left edge
+    int safeRight = 950;  // Stay away from right edge
+    
+    // Create randomized positions
+    Random random = new Random();
+    List<Point> randomPositions = new ArrayList<>();
+    
+    // Generate random positions for all ingredients ensuring they don't overlap
+    while (randomPositions.size() < ingredientsToUse.size()) {
+        // Generate random position within safe area
+        int x = safeLeft + random.nextInt(safeRight - safeLeft - INGREDIENT_SIZE);
+        int y = safeTop + random.nextInt(safeBottom - safeTop - INGREDIENT_SIZE);
+        Point newPos = new Point(x, y);
+        
+        // Check if this position overlaps with any existing positions
+        boolean overlaps = false;
+        for (Point existingPos : randomPositions) {
+            // Consider overlap if distance is less than 1.5x ingredient size
+            if (existingPos.distance(newPos) < INGREDIENT_SIZE * 1.1) {
+                overlaps = true;
+                break;
+            }
+        }
+        
+        // Only add non-overlapping positions
+        if (!overlaps) {
+            randomPositions.add(newPos);
+        }
+    }
+    
+    // Ensure left and right group ingredients are visually separated
+    Collections.sort(randomPositions, (p1, p2) -> Integer.compare(p1.x, p2.x));
+    
+    // Assign ingredients to groups
+    for (int i = 0; i < ingredientsToUse.size(); i++) {
+        IngredientItem ingredient = ingredientsToUse.get(i);
+        
+        // Reset visual state
+        ingredient.setSelected(false);
+        ingredient.setHighlighted(false);
+        ingredient.setBoxVisible(false);
+        
+        // Add to appropriate group (first 5 to left, next 5 to right)
+        if (i < 5) {
+            leftGroup.add(ingredient);
+        } else if (i < 10) {
+            rightGroup.add(ingredient);
+        }
+        
+        // Get position from our random positions list
+        Point pos = randomPositions.get(i);
+        
+        // Store original position for animation
+        ingredient.setOriginalPosition(pos);
+        ingredient.setLocation(pos.x, pos.y);
+        
+        // Add to grid panel
+        gridPanel.add(ingredient);
+        
+        // Add click listeners for item interaction
+        ingredient.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                handleIngredientClick(ingredient);
+            }
+        });
+    }
+
+    // Sort the groups (not visible yet)
+    sortGroup(leftGroup);
+    sortGroup(rightGroup);
+
+    // Enable the ability button
+    abilityButton.setEnabled(true);
+    
+    // Make sure grid panel is on top of other components
+    if (getComponentZOrder(gridPanel) > 0) {
+        setComponentZOrder(gridPanel, 0);
+    }
+
+    // Force UI refresh
+    gridPanel.revalidate();
+    gridPanel.repaint();
+}
     
     /**
     * Create backup ingredients if needed
@@ -1049,95 +1085,104 @@ public class TimSortVisualization extends JPanel {
     * Apply the Hand of Balance ability to sort ingredients
     */
     private void applyHandOfBalanceAbility() {
-        // First, show the group headers
-        for (Component c : gridPanel.getComponents()) {
-            if (c instanceof JLabel && !(c instanceof IngredientItem)) {
-                c.setVisible(true);
-            }
+    // First, show the group headers
+    for (Component c : gridPanel.getComponents()) {
+        if (c instanceof JLabel && !(c instanceof IngredientItem)) {
+            c.setVisible(true);
         }
+    }
 
-        // Disable the ability button during animation
-        abilityButton.setEnabled(false);
+    // Disable the ability button during animation
+    abilityButton.setEnabled(false);
 
-        // Define target positions for ingredients
-        // Calculate positions for organized grid
-        int leftGroupStartX = 50;
-        int rightGroupStartX = 450;
-        int groupsY = 250; // Y position for both groups
-        int columnWidth = INGREDIENT_SIZE + 10; // Add 10px spacing
+    // FIXED: Use absolute coordinates that match the headers
+    int leftGroupStartX = 150;  // Match left header
+    int rightGroupStartX = 550; // Match right header
+    int groupsY = 250;
+    int columnWidth = INGREDIENT_SIZE + 10; // 110px spacing between ingredients
 
-        // Create animation timer
-        final int animationDuration = 2000; // 2 seconds
-        final int fps = 60; // frames per second
-        final int totalFrames = animationDuration / (1000 / fps);
-        final int[] currentFrame = {0};
+    // Create animation timer
+    final int animationDuration = 2000; // 2 seconds
+    final int fps = 60; // frames per second
+    final int totalFrames = animationDuration / (1000 / fps);
+    final int[] currentFrame = {0};
 
-        Timer animationTimer = new Timer(1000 / fps, new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                currentFrame[0]++;
+    Timer animationTimer = new Timer(1000 / fps, new ActionListener() {
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            currentFrame[0]++;
 
-                // Calculate animation progress (0.0 to 1.0)
-                float progress = (float) currentFrame[0] / totalFrames;
+            // Calculate animation progress (0.0 to 1.0)
+            float progress = (float) currentFrame[0] / totalFrames;
 
-                // Apply easing function (ease out)
-                float easedProgress = 1.0f - (1.0f - progress) * (1.0f - progress);
+            // Apply easing function (ease out)
+            float easedProgress = 1.0f - (1.0f - progress) * (1.0f - progress);
 
-                // Animate left group
-                for (int i = 0; i < leftGroup.size(); i++) {
-                    IngredientItem ingredient = leftGroup.get(i);
-                    if (ingredient.getOriginalPosition() == null) {
-                        // Skip if no original position (shouldn't happen, but just in case)
-                        continue;
-                    }
-                    Point originalPos = ingredient.getOriginalPosition();
-                    int targetX = leftGroupStartX + (i * columnWidth);
-                    int targetY = groupsY;
-
-                    // Calculate current position based on progress
-                    int currentX = originalPos.x + (int)((targetX - originalPos.x) * easedProgress);
-                    int currentY = originalPos.y + (int)((targetY - originalPos.y) * easedProgress);
-
-                    ingredient.setLocation(currentX, currentY);
+            // Animate left group
+            for (int i = 0; i < leftGroup.size(); i++) {
+                IngredientItem ingredient = leftGroup.get(i);
+                if (ingredient.getOriginalPosition() == null) {
+                    // Skip if no original position (shouldn't happen, but just in case)
+                    continue;
                 }
+                Point originalPos = ingredient.getOriginalPosition();
+                int targetX = leftGroupStartX + (i * columnWidth);
+                int targetY = groupsY;
 
-                // Animate right group
-                for (int i = 0; i < rightGroup.size(); i++) {
-                    IngredientItem ingredient = rightGroup.get(i);
-                    if (ingredient.getOriginalPosition() == null) {
-                        // Skip if no original position
-                        continue;
-                    }
-                    Point originalPos = ingredient.getOriginalPosition();
-                    int targetX = rightGroupStartX + (i * columnWidth);
-                    int targetY = groupsY;
+                // Calculate current position based on progress
+                int currentX = originalPos.x + (int)((targetX - originalPos.x) * easedProgress);
+                int currentY = originalPos.y + (int)((targetY - originalPos.y) * easedProgress);
 
-                    // Calculate current position based on progress
-                    int currentX = originalPos.x + (int)((targetX - originalPos.x) * easedProgress);
-                    int currentY = originalPos.y + (int)((targetY - originalPos.y) * easedProgress);
+                ingredient.setLocation(currentX, currentY);
+                
+                // Ensure ingredient is visible by bringing it to front
+                gridPanel.setComponentZOrder(ingredient, 0);
+            }
 
-                    ingredient.setLocation(currentX, currentY);
+            // Animate right group
+            for (int i = 0; i < rightGroup.size(); i++) {
+                IngredientItem ingredient = rightGroup.get(i);
+                if (ingredient.getOriginalPosition() == null) {
+                    // Skip if no original position
+                    continue;
                 }
+                Point originalPos = ingredient.getOriginalPosition();
+                int targetX = rightGroupStartX + (i * columnWidth);
+                int targetY = groupsY;
 
-                // If animation is complete
-                if (currentFrame[0] >= totalFrames) {
-                    ((Timer)e.getSource()).stop();
+                // Calculate current position based on progress
+                int currentX = originalPos.x + (int)((targetX - originalPos.x) * easedProgress);
+                int currentY = originalPos.y + (int)((targetY - originalPos.y) * easedProgress);
 
-                    // Enable check button
-                    checkButton.setEnabled(true);
+                ingredient.setLocation(currentX, currentY);
+                
+                // Ensure ingredient is visible by bringing it to front
+                gridPanel.setComponentZOrder(ingredient, 0);
+            }
 
-                    // Update instructional text
-                    instructionLabel.setText("The ingredients have been sorted. Check your results.");
-                }
+            // If animation is complete
+            if (currentFrame[0] >= totalFrames) {
+                ((Timer)e.getSource()).stop();
 
-                // Repaint
+                // Enable check button
+                checkButton.setEnabled(true);
+
+                // Update instructional text
+                instructionLabel.setText("The ingredients have been sorted. Check your results.");
+                
+                // Force repaint to ensure everything is visible
+                gridPanel.revalidate();
                 gridPanel.repaint();
             }
-        });
 
-        // Start animation
-        animationTimer.start();
-    }
+            // Repaint
+            gridPanel.repaint();
+        }
+    });
+
+    // Start animation
+    animationTimer.start();
+}
     
     
     
@@ -1942,227 +1987,83 @@ public class TimSortVisualization extends JPanel {
         }
     
         @Override
-        protected void paintComponent(Graphics g) {
-            super.paintComponent(g);
+protected void paintComponent(Graphics g) {
+    super.paintComponent(g);
 
-            Graphics2D g2d = (Graphics2D) g;
-            g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+    Graphics2D g2d = (Graphics2D) g;
+    g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
-            // Only draw the grid box if it's visible AND we're in Phase 1
-            if (isBoxVisible && currentPhase == 1) {
-                if (gridBoxImage != null) {
-                    g2d.drawImage(gridBoxImage.getImage(), 0, 0, getWidth(), getHeight(), this);
-                } else {
-                    // Fallback colors if image is missing
-                    Color boxColor;
-                    // Alternate colors based on position to create a checkerboard effect
-                    int row = getY() / INGREDIENT_SIZE;
-                    int col = getX() / INGREDIENT_SIZE;
-                    if ((row + col) % 2 == 0) {
-                        boxColor = new Color(230, 195, 155); // Light tan
-                    } else {
-                        boxColor = new Color(215, 180, 140); // Darker tan
-                    }
-                    g2d.setColor(boxColor);
-                    g2d.fillRect(0, 0, getWidth(), getHeight());
-
-                    // Draw border
-                    g2d.setColor(new Color(165, 120, 95));
-                    g2d.drawRect(0, 0, getWidth()-1, getHeight()-1);
-                }
-            }
-
-            // Draw highlight if applicable
-            if (isHighlighted) {
-                g2d.setColor(highlightColor);
-                g2d.fillRoundRect(5, 5, getWidth() - 10, getHeight() - 10, 10, 10);
-            }
-
-            // Draw selection indicator
-            if (isSelected) {
-                g2d.setColor(new Color(255, 255, 255, 100));
-                g2d.fillRoundRect(5, 5, getWidth() - 10, getHeight() - 10, 10, 10);
-                g2d.setColor(Color.WHITE);
-                g2d.drawRoundRect(5, 5, getWidth() - 10, getHeight() - 10, 10, 10);
-            }
-
-            // Draw the ingredient image
-            if (ingredientImage != null) {
-                // Calculate size to maintain aspect ratio
-                Image img = ingredientImage.getImage();
-                int imgWidth = img.getWidth(this);
-                int imgHeight = img.getHeight(this);
-
-                // Skip if image hasn't loaded
-                if (imgWidth <= 0 || imgHeight <= 0) return;
-
-                // Scale image to fit within panel with margins
-                double scale = Math.min(
-                    (getWidth() - 20) / (double)imgWidth,
-                    (getHeight() - 20) / (double)imgHeight
-                );
-
-                int scaledWidth = (int)(imgWidth * scale);
-                int scaledHeight = (int)(imgHeight * scale);
-
-                // Center the image
-                int x = (getWidth() - scaledWidth) / 2;
-                int y = (getHeight() - scaledHeight) / 2;
-
-                // Draw the image
-                g2d.drawImage(img, x, y, scaledWidth, scaledHeight, this);
-
-                // Draw value indicator
-                g2d.setColor(new Color(0, 0, 0, 180));
-                g2d.fillOval(getWidth() - 20, getHeight() - 20, 16, 16);
-                g2d.setColor(Color.WHITE);
-                g2d.setFont(new Font("SansSerif", Font.BOLD, 11));
-
-                String valueStr = String.valueOf(value);
-                FontMetrics fm = g2d.getFontMetrics();
-                int textX = getWidth() - 20 + (16 - fm.stringWidth(valueStr)) / 2;
-                int textY = getHeight() - 20 + ((16 - fm.getHeight()) / 2) + fm.getAscent();
-
-                g2d.drawString(valueStr, textX, textY);
-            }
-        }
-
-        
-        
-        
-        // New method to draw ingredient image with proper sizing
-        private void drawIngredientImage(Graphics2D g2d) {
-            // Calculate the size to maintain aspect ratio
-            Image img = ingredientImage.getImage();
-            int imgWidth = img.getWidth(this);
-            int imgHeight = img.getHeight(this);
-
-            // Skip if image hasn't loaded yet
-            if (imgWidth <= 0 || imgHeight <= 0) return;
-
-            // Scale to fit within the panel with some margin
-            double scale = Math.min(
-                (getWidth() - 20) / (double)imgWidth,
-                (getHeight() - 20) / (double)imgHeight
-            );
-
-            int scaledWidth = (int)(imgWidth * scale);
-            int scaledHeight = (int)(imgHeight * scale);
-
-            // Center the image
-            int x = (getWidth() - scaledWidth) / 2;
-            int y = (getHeight() - scaledHeight) / 2;
-
-            // Draw the image
-            g2d.drawImage(img, x, y, scaledWidth, scaledHeight, this);
-
-            // Draw value in the corner for debugging or reference
-            g2d.setColor(new Color(0, 0, 0, 180));
-            g2d.fillOval(getWidth() - 20, getHeight() - 20, 16, 16);
-            g2d.setColor(Color.WHITE);
-            g2d.setFont(new Font("SansSerif", Font.BOLD, 11));
-
-            String valueStr = String.valueOf(value);
-            FontMetrics fm = g2d.getFontMetrics();
-            int textX = getWidth() - 20 + (16 - fm.stringWidth(valueStr)) / 2;
-            int textY = getHeight() - 20 + ((16 - fm.getHeight()) / 2) + fm.getAscent();
-
-            g2d.drawString(valueStr, textX, textY);
-        }
-        
-
-        /**
-         * Draw a regular ingredient
-         */
-        private void drawIngredient(Graphics2D g2d) {
-            // Original drawing code for fallback
-            // Map color string to actual color
-            Color actualColor;
-            switch (color.toLowerCase()) {
-                case "blue": actualColor = new Color(100, 150, 255); break;
-                case "red": actualColor = new Color(255, 100, 100); break;
-                case "green": actualColor = new Color(100, 255, 100); break;
-                case "yellow": actualColor = new Color(255, 255, 100); break;
-                case "purple": actualColor = new Color(200, 100, 255); break;
-                default: actualColor = Color.GRAY;
-            }
-
-            // Draw ingredient shape (circle)
-            g2d.setColor(actualColor);
-            g2d.fillOval(8, 8, getWidth() - 16, getHeight() - 16);
-            g2d.setColor(Color.WHITE);
-            g2d.drawOval(8, 8, getWidth() - 16, getHeight() - 16);
-
-            // Draw value
-            g2d.setColor(Color.WHITE);
-            g2d.setFont(new Font("SansSerif", Font.BOLD, 14));
-
-            String valueStr = String.valueOf(value);
-            FontMetrics fm = g2d.getFontMetrics();
-            int textX = (getWidth() - fm.stringWidth(valueStr)) / 2;
-            int textY = (getHeight() - fm.getHeight()) / 2 + fm.getAscent();
-
-            g2d.drawString(valueStr, textX, textY);
-        }
-        
-        /**
-         * Draw a potion bottle
-         */
-        private void drawPotion(Graphics2D g2d) {
-            // Draw bottle shape
-            int bottleNeckWidth = getWidth() / 4;
-            int bottleNeckHeight = getHeight() / 4;
-            int bottleBodyWidth = getWidth() - 16;
-            int bottleBodyHeight = getHeight() - bottleNeckHeight - 8;
-            
-            // Determine color based on potion type
-            Color potionColor;
-            if ("Fire Resistance Potion".equals(potionType)) {
-                potionColor = new Color(100, 200, 255); // Ice blue
+    // Only draw the grid box if it's visible AND we're in Phase 1
+    if (isBoxVisible && currentPhase == 1) {
+        if (gridBoxImage != null) {
+            g2d.drawImage(gridBoxImage.getImage(), 0, 0, getWidth(), getHeight(), this);
+        } else {
+            // Fallback colors if image is missing
+            Color boxColor;
+            // Alternate colors based on position to create a checkerboard effect
+            int row = getY() / INGREDIENT_SIZE;
+            int col = getX() / INGREDIENT_SIZE;
+            if ((row + col) % 2 == 0) {
+                boxColor = new Color(230, 195, 155); // Light tan
             } else {
-                potionColor = new Color(255, 100, 0); // Fiery orange
+                boxColor = new Color(215, 180, 140); // Darker tan
             }
-            
-            // Draw cork
-            g2d.setColor(new Color(150, 100, 50));
-            g2d.fillRect(getWidth()/2 - bottleNeckWidth/2, 4, bottleNeckWidth, 8);
-            
-            // Draw bottle neck
-            g2d.setColor(new Color(220, 220, 255, 180));
-            g2d.fillRect(getWidth()/2 - bottleNeckWidth/2, 12, bottleNeckWidth, bottleNeckHeight);
-            
-            // Draw bottle body
-            g2d.setColor(new Color(220, 220, 255, 180));
-            g2d.fillRoundRect(8, bottleNeckHeight + 8, bottleBodyWidth, bottleBodyHeight, 20, 20);
-            
-            // Draw liquid
-            g2d.setColor(potionColor);
-            int liquidHeight = (int)(bottleBodyHeight * 0.8);
-            g2d.fillRoundRect(12, bottleNeckHeight + 8 + bottleBodyHeight - liquidHeight, 
-                              bottleBodyWidth - 8, liquidHeight, 16, 16);
-            
-            // Draw shine
-            g2d.setColor(new Color(255, 255, 255, 100));
-            g2d.fillOval(bottleBodyWidth / 2, bottleNeckHeight + 16, 12, 24);
-            
-            // Draw outline
-            g2d.setColor(Color.WHITE);
-            g2d.drawRect(getWidth()/2 - bottleNeckWidth/2, 12, bottleNeckWidth, bottleNeckHeight);
-            g2d.drawRoundRect(8, bottleNeckHeight + 8, bottleBodyWidth, bottleBodyHeight, 20, 20);
-            
-            // Draw potion name
-            if (potionType != null) {
-                g2d.setFont(new Font("SansSerif", Font.BOLD, 10));
-                FontMetrics fm = g2d.getFontMetrics();
-                
-                String shortName = potionType.replace(" Potion", "");
-                int textX = (getWidth() - fm.stringWidth(shortName)) / 2;
-                int textY = getHeight() - 10;
-                
-                g2d.setColor(Color.WHITE);
-                g2d.drawString(shortName, textX, textY);
-            }
+            g2d.setColor(boxColor);
+            g2d.fillRect(0, 0, getWidth(), getHeight());
+
+            // Draw border
+            g2d.setColor(new Color(165, 120, 95));
+            g2d.drawRect(0, 0, getWidth()-1, getHeight()-1);
         }
+    }
+
+    // Draw highlight if applicable
+    if (isHighlighted) {
+        g2d.setColor(highlightColor);
+        g2d.fillRoundRect(5, 5, getWidth() - 10, getHeight() - 10, 10, 10);
+    }
+
+    // Draw selection indicator
+    if (isSelected) {
+        g2d.setColor(new Color(255, 255, 255, 100));
+        g2d.fillRoundRect(5, 5, getWidth() - 10, getHeight() - 10, 10, 10);
+        g2d.setColor(Color.WHITE);
+        g2d.drawRoundRect(5, 5, getWidth() - 10, getHeight() - 10, 10, 10);
+    }
+
+    // Draw the ingredient image
+    if (ingredientImage != null) {
+        // Calculate size to maintain aspect ratio
+        Image img = ingredientImage.getImage();
+        int imgWidth = img.getWidth(this);
+        int imgHeight = img.getHeight(this);
+
+        // Skip if image hasn't loaded
+        if (imgWidth <= 0 || imgHeight <= 0) return;
+
+        // Scale image to fit within panel with margins
+        double scale = Math.min(
+            (getWidth() - 20) / (double)imgWidth,
+            (getHeight() - 20) / (double)imgHeight
+        );
+
+        int scaledWidth = (int)(imgWidth * scale);
+        int scaledHeight = (int)(imgHeight * scale);
+
+        // Center the image
+        int x = (getWidth() - scaledWidth) / 2;
+        int y = (getHeight() - scaledHeight) / 2;
+
+        // Draw the image
+        g2d.drawImage(img, x, y, scaledWidth, scaledHeight, this);
+        
+        // REMOVED: Value indicator - no longer shown in UI but value still exists in the object
+        // This keeps the ingredient value for sorting logic but doesn't display it on screen
+    }
+}
+
+        
+        
         
         
         
@@ -2170,6 +2071,11 @@ public class TimSortVisualization extends JPanel {
         public int getValue() {
             return value;
         }
+        
+        public String getIngredientName() {
+            return ingredientName;
+        }
+        
         
         public String getColor() {
             return color;
