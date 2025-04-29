@@ -896,8 +896,7 @@ public class TimSortVisualization extends JPanel {
     gridPanel.setBackground(new Color(0, 0, 0, 0));
     gridPanel.setOpaque(false);
 
-    // CRITICAL FIX: Move grid panel to cover entire screen instead of being centered
-    // This allows absolute positioning of ingredients anywhere on screen
+    // Make grid panel cover the entire screen
     gridPanel.setBounds(0, 0, GameConstants.WINDOW_WIDTH, GameConstants.WINDOW_HEIGHT);
 
     // Update ability button text and instruction
@@ -908,18 +907,18 @@ public class TimSortVisualization extends JPanel {
 
     checkButton.setEnabled(false);
 
-    // Create group headers (initially invisible) - use absolute positions now
+    // Create group headers (initially invisible)
     JLabel leftHeader = new JLabel("Frost Ingredients", JLabel.CENTER);
     leftHeader.setFont(new Font("SansSerif", Font.BOLD, 16));
     leftHeader.setForeground(Color.CYAN);
-    leftHeader.setBounds(150, 200, 300, 30); // Absolute position
+    leftHeader.setBounds(150, 200, 300, 30);
     leftHeader.setVisible(false); // Initially invisible
     gridPanel.add(leftHeader);
 
     JLabel rightHeader = new JLabel("Power Ingredients", JLabel.CENTER);
     rightHeader.setFont(new Font("SansSerif", Font.BOLD, 16));
     rightHeader.setForeground(Color.RED);
-    rightHeader.setBounds(550, 200, 300, 30); // Absolute position
+    rightHeader.setBounds(550, 200, 300, 30);
     rightHeader.setVisible(false); // Initially invisible
     gridPanel.add(rightHeader);
 
@@ -959,17 +958,45 @@ public class TimSortVisualization extends JPanel {
         }
     }
 
-    // FIXED: Use absolute positions that are truly to the left side of the screen
-    // These are now absolute screen coordinates, not relative to grid
-    int[][] positions = new int[][] {
-        // Left side positions (5 ingredients) - TRULY LEFT
-        {50, 180}, {100, 150}, {150, 210}, {200, 240}, {250, 270},
-        // Right side positions (5 ingredients) - CENTER-RIGHT
-        {550, 180}, {600, 150}, {650, 210}, {700, 240}, {750, 270}
-    };
-
-    // Assign ingredients to groups and position them
-    for (int i = 0; i < ingredientsToUse.size() && i < positions.length; i++) {
+    // NEW: Create more randomized positions across the screen
+    // Define safe areas to keep ingredients visible
+    int safeTop = 150;    // Stay below the title
+    int safeBottom = 650; // Stay above the buttons
+    int safeLeft = 50;    // Stay away from left edge
+    int safeRight = 950;  // Stay away from right edge
+    
+    // Create randomized positions
+    Random random = new Random();
+    List<Point> randomPositions = new ArrayList<>();
+    
+    // Generate random positions for all ingredients ensuring they don't overlap
+    while (randomPositions.size() < ingredientsToUse.size()) {
+        // Generate random position within safe area
+        int x = safeLeft + random.nextInt(safeRight - safeLeft - INGREDIENT_SIZE);
+        int y = safeTop + random.nextInt(safeBottom - safeTop - INGREDIENT_SIZE);
+        Point newPos = new Point(x, y);
+        
+        // Check if this position overlaps with any existing positions
+        boolean overlaps = false;
+        for (Point existingPos : randomPositions) {
+            // Consider overlap if distance is less than 1.5x ingredient size
+            if (existingPos.distance(newPos) < INGREDIENT_SIZE * 1.1) {
+                overlaps = true;
+                break;
+            }
+        }
+        
+        // Only add non-overlapping positions
+        if (!overlaps) {
+            randomPositions.add(newPos);
+        }
+    }
+    
+    // Ensure left and right group ingredients are visually separated
+    Collections.sort(randomPositions, (p1, p2) -> Integer.compare(p1.x, p2.x));
+    
+    // Assign ingredients to groups
+    for (int i = 0; i < ingredientsToUse.size(); i++) {
         IngredientItem ingredient = ingredientsToUse.get(i);
         
         // Reset visual state
@@ -984,13 +1011,12 @@ public class TimSortVisualization extends JPanel {
             rightGroup.add(ingredient);
         }
         
-        // Position based on predefined coordinates - now absolute
-        int posX = positions[i][0];
-        int posY = positions[i][1];
+        // Get position from our random positions list
+        Point pos = randomPositions.get(i);
         
         // Store original position for animation
-        ingredient.setOriginalPosition(new Point(posX, posY));
-        ingredient.setLocation(posX, posY);
+        ingredient.setOriginalPosition(pos);
+        ingredient.setLocation(pos.x, pos.y);
         
         // Add to grid panel
         gridPanel.add(ingredient);
@@ -1961,227 +1987,83 @@ public class TimSortVisualization extends JPanel {
         }
     
         @Override
-        protected void paintComponent(Graphics g) {
-            super.paintComponent(g);
+protected void paintComponent(Graphics g) {
+    super.paintComponent(g);
 
-            Graphics2D g2d = (Graphics2D) g;
-            g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+    Graphics2D g2d = (Graphics2D) g;
+    g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
-            // Only draw the grid box if it's visible AND we're in Phase 1
-            if (isBoxVisible && currentPhase == 1) {
-                if (gridBoxImage != null) {
-                    g2d.drawImage(gridBoxImage.getImage(), 0, 0, getWidth(), getHeight(), this);
-                } else {
-                    // Fallback colors if image is missing
-                    Color boxColor;
-                    // Alternate colors based on position to create a checkerboard effect
-                    int row = getY() / INGREDIENT_SIZE;
-                    int col = getX() / INGREDIENT_SIZE;
-                    if ((row + col) % 2 == 0) {
-                        boxColor = new Color(230, 195, 155); // Light tan
-                    } else {
-                        boxColor = new Color(215, 180, 140); // Darker tan
-                    }
-                    g2d.setColor(boxColor);
-                    g2d.fillRect(0, 0, getWidth(), getHeight());
-
-                    // Draw border
-                    g2d.setColor(new Color(165, 120, 95));
-                    g2d.drawRect(0, 0, getWidth()-1, getHeight()-1);
-                }
-            }
-
-            // Draw highlight if applicable
-            if (isHighlighted) {
-                g2d.setColor(highlightColor);
-                g2d.fillRoundRect(5, 5, getWidth() - 10, getHeight() - 10, 10, 10);
-            }
-
-            // Draw selection indicator
-            if (isSelected) {
-                g2d.setColor(new Color(255, 255, 255, 100));
-                g2d.fillRoundRect(5, 5, getWidth() - 10, getHeight() - 10, 10, 10);
-                g2d.setColor(Color.WHITE);
-                g2d.drawRoundRect(5, 5, getWidth() - 10, getHeight() - 10, 10, 10);
-            }
-
-            // Draw the ingredient image
-            if (ingredientImage != null) {
-                // Calculate size to maintain aspect ratio
-                Image img = ingredientImage.getImage();
-                int imgWidth = img.getWidth(this);
-                int imgHeight = img.getHeight(this);
-
-                // Skip if image hasn't loaded
-                if (imgWidth <= 0 || imgHeight <= 0) return;
-
-                // Scale image to fit within panel with margins
-                double scale = Math.min(
-                    (getWidth() - 20) / (double)imgWidth,
-                    (getHeight() - 20) / (double)imgHeight
-                );
-
-                int scaledWidth = (int)(imgWidth * scale);
-                int scaledHeight = (int)(imgHeight * scale);
-
-                // Center the image
-                int x = (getWidth() - scaledWidth) / 2;
-                int y = (getHeight() - scaledHeight) / 2;
-
-                // Draw the image
-                g2d.drawImage(img, x, y, scaledWidth, scaledHeight, this);
-
-                // Draw value indicator
-                g2d.setColor(new Color(0, 0, 0, 180));
-                g2d.fillOval(getWidth() - 20, getHeight() - 20, 16, 16);
-                g2d.setColor(Color.WHITE);
-                g2d.setFont(new Font("SansSerif", Font.BOLD, 11));
-
-                String valueStr = String.valueOf(value);
-                FontMetrics fm = g2d.getFontMetrics();
-                int textX = getWidth() - 20 + (16 - fm.stringWidth(valueStr)) / 2;
-                int textY = getHeight() - 20 + ((16 - fm.getHeight()) / 2) + fm.getAscent();
-
-                g2d.drawString(valueStr, textX, textY);
-            }
-        }
-
-        
-        
-        
-        // New method to draw ingredient image with proper sizing
-        private void drawIngredientImage(Graphics2D g2d) {
-            // Calculate the size to maintain aspect ratio
-            Image img = ingredientImage.getImage();
-            int imgWidth = img.getWidth(this);
-            int imgHeight = img.getHeight(this);
-
-            // Skip if image hasn't loaded yet
-            if (imgWidth <= 0 || imgHeight <= 0) return;
-
-            // Scale to fit within the panel with some margin
-            double scale = Math.min(
-                (getWidth() - 20) / (double)imgWidth,
-                (getHeight() - 20) / (double)imgHeight
-            );
-
-            int scaledWidth = (int)(imgWidth * scale);
-            int scaledHeight = (int)(imgHeight * scale);
-
-            // Center the image
-            int x = (getWidth() - scaledWidth) / 2;
-            int y = (getHeight() - scaledHeight) / 2;
-
-            // Draw the image
-            g2d.drawImage(img, x, y, scaledWidth, scaledHeight, this);
-
-            // Draw value in the corner for debugging or reference
-            g2d.setColor(new Color(0, 0, 0, 180));
-            g2d.fillOval(getWidth() - 20, getHeight() - 20, 16, 16);
-            g2d.setColor(Color.WHITE);
-            g2d.setFont(new Font("SansSerif", Font.BOLD, 11));
-
-            String valueStr = String.valueOf(value);
-            FontMetrics fm = g2d.getFontMetrics();
-            int textX = getWidth() - 20 + (16 - fm.stringWidth(valueStr)) / 2;
-            int textY = getHeight() - 20 + ((16 - fm.getHeight()) / 2) + fm.getAscent();
-
-            g2d.drawString(valueStr, textX, textY);
-        }
-        
-
-        /**
-         * Draw a regular ingredient
-         */
-        private void drawIngredient(Graphics2D g2d) {
-            // Original drawing code for fallback
-            // Map color string to actual color
-            Color actualColor;
-            switch (color.toLowerCase()) {
-                case "blue": actualColor = new Color(100, 150, 255); break;
-                case "red": actualColor = new Color(255, 100, 100); break;
-                case "green": actualColor = new Color(100, 255, 100); break;
-                case "yellow": actualColor = new Color(255, 255, 100); break;
-                case "purple": actualColor = new Color(200, 100, 255); break;
-                default: actualColor = Color.GRAY;
-            }
-
-            // Draw ingredient shape (circle)
-            g2d.setColor(actualColor);
-            g2d.fillOval(8, 8, getWidth() - 16, getHeight() - 16);
-            g2d.setColor(Color.WHITE);
-            g2d.drawOval(8, 8, getWidth() - 16, getHeight() - 16);
-
-            // Draw value
-            g2d.setColor(Color.WHITE);
-            g2d.setFont(new Font("SansSerif", Font.BOLD, 14));
-
-            String valueStr = String.valueOf(value);
-            FontMetrics fm = g2d.getFontMetrics();
-            int textX = (getWidth() - fm.stringWidth(valueStr)) / 2;
-            int textY = (getHeight() - fm.getHeight()) / 2 + fm.getAscent();
-
-            g2d.drawString(valueStr, textX, textY);
-        }
-        
-        /**
-         * Draw a potion bottle
-         */
-        private void drawPotion(Graphics2D g2d) {
-            // Draw bottle shape
-            int bottleNeckWidth = getWidth() / 4;
-            int bottleNeckHeight = getHeight() / 4;
-            int bottleBodyWidth = getWidth() - 16;
-            int bottleBodyHeight = getHeight() - bottleNeckHeight - 8;
-            
-            // Determine color based on potion type
-            Color potionColor;
-            if ("Fire Resistance Potion".equals(potionType)) {
-                potionColor = new Color(100, 200, 255); // Ice blue
+    // Only draw the grid box if it's visible AND we're in Phase 1
+    if (isBoxVisible && currentPhase == 1) {
+        if (gridBoxImage != null) {
+            g2d.drawImage(gridBoxImage.getImage(), 0, 0, getWidth(), getHeight(), this);
+        } else {
+            // Fallback colors if image is missing
+            Color boxColor;
+            // Alternate colors based on position to create a checkerboard effect
+            int row = getY() / INGREDIENT_SIZE;
+            int col = getX() / INGREDIENT_SIZE;
+            if ((row + col) % 2 == 0) {
+                boxColor = new Color(230, 195, 155); // Light tan
             } else {
-                potionColor = new Color(255, 100, 0); // Fiery orange
+                boxColor = new Color(215, 180, 140); // Darker tan
             }
-            
-            // Draw cork
-            g2d.setColor(new Color(150, 100, 50));
-            g2d.fillRect(getWidth()/2 - bottleNeckWidth/2, 4, bottleNeckWidth, 8);
-            
-            // Draw bottle neck
-            g2d.setColor(new Color(220, 220, 255, 180));
-            g2d.fillRect(getWidth()/2 - bottleNeckWidth/2, 12, bottleNeckWidth, bottleNeckHeight);
-            
-            // Draw bottle body
-            g2d.setColor(new Color(220, 220, 255, 180));
-            g2d.fillRoundRect(8, bottleNeckHeight + 8, bottleBodyWidth, bottleBodyHeight, 20, 20);
-            
-            // Draw liquid
-            g2d.setColor(potionColor);
-            int liquidHeight = (int)(bottleBodyHeight * 0.8);
-            g2d.fillRoundRect(12, bottleNeckHeight + 8 + bottleBodyHeight - liquidHeight, 
-                              bottleBodyWidth - 8, liquidHeight, 16, 16);
-            
-            // Draw shine
-            g2d.setColor(new Color(255, 255, 255, 100));
-            g2d.fillOval(bottleBodyWidth / 2, bottleNeckHeight + 16, 12, 24);
-            
-            // Draw outline
-            g2d.setColor(Color.WHITE);
-            g2d.drawRect(getWidth()/2 - bottleNeckWidth/2, 12, bottleNeckWidth, bottleNeckHeight);
-            g2d.drawRoundRect(8, bottleNeckHeight + 8, bottleBodyWidth, bottleBodyHeight, 20, 20);
-            
-            // Draw potion name
-            if (potionType != null) {
-                g2d.setFont(new Font("SansSerif", Font.BOLD, 10));
-                FontMetrics fm = g2d.getFontMetrics();
-                
-                String shortName = potionType.replace(" Potion", "");
-                int textX = (getWidth() - fm.stringWidth(shortName)) / 2;
-                int textY = getHeight() - 10;
-                
-                g2d.setColor(Color.WHITE);
-                g2d.drawString(shortName, textX, textY);
-            }
+            g2d.setColor(boxColor);
+            g2d.fillRect(0, 0, getWidth(), getHeight());
+
+            // Draw border
+            g2d.setColor(new Color(165, 120, 95));
+            g2d.drawRect(0, 0, getWidth()-1, getHeight()-1);
         }
+    }
+
+    // Draw highlight if applicable
+    if (isHighlighted) {
+        g2d.setColor(highlightColor);
+        g2d.fillRoundRect(5, 5, getWidth() - 10, getHeight() - 10, 10, 10);
+    }
+
+    // Draw selection indicator
+    if (isSelected) {
+        g2d.setColor(new Color(255, 255, 255, 100));
+        g2d.fillRoundRect(5, 5, getWidth() - 10, getHeight() - 10, 10, 10);
+        g2d.setColor(Color.WHITE);
+        g2d.drawRoundRect(5, 5, getWidth() - 10, getHeight() - 10, 10, 10);
+    }
+
+    // Draw the ingredient image
+    if (ingredientImage != null) {
+        // Calculate size to maintain aspect ratio
+        Image img = ingredientImage.getImage();
+        int imgWidth = img.getWidth(this);
+        int imgHeight = img.getHeight(this);
+
+        // Skip if image hasn't loaded
+        if (imgWidth <= 0 || imgHeight <= 0) return;
+
+        // Scale image to fit within panel with margins
+        double scale = Math.min(
+            (getWidth() - 20) / (double)imgWidth,
+            (getHeight() - 20) / (double)imgHeight
+        );
+
+        int scaledWidth = (int)(imgWidth * scale);
+        int scaledHeight = (int)(imgHeight * scale);
+
+        // Center the image
+        int x = (getWidth() - scaledWidth) / 2;
+        int y = (getHeight() - scaledHeight) / 2;
+
+        // Draw the image
+        g2d.drawImage(img, x, y, scaledWidth, scaledHeight, this);
+        
+        // REMOVED: Value indicator - no longer shown in UI but value still exists in the object
+        // This keeps the ingredient value for sorting logic but doesn't display it on screen
+    }
+}
+
+        
+        
         
         
         
