@@ -1,6 +1,7 @@
 package gameproject.ui;
 
 import gameproject.controller.GameController;
+import gameproject.model.GameModel;
 import gameproject.model.GameState;
 import gameproject.util.ResourceManager;
 import gameproject.util.GameConstants;
@@ -169,7 +170,7 @@ public class TimSortVisualization extends JPanel {
         instructionLabel.setBounds(0, 95, GameConstants.WINDOW_WIDTH, 30);
         add(instructionLabel);
 
-        // FIXED GRID LAYOUT - More precise calculations
+        // FIXED GRID LAYOUT - Modified to be transparent for Phase 2
         // The grid should be a perfect 5x4 grid
         int GRID_PADDING = 12; // Border padding around grid
         gridPanel = new JPanel() {
@@ -177,15 +178,18 @@ public class TimSortVisualization extends JPanel {
             protected void paintComponent(Graphics g) {
                 super.paintComponent(g);
 
-                // Draw background image first - ensure it fits the entire panel
-                ImageIcon gridBgImage = resourceManager.getImage("/gameproject/resources/grid_bg.png");
-                if (gridBgImage != null) {
-                    g.drawImage(gridBgImage.getImage(), 0, 0, getWidth(), getHeight(), this);
-                } else {
-                    // Fallback color if image is missing
-                    g.setColor(new Color(165, 120, 95)); // Reddish background
-                    g.fillRect(0, 0, getWidth(), getHeight());
+                // Only draw background if we're in Phase 1
+                if (currentPhase == 1) {
+                    // Draw background image - rest remains the same
+                    ImageIcon gridBgImage = resourceManager.getImage("/gameproject/resources/grid_bg.png");
+                    if (gridBgImage != null) {
+                        g.drawImage(gridBgImage.getImage(), 0, 0, getWidth(), getHeight(), this);
+                    } else {
+                        g.setColor(new Color(165, 120, 95));
+                        g.fillRect(0, 0, getWidth(), getHeight());
+                    }
                 }
+                // For Phase 2 and Phase 3, no background will be drawn
             }
         };
 
@@ -798,8 +802,8 @@ public class TimSortVisualization extends JPanel {
             // Eye of Pattern - Highlight runs
             highlightNaturalRuns();
         } else if (currentPhase == 2) {
-            // Hand of Balance - Arrange ingredients
-            arrangeIngredientsForSorting();
+            // Hand of Balance - Apply automatic sorting
+            applyHandOfBalanceAbility();
         } else if (currentPhase == 3) {
             // Mind of Unity - Display potion options
             displayPotionOptions();
@@ -868,65 +872,274 @@ public class TimSortVisualization extends JPanel {
      * Highlight a run of ingredients
      */
     private void highlightRun(List<IngredientItem> run, Color highlightColor) {
-        for (IngredientItem ingredient : run) {
-            ingredient.setHighlighted(true);
-            ingredient.setHighlightColor(highlightColor);
+            for (IngredientItem ingredient : run) {
+                ingredient.setHighlighted(true);
+                ingredient.setHighlightColor(highlightColor);
+            }
         }
-    }
-    
+
     /**
-     * Arrange ingredients for sorting in Phase 2
-     */
+    * Arrange ingredients for sorting in Phase 2 - Revised version
+    */
     private void arrangeIngredientsForSorting() {
+        // DEBUGGING - add a console message to verify this method is actually running
+        System.out.println("PHASE 2: arrangeIngredientsForSorting is running");
+
         // Clear groups
         leftGroup.clear();
         rightGroup.clear();
-        
-        // Update UI
+
+        // Clear the grid panel - COMPLETELY REMOVE ALL ELEMENTS
         gridPanel.removeAll();
-        
-        // Create group headers
+
+        // Make sure grid panel has no background
+        gridPanel.setBackground(new Color(0, 0, 0, 0));
+        gridPanel.setOpaque(false);
+
+        // Update ability button text and instruction
+        abilityButton.setText("Use Hand of Balance");
+
+        // CORRECTED: Start with the right instruction that doesn't claim sorting is done
+        instructionLabel.setText("Use your 'Hand of Balance' to sort ingredients into two groups.");
+
+        checkButton.setEnabled(false);
+
+        // Create group headers (initially invisible)
         JLabel leftHeader = new JLabel("Frost Ingredients", JLabel.CENTER);
         leftHeader.setFont(new Font("SansSerif", Font.BOLD, 16));
         leftHeader.setForeground(Color.CYAN);
-        leftHeader.setBounds(50, 200, 300, 30); // Moved from 150 to 200
+        leftHeader.setBounds(50, 200, 300, 30);
+        leftHeader.setVisible(false); // Initially invisible
         gridPanel.add(leftHeader);
-        
+
         JLabel rightHeader = new JLabel("Power Ingredients", JLabel.CENTER);
         rightHeader.setFont(new Font("SansSerif", Font.BOLD, 16));
         rightHeader.setForeground(Color.RED);
-        rightHeader.setBounds(450, 200, 300, 30); // Moved from 150 to 200
+        rightHeader.setBounds(450, 200, 300, 30);
+        rightHeader.setVisible(false); // Initially invisible
         gridPanel.add(rightHeader);
-        
-        // Add ingredients that were selected in Phase 1
-        for (IngredientItem ingredient : selectedIngredients) {
-            ingredient.setSelected(true);
-            ingredient.setHighlighted(false);
-            
-            // Randomly assign to left or right group initially
-            if (leftGroup.size() < GROUP_SIZE && Math.random() < 0.5) {
-                leftGroup.add(ingredient);
-            } else if (rightGroup.size() < GROUP_SIZE) {
-                rightGroup.add(ingredient);
-            } else {
-                leftGroup.add(ingredient);
+
+        // Check if we have selected ingredients from Phase 1
+        if (selectedIngredients.isEmpty() && currentPhase == 2) {
+            // If no ingredients were selected in Phase 1, generate backup ingredients
+            createBackupIngredients();
+        }
+
+        // Define safe areas to prevent ingredients from overlapping UI elements
+        int safeTopMargin = 150; 
+        int safeBottomMargin = 120;
+        int safeLeftMargin = 150;
+        int safeRightMargin = 150;
+
+        // Calculate available area
+        int availableWidth = GameConstants.WINDOW_WIDTH - safeLeftMargin - safeRightMargin;
+        int availableHeight = GameConstants.WINDOW_HEIGHT - safeTopMargin - safeBottomMargin;
+
+        // Use only the selected ingredients from Phase 1 (limited to 10)
+        List<IngredientItem> ingredientsToUse = new ArrayList<>();
+        for (int i = 0; i < Math.min(selectedIngredients.size(), 10); i++) {
+            // CRITICAL: Create NEW IngredientItem objects rather than reusing old ones
+            IngredientItem originalItem = selectedIngredients.get(i);
+            IngredientItem newItem = new IngredientItem(originalItem.getValue(), originalItem.getColor());
+
+            // Copy important properties
+            newItem.setPotionType(originalItem.getPotionType());
+            newItem.setIngredientName(originalItem.getIngredientName());
+
+            // CRITICAL: Make sure the box isn't visible
+            newItem.setBoxVisible(false);
+
+            ingredientsToUse.add(newItem);
+        }
+
+        // If we didn't get 10, add from our backup
+        if (ingredientsToUse.size() < 10 && allIngredients.size() >= 10) {
+            for (int i = 0; i < 10 - ingredientsToUse.size(); i++) {
+                if (i < allIngredients.size()) {
+                    IngredientItem originalItem = allIngredients.get(i);
+                    IngredientItem newItem = new IngredientItem(originalItem.getValue(), originalItem.getColor());
+                    newItem.setPotionType(originalItem.getPotionType());
+                    newItem.setIngredientName(originalItem.getIngredientName());
+                    newItem.setBoxVisible(false);
+                    ingredientsToUse.add(newItem);
+                }
             }
-            
+        }
+
+        // Assign to left/right groups
+        for (int i = 0; i < ingredientsToUse.size(); i++) {
+            IngredientItem ingredient = ingredientsToUse.get(i);
+
+            // Ensure nothing from Phase 1 is showing
+            ingredient.setSelected(false);
+            ingredient.setHighlighted(false);
+            ingredient.setBoxVisible(false);
+
+            // Add to appropriate group
+            if (i < 5) {
+                leftGroup.add(ingredient);
+            } else if (i < 10) {
+                rightGroup.add(ingredient);
+            }
+
+            // Generate random position
+            int randomX = safeLeftMargin + (int)(Math.random() * availableWidth);
+            int randomY = safeTopMargin + (int)(Math.random() * availableHeight);
+
+            // Store original position for animation
+            ingredient.setOriginalPosition(new Point(randomX, randomY));
+            ingredient.setLocation(randomX, randomY);
+
             // Add to grid panel
             gridPanel.add(ingredient);
+
+            // Remove mouse listeners - prevent clicking
+            for (MouseListener listener : ingredient.getMouseListeners()) {
+                ingredient.removeMouseListener(listener);
+            }
         }
-        
-        // Sort and display groups
+
+        // Sort the groups (not visible yet)
         sortGroup(leftGroup);
         sortGroup(rightGroup);
-        updateGroupDisplay();
-        
-        // Update instruction
-        instructionLabel.setText("Use your 'Hand of Balance' to sort ingredients into two groups. Click on ingredients to move them between groups.");
-        
-        // Enable check button if both groups are full
-        checkButton.setEnabled(leftGroup.size() == GROUP_SIZE && rightGroup.size() == GROUP_SIZE);
+
+        // Enable the ability button
+        abilityButton.setEnabled(true);
+
+        // Force UI refresh
+        gridPanel.revalidate();
+        gridPanel.repaint();
     }
+    
+    /**
+    * Create backup ingredients if needed
+    */
+    private void createBackupIngredients() {
+        // Clear any existing ingredients to prevent duplicates
+        selectedIngredients.clear();
+
+        // Create a new set of ingredients for Phase 2
+        String[] colors = {"red", "blue", "green", "yellow", "orange"};
+
+        // Create 10 ingredients with values 1-10
+        for (int i = 0; i < 10; i++) {
+            String color = colors[i % colors.length];
+            IngredientItem ingredient = new IngredientItem(i + 1, color);
+
+            // Set proper names based on index
+            if (i < 5) {
+                // Fire resistance ingredients
+                String[] fireIngredients = {"pumpkin", "apples", "peppers", "dragon_fire_glands", "fire_crystal"};
+                ingredient.setIngredientName(fireIngredients[i]);
+                ingredient.setPotionType("fire");
+            } else {
+                // Strength ingredients
+                String[] strengthIngredients = {"corn", "powdered_giant_insect", "troll_sweat", "powdered_minotaur_horn", "dragon_bone"};
+                ingredient.setIngredientName(strengthIngredients[i - 5]);
+                ingredient.setPotionType("strength");
+            }
+
+            selectedIngredients.add(ingredient);
+        }
+    }
+    
+    
+    
+    /**
+    * Apply the Hand of Balance ability to sort ingredients
+    */
+    private void applyHandOfBalanceAbility() {
+        // First, show the group headers
+        for (Component c : gridPanel.getComponents()) {
+            if (c instanceof JLabel && !(c instanceof IngredientItem)) {
+                c.setVisible(true);
+            }
+        }
+
+        // Disable the ability button during animation
+        abilityButton.setEnabled(false);
+
+        // Define target positions for ingredients
+        // Calculate positions for organized grid
+        int leftGroupStartX = 50;
+        int rightGroupStartX = 450;
+        int groupsY = 250; // Y position for both groups
+        int columnWidth = INGREDIENT_SIZE + 10; // Add 10px spacing
+
+        // Create animation timer
+        final int animationDuration = 2000; // 2 seconds
+        final int fps = 60; // frames per second
+        final int totalFrames = animationDuration / (1000 / fps);
+        final int[] currentFrame = {0};
+
+        Timer animationTimer = new Timer(1000 / fps, new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                currentFrame[0]++;
+
+                // Calculate animation progress (0.0 to 1.0)
+                float progress = (float) currentFrame[0] / totalFrames;
+
+                // Apply easing function (ease out)
+                float easedProgress = 1.0f - (1.0f - progress) * (1.0f - progress);
+
+                // Animate left group
+                for (int i = 0; i < leftGroup.size(); i++) {
+                    IngredientItem ingredient = leftGroup.get(i);
+                    if (ingredient.getOriginalPosition() == null) {
+                        // Skip if no original position (shouldn't happen, but just in case)
+                        continue;
+                    }
+                    Point originalPos = ingredient.getOriginalPosition();
+                    int targetX = leftGroupStartX + (i * columnWidth);
+                    int targetY = groupsY;
+
+                    // Calculate current position based on progress
+                    int currentX = originalPos.x + (int)((targetX - originalPos.x) * easedProgress);
+                    int currentY = originalPos.y + (int)((targetY - originalPos.y) * easedProgress);
+
+                    ingredient.setLocation(currentX, currentY);
+                }
+
+                // Animate right group
+                for (int i = 0; i < rightGroup.size(); i++) {
+                    IngredientItem ingredient = rightGroup.get(i);
+                    if (ingredient.getOriginalPosition() == null) {
+                        // Skip if no original position
+                        continue;
+                    }
+                    Point originalPos = ingredient.getOriginalPosition();
+                    int targetX = rightGroupStartX + (i * columnWidth);
+                    int targetY = groupsY;
+
+                    // Calculate current position based on progress
+                    int currentX = originalPos.x + (int)((targetX - originalPos.x) * easedProgress);
+                    int currentY = originalPos.y + (int)((targetY - originalPos.y) * easedProgress);
+
+                    ingredient.setLocation(currentX, currentY);
+                }
+
+                // If animation is complete
+                if (currentFrame[0] >= totalFrames) {
+                    ((Timer)e.getSource()).stop();
+
+                    // Enable check button
+                    checkButton.setEnabled(true);
+
+                    // Update instructional text
+                    instructionLabel.setText("The ingredients have been sorted. Check your results.");
+                }
+
+                // Repaint
+                gridPanel.repaint();
+            }
+        });
+
+        // Start animation
+        animationTimer.start();
+    }
+    
+    
     
     /**
     * Display potion options in Phase 3
@@ -939,6 +1152,7 @@ public class TimSortVisualization extends JPanel {
         IngredientItem frostPotion = new IngredientItem(1, "blue");
         frostPotion.setPotionType("Fire Resistance Potion");
         frostPotion.setGroupLabel(true);
+        frostPotion.setBoxVisible(false); // IMPORTANT: Disable grid box in Phase 3
         frostPotion.setLocation(GameConstants.WINDOW_WIDTH / 4 - INGREDIENT_SIZE, 250);
         frostPotion.setSize(INGREDIENT_SIZE * 2, INGREDIENT_SIZE * 2);
         gridPanel.add(frostPotion);
@@ -946,6 +1160,7 @@ public class TimSortVisualization extends JPanel {
         IngredientItem strengthPotion = new IngredientItem(2, "red");
         strengthPotion.setPotionType("Strength Potion");
         strengthPotion.setGroupLabel(true);
+        strengthPotion.setBoxVisible(false); // IMPORTANT: Disable grid box in Phase 3
         strengthPotion.setLocation((GameConstants.WINDOW_WIDTH * 3) / 4 - INGREDIENT_SIZE, 250);
         strengthPotion.setSize(INGREDIENT_SIZE * 2, INGREDIENT_SIZE * 2);
         gridPanel.add(strengthPotion);
@@ -1279,20 +1494,29 @@ public class TimSortVisualization extends JPanel {
     private void advanceToNextPhase() {
         currentPhase++;
         phaseCompleted = false;
-        
+
+        // Reset everything - crucial for clean transition
+        gridPanel.removeAll();
+
         // Update phase label
         if (currentPhase == 2) {
             phaseLabel.setText("Phase 2: The Hand of Balance");
             abilityButton.setText("Use Hand of Balance");
-            useAbility(); // Set up Phase 2
+
+            // IMPORTANT: Use arrangeIngredientsForSorting instead of useAbility
+            arrangeIngredientsForSorting();
         } else if (currentPhase == 3) {
             phaseLabel.setText("Phase 3: The Mind of Unity");
             abilityButton.setText("Use Mind of Unity");
-            useAbility(); // Set up Phase 3
+            displayPotionOptions();
         } else {
             // Return to story mode after all phases
             controller.returnToStoryMode();
         }
+
+        // Force complete UI refresh
+        revalidate();
+        repaint();
     }
     
     /**
@@ -1386,32 +1610,7 @@ public class TimSortVisualization extends JPanel {
         g.setColor(new Color(25, 25, 50));
         g.fillRect(0, 0, getWidth(), getHeight());
 
-        // Draw decorative elements based on current phase
-        Graphics2D g2d = (Graphics2D) g;
-        g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-
-        if (currentPhase == 1) {
-            // Draw larger eye symbol in top right - THIS IS THE CIRCULAR ELEMENT
-            g2d.setColor(new Color(100, 100, 255, 150)); // Make more visible with higher opacity
-            g2d.fillOval(getWidth() - 110, 25, 80, 80); // Larger and positioned to be visible
-            g2d.setColor(new Color(255, 255, 255, 200)); // Brighter white
-            g2d.drawOval(getWidth() - 110, 25, 80, 80); // Match the outer bounds
-            g2d.fillOval(getWidth() - 85, 45, 30, 40); // Adjust pupil size to match
-        } else if (currentPhase == 2) {
-            // Draw balance symbol
-            g2d.setColor(new Color(255, 200, 100, 100));
-            g2d.fillRect(getWidth() - 100, 30, 60, 10);
-            g2d.fillRect(getWidth() - 80, 30, 20, 60);
-        } else if (currentPhase == 3) {
-            // Draw unity symbol
-            g2d.setColor(new Color(100, 255, 100, 100));
-            g2d.fillOval(getWidth() - 90, 40, 40, 40);
-            g2d.setColor(new Color(255, 100, 100, 100));
-            g2d.fillOval(getWidth() - 110, 40, 40, 40);
-            g2d.setColor(new Color(255, 255, 255, 180));
-            g2d.drawOval(getWidth() - 90, 40, 40, 40);
-            g2d.drawOval(getWidth() - 110, 40, 40, 40);
-        }
+        // No phase-specific decorative elements - removed
     }
     
     /**
@@ -1526,6 +1725,151 @@ public class TimSortVisualization extends JPanel {
         }
     }
     
+    
+    
+    @Override
+        public void addNotify() {
+            super.addNotify();
+
+            // We can't directly access model, so just check the currentPhase value
+            // If it's not set properly, default to phase 1
+            if (currentPhase < 1 || currentPhase > 3) {
+                currentPhase = 1; // Default to phase 1 if not set
+            }
+
+            // Update phase label
+            updatePhaseLabel();
+
+            // Initialize the proper phase UI
+            initializePhaseUI();
+        }
+       
+    
+        
+    /**
+
+    * Configure visualization for a specific phase
+
+    * This should be called by the controller when switching phases
+
+    */
+
+    public void setPhase(int phase) {
+        if (phase >= 1 && phase <= 3) {
+            // First reset everything
+            gridPanel.removeAll();
+
+            // Set the new phase
+            currentPhase = phase;
+
+            // Update phase label
+            updatePhaseLabel();
+
+            // Then initialize the proper phase UI
+            initializePhaseUI();
+        }
+    }
+
+   /**
+
+    * Update the phase label based on current phase
+
+    */
+
+    private void updatePhaseLabel() {
+
+        switch (currentPhase) {
+
+            case 1:
+
+                phaseLabel.setText("Phase 1: The Eye of Pattern");
+
+                break;
+
+            case 2:
+
+                phaseLabel.setText("Phase 2: The Hand of Balance");
+
+                break;
+
+            case 3:
+
+                phaseLabel.setText("Phase 3: The Mind of Unity");
+
+                break;
+
+        }
+
+    }
+
+   /**
+
+    * Initialize UI for the current phase
+
+    */
+
+    private void initializePhaseUI() {
+
+        // Reset UI elements
+
+        gridPanel.removeAll();
+
+           
+        // Set proper background transparency based on phase
+        if (currentPhase == 1) {
+            // Only Phase 1 should have the grid background
+            gridPanel.setBackground(null);
+        } else {
+            // Phase 2 and 3 should have completely transparent background
+            gridPanel.setBackground(new Color(0, 0, 0, 0));
+        }
+
+        // Force repaint before setting up the new phase
+        gridPanel.revalidate();
+        gridPanel.repaint();
+        
+
+        // Set button labels
+
+        switch (currentPhase) {
+            case 1:
+                abilityButton.setText("Use Eye of Pattern");
+                instructionLabel.setText("Use your 'Eye of Pattern' ability to identify ingredient sequences (runs).");
+                // Generate ingredients for Phase 1
+                generateIngredients();
+                break;
+
+            case 2:
+                abilityButton.setText("Use Hand of Balance");
+                instructionLabel.setText("Use your 'Hand of Balance' to sort ingredients into two groups.");
+                // Setup Phase 2 with scattered ingredients
+                arrangeIngredientsForSorting();
+                break;
+
+            case 3:
+                abilityButton.setText("Use Mind of Unity");
+                instructionLabel.setText("Use your 'Mind of Unity' to choose which potion to craft.");
+                // Setup Phase 3
+                displayPotionOptions();
+                break;
+        }
+
+
+
+        // Reset state
+        checkButton.setEnabled(false);
+        phaseCompleted = false;
+
+        // Force complete UI refresh
+        revalidate();
+        repaint();
+    }
+    
+    
+    
+    
+    
+    
     /**
      * Ingredient item class representing a visual ingredient element that can be
      * selected, highlighted, and arranged
@@ -1540,6 +1884,7 @@ public class TimSortVisualization extends JPanel {
         private boolean isBoxVisible = false;
         private Color highlightColor = new Color(255, 255, 0, 80);
         private boolean isGroupLabel = false;
+        private Point originalPosition = null; // Added to store original position for animation
 
         private ImageIcon ingredientImage = null;
         private ImageIcon gridBoxImage = null;
@@ -1559,6 +1904,13 @@ public class TimSortVisualization extends JPanel {
             this.isBoxVisible = true;
         }
         
+        public Point getOriginalPosition() {
+            return originalPosition;
+        }
+        
+        public void setOriginalPosition(Point pos) {
+            this.originalPosition = pos;
+        }
         
         public void setIngredientName(String name) {
             this.ingredientName = name;
@@ -1596,26 +1948,28 @@ public class TimSortVisualization extends JPanel {
             Graphics2D g2d = (Graphics2D) g;
             g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
-            // Always draw the grid box
-            if (gridBoxImage != null) {
-                g2d.drawImage(gridBoxImage.getImage(), 0, 0, getWidth(), getHeight(), this);
-            } else {
-                // Fallback colors if image is missing
-                Color boxColor;
-                // Alternate colors based on position to create a checkerboard effect
-                int row = getY() / INGREDIENT_SIZE;
-                int col = getX() / INGREDIENT_SIZE;
-                if ((row + col) % 2 == 0) {
-                    boxColor = new Color(230, 195, 155); // Light tan
+            // Only draw the grid box if it's visible AND we're in Phase 1
+            if (isBoxVisible && currentPhase == 1) {
+                if (gridBoxImage != null) {
+                    g2d.drawImage(gridBoxImage.getImage(), 0, 0, getWidth(), getHeight(), this);
                 } else {
-                    boxColor = new Color(215, 180, 140); // Darker tan
-                }
-                g2d.setColor(boxColor);
-                g2d.fillRect(0, 0, getWidth(), getHeight());
+                    // Fallback colors if image is missing
+                    Color boxColor;
+                    // Alternate colors based on position to create a checkerboard effect
+                    int row = getY() / INGREDIENT_SIZE;
+                    int col = getX() / INGREDIENT_SIZE;
+                    if ((row + col) % 2 == 0) {
+                        boxColor = new Color(230, 195, 155); // Light tan
+                    } else {
+                        boxColor = new Color(215, 180, 140); // Darker tan
+                    }
+                    g2d.setColor(boxColor);
+                    g2d.fillRect(0, 0, getWidth(), getHeight());
 
-                // Draw border
-                g2d.setColor(new Color(165, 120, 95));
-                g2d.drawRect(0, 0, getWidth()-1, getHeight()-1);
+                    // Draw border
+                    g2d.setColor(new Color(165, 120, 95));
+                    g2d.drawRect(0, 0, getWidth()-1, getHeight()-1);
+                }
             }
 
             // Draw highlight if applicable
@@ -1809,6 +2163,8 @@ public class TimSortVisualization extends JPanel {
                 g2d.drawString(shortName, textX, textY);
             }
         }
+        
+        
         
         // Getters and setters
         public int getValue() {

@@ -140,29 +140,32 @@ public class GameController {
                 // Eye of Pattern phase
                 model.setCurrentState(GameState.TIMSORT_CHALLENGE);
                 model.setCurrentLevel(1);
-                
+
                 // Show TimSort visualization for phase 1
+                timSortVisualization.setPhase(1); // Explicitly set phase
                 cardLayout.show(mainPanel, "timSortVisualization");
                 break;
-                
+
             case 2:
                 // Hand of Balance phase
                 model.setCurrentState(GameState.TIMSORT_CHALLENGE);
                 model.setCurrentLevel(2);
-                
+
                 // Show TimSort visualization for phase 2
+                timSortVisualization.setPhase(2); // Explicitly set phase
                 cardLayout.show(mainPanel, "timSortVisualization");
                 break;
-                
+
             case 3:
                 // Mind of Unity phase
                 model.setCurrentState(GameState.TIMSORT_CHALLENGE);
                 model.setCurrentLevel(3);
-                
+
                 // Show TimSort visualization for phase 3
+                timSortVisualization.setPhase(3); // Explicitly set phase
                 cardLayout.show(mainPanel, "timSortVisualization");
                 break;
-                
+
             default:
                 // Invalid phase - show story view
                 model.setCurrentState(GameState.STORY_MODE);
@@ -170,6 +173,7 @@ public class GameController {
                 break;
         }
     }
+
     
     /**
      * Handle dialogue sequence completion
@@ -368,3 +372,6 @@ public class GameController {
         }
     }
 }
+
+
+

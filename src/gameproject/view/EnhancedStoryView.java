@@ -1,4 +1,3 @@
-
 package gameproject.view;
 
 import gameproject.controller.GameController;
