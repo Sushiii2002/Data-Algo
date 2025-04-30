@@ -247,6 +247,80 @@ public class EnhancedStoryView extends JPanel {
     }
     
     /**
+     * Start dynamic dialogue for a specific phase
+     * @param phase The phase number (1-3)
+     */
+    public void startDynamicPhaseDialogue(int phase) {
+        currentPhase = phase;
+
+        // Get the potion types from TimSortVisualization
+        // This requires a reference to the TimSortVisualization instance
+        String leftPotionType = "Fire Resistance"; // Default
+        String rightPotionType = "Strength";       // Default
+
+        // If we have a reference to the TimSortVisualization, get the actual values
+        // timSortViz.getLeftGroupPotionType() and timSortViz.getRightGroupPotionType()
+
+        // Update phase indicators
+        for (int i = 0; i < phaseLabels.length; i++) {
+            if (i == currentPhase) {
+                phaseLabels[i].setForeground(Color.WHITE);
+                phaseLabels[i].setBorder(BorderFactory.createCompoundBorder(
+                    BorderFactory.createMatteBorder(0, 0, 2, 0, Color.WHITE),
+                    BorderFactory.createEmptyBorder(5, 15, 5, 15)
+                ));
+            } else if (i < currentPhase) {
+                // Completed phases
+                phaseLabels[i].setForeground(new Color(200, 200, 200));
+                phaseLabels[i].setBorder(BorderFactory.createEmptyBorder(5, 15, 5, 15));
+            } else {
+                // Future phases
+                phaseLabels[i].setForeground(Color.GRAY);
+                phaseLabels[i].setBorder(BorderFactory.createEmptyBorder(5, 15, 5, 15));
+            }
+        }
+
+        // Show phase indicators
+        phaseIndicatorsPanel.setVisible(true);
+
+        // Get dynamic dialogue for this phase
+        List<NarrativeSystem.DialogueEntry> dialogueSequence = 
+            narrativeSystem.getDynamicDialogue(phase, leftPotionType, rightPotionType);
+
+        // Start the dialogue
+        dialogueManager.startDialogue(dialogueSequence);
+    }
+
+    /**
+     * Show boss battle result with dynamic dialogue
+     */
+    public void showBossBattleResult(boolean success, int bossLevel) {
+        // Get the potion types and selected potion from TimSortVisualization
+        String leftPotionType = "Fire Resistance"; // Default
+        String rightPotionType = "Strength";       // Default
+        String selectedPotion = "Unknown Potion";  // Default
+
+        // If we have a reference to the TimSortVisualization, get the actual values
+
+        // Set the boss battle outcome in narrative system with dynamic details
+        narrativeSystem.setBossBattleOutcome(success, bossLevel, selectedPotion);
+
+        // Get appropriate dialogue sequence - now with dynamic content
+        String dialogueKey = success ? "boss" + bossLevel + "_success" : "boss" + bossLevel + "_failure";
+        List<NarrativeSystem.DialogueEntry> battleDialogues = 
+            narrativeSystem.getDialogueSequence(dialogueKey);
+
+        // Start the dialogue
+        dialogueManager.startDialogue(battleDialogues);
+    }
+
+    
+    
+    
+    
+    
+    
+    /**
      * Complete transition to next phase after fade out
      */
     private void transitionToNextPhase() {
@@ -325,19 +399,6 @@ public class EnhancedStoryView extends JPanel {
         List<NarrativeSystem.DialogueEntry> dialogueSequence = 
             narrativeSystem.getDialogueSequence(dialogueKey);
         dialogueManager.startDialogue(dialogueSequence);
-    }
-    
-    /**
-     * Show boss battle dialogue
-     */
-    public void showBossBattleResult(boolean success, int bossLevel) {
-        // Set the boss battle outcome in narrative system
-        narrativeSystem.setBossBattleOutcome(success, bossLevel);
-        
-        // Get and display the battle result dialogue
-        List<NarrativeSystem.DialogueEntry> battleDialogues = 
-            narrativeSystem.getNextDialogueSequence();
-        dialogueManager.startDialogue(battleDialogues);
     }
     
     @Override

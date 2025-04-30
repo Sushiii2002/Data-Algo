@@ -249,6 +249,131 @@ public class NarrativeSystem {
         }
     }
     
+    
+    
+    /**
+    * Get dynamic dialogue for a specific phase based on player choices
+    * @param phase The current phase (1, 2, or 3)
+    * @param potionTypes The potion types being worked with (can be null in early phases)
+    * @return List of DialogueEntry objects with dynamic content
+    */
+    public List<DialogueEntry> getDynamicDialogue(int phase, String leftPotionType, String rightPotionType) {
+        List<DialogueEntry> dialogueSequence = new ArrayList<>();
+
+        // Phase 1 - Eye of Pattern
+        if (phase == 1) {
+            dialogueSequence.add(new DialogueEntry("MasterOrdin", 
+                "The Eye of Pattern allows you to see natural order within chaos. Every ingredient has an intrinsic value that connects it to others. Look for patterns of ingredients.", 
+                "instructing"));
+            dialogueSequence.add(new DialogueEntry("Runa", 
+                "I sense Flameclaw approaching our village! His fiery breath burns everything in its path! You'll need ingredients that can counteract fire.", 
+                "excited"));
+            dialogueSequence.add(new DialogueEntry("MasterOrdin", 
+                "Select ingredients that naturally flow together in sequence. The patterns you recognize will become the foundation of your potion.", 
+                "instructing"));
+        }
+        // Phase 2 - Hand of Balance
+        else if (phase == 2) {
+            // Check what ingredients were selected in Phase 1
+            String recommendedPotion = "Fire Resistance"; // Default
+
+            dialogueSequence.add(new DialogueEntry("MasterOrdin", 
+                "The Hand of Balance teaches us that small groups must be perfectly arranged before they can be unified. Sort your ingredients carefully.",
+                "instructing"));
+
+            dialogueSequence.add(new DialogueEntry("MerchantBalz", 
+                "Ah, I see you've gathered ingredients for potions. Sort them well - the order matters greatly for effective brewing.",
+                "thoughtful"));
+
+            dialogueSequence.add(new DialogueEntry("MasterOrdin", 
+                "Listen to Balz, Tima. Proper sorting of ingredients is crucial for potion effectiveness.",
+                "instructing"));
+        }
+        // Phase 3 - Mind of Unity
+        else if (phase == 3) {
+            // Add dynamic dialogue based on the potion types identified in Phase 2
+            dialogueSequence.add(new DialogueEntry("MasterOrdin", 
+                "The Mind of Unity allows you to bring separate elements together into a greater whole. You must now choose which potion to craft.", 
+                "instructing"));
+
+            // Left potion type dialogue
+            if (leftPotionType.equals("Fire Resistance")) {
+                dialogueSequence.add(new DialogueEntry("ScholarMerion", 
+                    "This " + leftPotionType + " potion would protect against fire and heat - quite useful against flame-based threats.", 
+                    "analyzing"));
+            } 
+            else if (leftPotionType.equals("Cold Resistance")) {
+                dialogueSequence.add(new DialogueEntry("ScholarMerion", 
+                    "This " + leftPotionType + " potion would shield against ice and frost - effective against cold-based threats.", 
+                    "analyzing"));
+            }
+            else if (leftPotionType.equals("Strength")) {
+                dialogueSequence.add(new DialogueEntry("ScholarMerion", 
+                    "This " + leftPotionType + " potion would enhance physical power, but remember that raw strength isn't always the answer.", 
+                    "analyzing"));
+            }
+            else if (leftPotionType.equals("Dexterity")) {
+                dialogueSequence.add(new DialogueEntry("ScholarMerion", 
+                    "This " + leftPotionType + " potion would improve agility and reflexes - helpful for avoiding attacks but not stopping them.", 
+                    "analyzing"));
+            }
+
+            // Right potion type dialogue
+            if (rightPotionType.equals("Fire Resistance")) {
+                dialogueSequence.add(new DialogueEntry("Runa", 
+                    "A " + rightPotionType + " potion would be very effective against a creature of flame.", 
+                    "suggesting"));
+            } 
+            else if (rightPotionType.equals("Cold Resistance")) {
+                dialogueSequence.add(new DialogueEntry("Runa", 
+                    "A " + rightPotionType + " potion would be ideal against ice creatures, but less effective against fire.", 
+                    "suggesting"));
+            }
+            else if (rightPotionType.equals("Strength")) {
+                dialogueSequence.add(new DialogueEntry("Runa", 
+                    "A " + rightPotionType + " potion gives raw power, but remember that some elements cannot be overcome by strength alone.", 
+                    "suggesting"));
+            }
+            else if (rightPotionType.equals("Dexterity")) {
+                dialogueSequence.add(new DialogueEntry("Runa", 
+                    "A " + rightPotionType + " potion helps evade danger but doesn't protect against the elements directly.", 
+                    "suggesting"));
+            }
+
+            // Add a hint about Flameclaw specifically
+            dialogueSequence.add(new DialogueEntry("MasterOrdin", 
+                "Flameclaw's fire is intense. Consider which potion would best protect against his flames.", 
+                "guiding"));
+        }
+
+        return dialogueSequence;
+    }
+
+    /**
+     * Get dynamic hints based on the current phase and identified potion types
+     */
+    public String getDynamicHint(int phase, String leftPotionType, String rightPotionType) {
+        switch(phase) {
+            case 1:
+                return "Look for ingredients with similar properties. Fire ingredients are red, Cold are blue, Strength are green, and Dexterity are yellow.";
+            case 2:
+                return "Sort each group from lowest to highest value. The order is crucial for potion effectiveness.";
+            case 3:
+                // Provide hint based on the potions identified
+                if (leftPotionType.equals("Fire Resistance") || rightPotionType.equals("Fire Resistance")) {
+                    return "Against Flameclaw's fire, direct protection is more effective than enhanced abilities. Consider what would shield you from flames.";
+                } else {
+                    return "Remember that Flameclaw is a fire creature. Which potion would best counteract fire?";
+                }
+            default:
+                return "Observe the natural patterns in the ingredients and follow the guidance of the characters.";
+        }
+    }
+    
+    
+    
+    
+    
     /**
      * Get current algorithm phase
      */
@@ -257,16 +382,58 @@ public class NarrativeSystem {
     }
     
     /**
-     * Set the outcome of a boss battle
-     */
-    public void setBossBattleOutcome(boolean success, int bossLevel) {
+    * Set the outcome of a boss battle with dynamic potion information
+    * @param success Whether the battle was successful
+    * @param bossLevel Which boss (1-3)
+    * @param selectedPotion The potion the player selected
+    */
+    public void setBossBattleOutcome(boolean success, int bossLevel, String selectedPotion) {
+        // Get boss name based on level
+        String bossName = "Unknown";
         if (bossLevel == 1) {
-            currentAct = success ? "boss1_success" : "boss1_failure";
+            bossName = "Flameclaw";
         } else if (bossLevel == 2) {
-            currentAct = success ? "boss2_success" : "boss2_failure";
+            bossName = "Toxitar";
         } else if (bossLevel == 3) {
-            currentAct = success ? "boss3_success" : "boss3_failure";
+            bossName = "LordChaosa";
         }
+
+        // Create dynamic dialogue based on the outcome and selected potion
+        List<DialogueEntry> battleDialogues = new ArrayList<>();
+
+        if (bossLevel == 1) { // Flameclaw
+            if (success) {
+                // Fire Resistance was used successfully
+                battleDialogues.add(new DialogueEntry("Flameclaw", "BURN! ALL WILL BURN!", "roaring"));
+                battleDialogues.add(new DialogueEntry("Tima", "Not today, creature of chaos!", "determined"));
+                battleDialogues.add(new DialogueEntry("Flameclaw", "IMPOSSIBLE! MY FLAMES DO NOTHING!", "confused"));
+                battleDialogues.add(new DialogueEntry("Tima", "The " + selectedPotion + " protects me from your fire!", "confident"));
+                battleDialogues.add(new DialogueEntry("MasterOrdin", "Excellent choice with the " + selectedPotion + "! Fire cannot harm one protected by this potion.", "praising"));
+            } else {
+                // Wrong potion was selected
+                battleDialogues.add(new DialogueEntry("Flameclaw", "BURN! ALL WILL BURN!", "roaring"));
+                battleDialogues.add(new DialogueEntry("Tima", "Not today, creature of chaos!", "determined"));
+
+                if (selectedPotion.contains("Strength")) {
+                    battleDialogues.add(new DialogueEntry("Flameclaw", "STRENGTH MEANS NOTHING AGAINST FIRE!", "triumphant"));
+                } else if (selectedPotion.contains("Dexterity")) {
+                    battleDialogues.add(new DialogueEntry("Flameclaw", "YOU CANNOT OUTRUN THE FLAMES!", "triumphant"));
+                } else if (selectedPotion.contains("Cold")) {
+                    battleDialogues.add(new DialogueEntry("Flameclaw", "YOUR COLD MAGIC IS TOO WEAK AGAINST MY INFERNO!", "triumphant"));
+                } else {
+                    battleDialogues.add(new DialogueEntry("Flameclaw", "YOUR POTION IS USELESS AGAINST ME!", "triumphant"));
+                }
+
+                battleDialogues.add(new DialogueEntry("MasterOrdin", "Retreat! We must try again with a different approach! The " + selectedPotion + " wasn't effective.", "protecting"));
+            }
+        } else if (bossLevel == 2) { // Toxitar
+            // Similar dynamic dialogue for Toxitar
+        } else if (bossLevel == 3) { // Lord Chaosa
+            // Similar dynamic dialogue for Lord Chaosa
+        }
+
+        // Store the dialogue for use later
+        dialogueSequences.put(success ? "boss" + bossLevel + "_success" : "boss" + bossLevel + "_failure", battleDialogues);
     }
     
     /**

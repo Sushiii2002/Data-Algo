@@ -202,14 +202,15 @@ public class GameController {
     public void returnToStoryMode() {
         model.setCurrentState(GameState.STORY_MODE);
         cardLayout.show(mainPanel, "enhancedStory");
-        
-        // Get current phase for dialogue key
+
+        // Get current phase and potion types
         int currentPhase = model.getCurrentLevel();
-        String dialogueKey = "phase" + currentPhase + "_end";
-        
-        // Show appropriate dialogue
-        enhancedStoryView.startPhaseDialogue(currentPhase - 1, dialogueKey);
-        
+        String leftPotionType = model.getLeftPotionType();
+        String rightPotionType = model.getRightPotionType();
+
+        // Start dynamic dialogue based on phase and potion types
+        enhancedStoryView.startDynamicPhaseDialogue(currentPhase);
+
         // Increment current level to prepare for next phase
         model.setCurrentLevel(currentPhase + 1);
     }
@@ -220,10 +221,13 @@ public class GameController {
     public void onBossBattleComplete(boolean success, int bossLevel) {
         model.setCurrentState(GameState.STORY_MODE);
         cardLayout.show(mainPanel, "enhancedStory");
-        
-        // Show appropriate dialogue based on outcome
+
+        // Get selected potion from the model
+        String selectedPotion = model.getSelectedPotion();
+
+        // Show appropriate dialogue based on outcome with dynamic content
         enhancedStoryView.showBossBattleResult(success, bossLevel);
-        
+
         // Record progress if successful
         if (success) {
             progressTracker.completeLevel("Beginner", bossLevel, 3);
@@ -371,6 +375,28 @@ public class GameController {
             System.exit(0);
         }
     }
+    
+    
+    
+    /**
+    * Method to handle phase transitions with dynamic dialogue in GameController
+    */
+    public void onPhaseAdvance(int phase, String leftPotionType, String rightPotionType) {
+        System.out.println("DEBUG: Phase advanced to " + phase);
+        System.out.println("DEBUG: Left potion type: " + leftPotionType);
+        System.out.println("DEBUG: Right potion type: " + rightPotionType);
+
+        // Store potion types in the model for later use
+        // This allows sharing this information between components
+        if (model != null) {
+            model.setLeftPotionType(leftPotionType);
+            model.setRightPotionType(rightPotionType);
+        }
+
+        // We can use these when returning to story mode to show dynamic dialogue
+    }
+    
+    
 }
 
 

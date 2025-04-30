@@ -77,6 +77,10 @@ public class TimSortVisualization extends JPanel {
     private static final int INGREDIENT_SIZE = 100;
     private static final int GROUP_SIZE = 5; // Size of each group in phase 2
     
+    // Store the potion types identified in Phase 2 - to be used in Phase 3
+    private String leftGroupPotionType = "Fire Resistance";  // Default value
+    private String rightGroupPotionType = "Strength";    
+    
     /**
      * Constructor - Initialize the TimSort visualization
      */
@@ -577,72 +581,7 @@ public class TimSortVisualization extends JPanel {
     }
 
     
-    
-    
-    
-    
-    
-    
-    
-    
-    /**
-     * Add a run of ingredients with sequential values
-     */
-    private void addIngredientsRun(int startValue, int endValue, String color) {
-        for (int value = startValue; value <= endValue; value++) {
-            IngredientItem ingredient = new IngredientItem(value, color);
-            allIngredients.add(ingredient);
-        }
-    }
-    
-    /**
-     * Add random ingredients to fill the grid
-     */
-    private void addRandomIngredients(int count) {
-        String[] colors = {"blue", "red", "green", "yellow", "purple"};
-        
-        for (int i = 0; i < count; i++) {
-            int value = 13 + i;
-            String color = colors[(int)(Math.random() * colors.length)];
-            IngredientItem ingredient = new IngredientItem(value, color);
-            allIngredients.add(ingredient);
-        }
-    }
-    
-    /**
-     * Position ingredients randomly in the grid
-     */
-    private void positionIngredientsRandomly() {
-        // Shuffle the ingredients list for random placement
-        Collections.shuffle(allIngredients);
-
-        for (int i = 0; i < allIngredients.size(); i++) {
-            IngredientItem ingredient = allIngredients.get(i);
-
-            // Calculate grid positions 
-            int row = i / GRID_COLS;
-            int col = i % GRID_COLS;
-
-            // Position in grid
-            ingredient.setBounds(
-                col * INGREDIENT_SIZE,
-                row * INGREDIENT_SIZE,
-                INGREDIENT_SIZE,
-                INGREDIENT_SIZE
-            );
-
-            // Add to grid panel
-            gridPanel.add(ingredient);
-
-            // Add click listener
-            ingredient.addMouseListener(new MouseAdapter() {
-                @Override
-                public void mouseClicked(MouseEvent e) {
-                    handleIngredientClick(ingredient);
-                }
-            });
-        }
-    }
+  
     
     /**
      * Handle ingredient click based on current phase
@@ -766,22 +705,28 @@ public class TimSortVisualization extends JPanel {
     }
     
     /**
-     * Select a potion group in Phase 3
-     */
+    * Select a potion group in Phase 3
+    */
     private void selectPotionGroup(int groupId) {
+        // Debug which potion is being selected
+        System.out.println("DEBUG: Selecting potion group " + groupId);
+
+        // Use potion types from Phase 2 to set the craftedPotion variable
         if (groupId == 1) {
-            craftedPotion = "Fire Resistance Potion";
+            craftedPotion = leftGroupPotionType + " Potion";
+            System.out.println("DEBUG: Selected left potion: " + craftedPotion);
         } else {
-            craftedPotion = "Strength Potion";
+            craftedPotion = rightGroupPotionType + " Potion";
+            System.out.println("DEBUG: Selected right potion: " + craftedPotion);
         }
-        
+
         // Show confirmation
         JOptionPane.showMessageDialog(this,
             "You've selected the " + craftedPotion + "!",
             "Potion Selection",
             JOptionPane.INFORMATION_MESSAGE
         );
-        
+
         // Enable check button
         checkButton.setEnabled(true);
         phaseCompleted = true;
@@ -805,8 +750,7 @@ public class TimSortVisualization extends JPanel {
     
     
     /**
-    * Animate the potion options appearing
-    * This is a new method to add to your class
+    * Animate the potion options appearing without any backgrounds or overlays
     */
     private void animatePotionOptions() {
         // First, disable ability button to prevent multiple animations
@@ -868,11 +812,7 @@ public class TimSortVisualization extends JPanel {
                 // Update all components
                 for (JComponent comp : elementsToAnimate) {
                     if (comp != null) {
-                        // Adjust transparency for JPanel components
-                        if (comp instanceof JPanel) {
-                            float alpha = easedProgress;
-                            ((JPanel) comp).setBackground(new Color(0f, 0f, 0f, alpha * 0.5f));
-                        }
+                        // NO BACKGROUND COLORS OR OVERLAYS ARE APPLIED
 
                         // Get original bounds
                         Rectangle origBounds = originalBoundsMap.get(comp);
@@ -908,11 +848,6 @@ public class TimSortVisualization extends JPanel {
                         Rectangle origBounds = originalBoundsMap.get(comp);
                         if (origBounds != null) {
                             comp.setBounds(origBounds);
-                        }
-
-                        // Reset any transparency settings for JPanels
-                        if (comp instanceof JPanel) {
-                            ((JPanel) comp).setBackground(new Color(0, 0, 0, 0));
                         }
                     }
 
@@ -1323,8 +1258,8 @@ public class TimSortVisualization extends JPanel {
         }
 
         // Determine potion types based on the ingredients in each group
-        String leftPotionType = determinePotionType(leftGroup);
-        String rightPotionType = determinePotionType(rightGroup);
+        leftGroupPotionType = determinePotionType(leftGroup);
+        rightGroupPotionType = determinePotionType(rightGroup);
 
         // Clear any existing headers
         for (Component c : gridPanel.getComponents()) {
@@ -1333,17 +1268,17 @@ public class TimSortVisualization extends JPanel {
             }
         }
 
-        // Create headers
-        JLabel topHeader = new JLabel(leftPotionType + " Ingredients", JLabel.CENTER);
+        // Create headers with potion types
+        JLabel topHeader = new JLabel(leftGroupPotionType + " Ingredients", JLabel.CENTER);
         topHeader.setFont(new Font("SansSerif", Font.BOLD, 16));
-        topHeader.setForeground(getPotionColor(leftPotionType));
+        topHeader.setForeground(getColorForPotionType(leftGroupPotionType));
         topHeader.setBounds(0, 180, GameConstants.WINDOW_WIDTH, 30);
         topHeader.setVisible(true);
         gridPanel.add(topHeader);
 
-        JLabel bottomHeader = new JLabel(rightPotionType + " Ingredients", JLabel.CENTER);
+        JLabel bottomHeader = new JLabel(rightGroupPotionType + " Ingredients", JLabel.CENTER);
         bottomHeader.setFont(new Font("SansSerif", Font.BOLD, 16));
-        bottomHeader.setForeground(getPotionColor(rightPotionType));
+        bottomHeader.setForeground(getColorForPotionType(rightGroupPotionType));
         bottomHeader.setBounds(0, 350, GameConstants.WINDOW_WIDTH, 30);
         bottomHeader.setVisible(true);
         gridPanel.add(bottomHeader);
@@ -1471,120 +1406,174 @@ public class TimSortVisualization extends JPanel {
     
     
     /**
-    * Display potion options in Phase 3
+    * Display potion options in Phase 3 based on potions identified in Phase 2
     */
     private void displayPotionOptions() {
-    // Clear the grid panel
-    gridPanel.removeAll();
+        // Clear the grid panel
+        gridPanel.removeAll();
 
-    // Create potion option labels - initially invisible
-    IngredientItem frostPotion = new IngredientItem(1, "blue");
-    frostPotion.setPotionType("Fire Resistance Potion");
-    frostPotion.setGroupLabel(true);
-    frostPotion.setLocation(GameConstants.WINDOW_WIDTH / 4 - INGREDIENT_SIZE, 250);
-    frostPotion.setSize(INGREDIENT_SIZE * 2, INGREDIENT_SIZE * 2);
-    frostPotion.setVisible(false); // Initially invisible
-    gridPanel.add(frostPotion);
+        // Get potion types from Phase 2 - use stored values from leftGroupPotionType and rightGroupPotionType
+        String potion1Type = leftGroupPotionType;  // From Phase 2 left group
+        String potion2Type = rightGroupPotionType; // From Phase 2 right group
 
-    IngredientItem strengthPotion = new IngredientItem(2, "red");
-    strengthPotion.setPotionType("Strength Potion");
-    strengthPotion.setGroupLabel(true);
-    strengthPotion.setLocation((GameConstants.WINDOW_WIDTH * 3) / 4 - INGREDIENT_SIZE, 250);
-    strengthPotion.setSize(INGREDIENT_SIZE * 2, INGREDIENT_SIZE * 2);
-    strengthPotion.setVisible(false); // Initially invisible
-    gridPanel.add(strengthPotion);
+        // Create invisible clickable areas for the potions
+        IngredientItem potion1ClickArea = new IngredientItem(1, "transparent");
+        potion1ClickArea.setPotionType("");
+        potion1ClickArea.setLocation(GameConstants.WINDOW_WIDTH / 4 - INGREDIENT_SIZE, 250);
+        potion1ClickArea.setSize(INGREDIENT_SIZE * 2, INGREDIENT_SIZE * 2);
+        potion1ClickArea.setVisible(false);
+        gridPanel.add(potion1ClickArea);
 
-    // Load and display potion images with labels - initially invisible
-    ImageIcon frostPotionImg = resourceManager.getImage("/gameproject/resources/potions/fire_resistance_potion.png");
-    ImageIcon strengthPotionImg = resourceManager.getImage("/gameproject/resources/potions/strength_potion.png");
+        IngredientItem potion2ClickArea = new IngredientItem(2, "transparent");
+        potion2ClickArea.setPotionType("");
+        potion2ClickArea.setLocation((GameConstants.WINDOW_WIDTH * 3) / 4 - INGREDIENT_SIZE, 250);
+        potion2ClickArea.setSize(INGREDIENT_SIZE * 2, INGREDIENT_SIZE * 2);
+        potion2ClickArea.setVisible(false);
+        gridPanel.add(potion2ClickArea);
 
-    JLabel frostImgLabel = null;
-    if (frostPotionImg != null) {
-        frostImgLabel = new JLabel(new ImageIcon(frostPotionImg.getImage().getScaledInstance(120, 120, Image.SCALE_SMOOTH)));
-        frostImgLabel.setBounds(GameConstants.WINDOW_WIDTH / 4 - 60, 180, 120, 120);
-        frostImgLabel.setVisible(false); // Initially invisible
-        gridPanel.add(frostImgLabel);
-    }
+        // Load and display potion images dynamically based on potion types from Phase 2
+        // Determine image paths based on potion types
+        String potion1ImagePath = "/gameproject/resources/potions/" + 
+                                 potion1Type.toLowerCase().replace(" ", "_") + "_potion.png";
+        String potion2ImagePath = "/gameproject/resources/potions/" + 
+                                 potion2Type.toLowerCase().replace(" ", "_") + "_potion.png";
 
-    JLabel strengthImgLabel = null;
-    if (strengthPotionImg != null) {
-        strengthImgLabel = new JLabel(new ImageIcon(strengthPotionImg.getImage().getScaledInstance(120, 120, Image.SCALE_SMOOTH)));
-        strengthImgLabel.setBounds((GameConstants.WINDOW_WIDTH * 3) / 4 - 60, 180, 120, 120);
-        strengthImgLabel.setVisible(false); // Initially invisible
-        gridPanel.add(strengthImgLabel);
-    }
+        ImageIcon potion1Img = resourceManager.getImage(potion1ImagePath);
+        ImageIcon potion2Img = resourceManager.getImage(potion2ImagePath);
 
-    // Add descriptions with better styling - initially invisible
-    JLabel frostLabel = new JLabel("Fire Resistance Potion", JLabel.CENTER);
-    frostLabel.setFont(new Font("SansSerif", Font.BOLD, 16));
-    frostLabel.setForeground(Color.CYAN);
-    frostLabel.setBounds(GameConstants.WINDOW_WIDTH / 4 - 150, 400, 300, 30);
-    frostLabel.setVisible(false); // Initially invisible
-    gridPanel.add(frostLabel);
+        // Increased potion image size (50px larger than original)
+        int potionImageSize = 170; // Original 120px + 50px
 
-    JLabel strengthLabel = new JLabel("Strength Potion", JLabel.CENTER);
-    strengthLabel.setFont(new Font("SansSerif", Font.BOLD, 16));
-    strengthLabel.setForeground(Color.RED);
-    strengthLabel.setBounds((GameConstants.WINDOW_WIDTH * 3) / 4 - 150, 400, 300, 30);
-    strengthLabel.setVisible(false); // Initially invisible
-    gridPanel.add(strengthLabel);
-
-    // Add potion descriptions - initially invisible
-    JTextArea frostDesc = new JTextArea("Protects against fire attacks and extreme heat.");
-    frostDesc.setEditable(false);
-    frostDesc.setWrapStyleWord(true);
-    frostDesc.setLineWrap(true);
-    frostDesc.setOpaque(false);
-    frostDesc.setForeground(Color.WHITE);
-    frostDesc.setFont(new Font("SansSerif", Font.PLAIN, 14));
-    frostDesc.setBounds(GameConstants.WINDOW_WIDTH / 4 - 150, 430, 300, 60);
-    frostDesc.setVisible(false); // Initially invisible
-    gridPanel.add(frostDesc);
-
-    JTextArea strengthDesc = new JTextArea("Enhances physical strength and combat abilities.");
-    strengthDesc.setEditable(false);
-    strengthDesc.setWrapStyleWord(true);
-    strengthDesc.setLineWrap(true);
-    strengthDesc.setOpaque(false);
-    strengthDesc.setForeground(Color.WHITE);
-    strengthDesc.setFont(new Font("SansSerif", Font.PLAIN, 14));
-    strengthDesc.setBounds((GameConstants.WINDOW_WIDTH * 3) / 4 - 150, 430, 300, 60);
-    strengthDesc.setVisible(false); // Initially invisible
-    gridPanel.add(strengthDesc);
-
-    // Update instruction
-    instructionLabel.setText("Use your 'Mind of Unity' to choose which potion to craft. Click the button below.");
-
-    // Enable ability button
-    abilityButton.setText("Use Mind of Unity");
-    abilityButton.setEnabled(true);
-
-    // Disable check button until a potion is selected
-    checkButton.setEnabled(false);
-
-    // Add click listeners to potions for selection
-    frostPotion.addMouseListener(new MouseAdapter() {
-        @Override
-        public void mouseClicked(MouseEvent e) {
-            if (frostPotion.isVisible()) {
-                selectPotionGroup(1); // Fire Resistance Potion
-            }
+        // Potion 1 image (left side)
+        JLabel potion1ImgLabel = null;
+        if (potion1Img != null) {
+            potion1ImgLabel = new JLabel(new ImageIcon(potion1Img.getImage().getScaledInstance(potionImageSize, potionImageSize, Image.SCALE_SMOOTH)));
+            // Adjust position to keep centered with larger size
+            potion1ImgLabel.setBounds(
+                GameConstants.WINDOW_WIDTH / 4 - potionImageSize/2, 
+                180 - (potionImageSize - 120)/2, 
+                potionImageSize, 
+                potionImageSize
+            );
+            potion1ImgLabel.setVisible(false);
+            gridPanel.add(potion1ImgLabel);
         }
-    });
-    
-    strengthPotion.addMouseListener(new MouseAdapter() {
-        @Override
-        public void mouseClicked(MouseEvent e) {
-            if (strengthPotion.isVisible()) {
-                selectPotionGroup(2); // Strength Potion
-            }
-        }
-    });
 
-    // Update UI
-    gridPanel.revalidate();
-    gridPanel.repaint();
-}
+        // Potion 2 image (right side)
+        JLabel potion2ImgLabel = null;
+        if (potion2Img != null) {
+            potion2ImgLabel = new JLabel(new ImageIcon(potion2Img.getImage().getScaledInstance(potionImageSize, potionImageSize, Image.SCALE_SMOOTH)));
+            // Adjust position to keep centered with larger size
+            potion2ImgLabel.setBounds(
+                (GameConstants.WINDOW_WIDTH * 3) / 4 - potionImageSize/2, 
+                180 - (potionImageSize - 120)/2, 
+                potionImageSize, 
+                potionImageSize
+            );
+            potion2ImgLabel.setVisible(false);
+            gridPanel.add(potion2ImgLabel);
+        }
+
+        // Add potion title labels with correct colors from Phase 2
+        JLabel potion1Label = new JLabel(potion1Type + " Potion", JLabel.CENTER);
+        potion1Label.setFont(new Font("SansSerif", Font.BOLD, 16));
+        potion1Label.setForeground(getColorForPotionType(potion1Type)); // Use dynamic color
+        potion1Label.setBounds(GameConstants.WINDOW_WIDTH / 4 - 150, 350, 300, 30);
+        potion1Label.setVisible(false);
+        gridPanel.add(potion1Label);
+
+        JLabel potion2Label = new JLabel(potion2Type + " Potion", JLabel.CENTER);
+        potion2Label.setFont(new Font("SansSerif", Font.BOLD, 16));
+        potion2Label.setForeground(getColorForPotionType(potion2Type)); // Use dynamic color
+        potion2Label.setBounds((GameConstants.WINDOW_WIDTH * 3) / 4 - 150, 350, 300, 30);
+        potion2Label.setVisible(false);
+        gridPanel.add(potion2Label);
+
+        // Add potion descriptions - based on potion type
+        String potion1Description = getPotionDescription(potion1Type);
+        JTextArea potion1Desc = new JTextArea(potion1Description);
+        potion1Desc.setEditable(false);
+        potion1Desc.setWrapStyleWord(true);
+        potion1Desc.setLineWrap(true);
+        potion1Desc.setOpaque(false);
+        potion1Desc.setForeground(Color.WHITE);
+        potion1Desc.setFont(new Font("SansSerif", Font.PLAIN, 14));
+        potion1Desc.setBounds(GameConstants.WINDOW_WIDTH / 4 - 150, 380, 300, 60);
+        potion1Desc.setVisible(false);
+        gridPanel.add(potion1Desc);
+
+        String potion2Description = getPotionDescription(potion2Type);
+        JTextArea potion2Desc = new JTextArea(potion2Description);
+        potion2Desc.setEditable(false);
+        potion2Desc.setWrapStyleWord(true);
+        potion2Desc.setLineWrap(true);
+        potion2Desc.setOpaque(false);
+        potion2Desc.setForeground(Color.WHITE);
+        potion2Desc.setFont(new Font("SansSerif", Font.PLAIN, 14));
+        potion2Desc.setBounds((GameConstants.WINDOW_WIDTH * 3) / 4 - 150, 380, 300, 60);
+        potion2Desc.setVisible(false);
+        gridPanel.add(potion2Desc);
+
+        // Update instruction
+        instructionLabel.setText("Use your 'Mind of Unity' to choose which potion to craft. Click the button below.");
+
+        // Enable ability button
+        abilityButton.setText("Use Mind of Unity");
+        abilityButton.setEnabled(true);
+
+        // Disable check button until a potion is selected
+        checkButton.setEnabled(false);
+
+        // Add click listeners to potions for selection
+        potion1ClickArea.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                if (potion1ClickArea.isVisible()) {
+                    selectPotionGroup(1); // First potion
+                }
+            }
+        });
+
+        potion2ClickArea.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                if (potion2ClickArea.isVisible()) {
+                    selectPotionGroup(2); // Second potion
+                }
+            }
+        });
+
+        // Make the potion images also clickable
+        if (potion1ImgLabel != null) {
+            final JLabel finalPotion1ImgLabel = potion1ImgLabel; // Create final reference
+            potion1ImgLabel.addMouseListener(new MouseAdapter() {
+                @Override
+                public void mouseClicked(MouseEvent e) {
+                    if (finalPotion1ImgLabel.isVisible()) {
+                        selectPotionGroup(1); // First potion
+                    }
+                }
+            });
+            potion1ImgLabel.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        }
+
+        if (potion2ImgLabel != null) {
+            final JLabel finalPotion2ImgLabel = potion2ImgLabel; // Create final reference
+            potion2ImgLabel.addMouseListener(new MouseAdapter() {
+                @Override
+                public void mouseClicked(MouseEvent e) {
+                    if (finalPotion2ImgLabel.isVisible()) {
+                        selectPotionGroup(2); // Second potion
+                    }
+                }
+            });
+            potion2ImgLabel.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        }
+
+        // Update UI
+        gridPanel.revalidate();
+        gridPanel.repaint();
+    }
     
     /**
     * Modified check phase completion to account for automatic sorting
@@ -1622,24 +1611,13 @@ public class TimSortVisualization extends JPanel {
             boolean leftSorted = isGroupSorted(leftGroup);
             boolean rightSorted = isGroupSorted(rightGroup);
 
-            // Important: Debug output to console to help diagnose issues
+            // Debug output
             System.out.println("Checking Phase 2 completion:");
             System.out.println("Left group sorted: " + leftSorted + ", flag: " + isLeftGroupSorted);
             System.out.println("Right group sorted: " + rightSorted + ", flag: " + isRightGroupSorted);
             System.out.println("Left group size: " + leftGroup.size() + ", Right group size: " + rightGroup.size());
-
-            // Dump values to console for debugging
-            System.out.print("Left group values: ");
-            for (IngredientItem item : leftGroup) {
-                System.out.print(item.getValue() + " ");
-            }
-            System.out.println();
-
-            System.out.print("Right group values: ");
-            for (IngredientItem item : rightGroup) {
-                System.out.print(item.getValue() + " ");
-            }
-            System.out.println();
+            System.out.println("Left group potion type: " + leftGroupPotionType);
+            System.out.println("Right group potion type: " + rightGroupPotionType);
 
             // Now check if the ability has been used AND the groups are sorted
             if (isLeftGroupSorted && isRightGroupSorted && leftSorted && rightSorted) {
@@ -1676,8 +1654,12 @@ public class TimSortVisualization extends JPanel {
                 isRightGroupSorted = false;
             }
         } else if (currentPhase == 3) {
-            // Phase 3 code unchanged
+            // Phase 3 - now using the dynamic dialogue
             if (craftedPotion != null) {
+                System.out.println("DEBUG: Starting boss battle with crafted potion: " + craftedPotion);
+                System.out.println("DEBUG: Left potion type: " + leftGroupPotionType);
+                System.out.println("DEBUG: Right potion type: " + rightGroupPotionType);
+
                 startBossBattle("Flameclaw");
             }
         }
@@ -1688,8 +1670,14 @@ public class TimSortVisualization extends JPanel {
     
     /**
     * Display boss battle and determine the outcome after animation
+    * WITH DYNAMIC MESSAGES based on the actual selected potion
     */
     private void startBossBattle(String bossName) {
+        // Add debug logging
+        System.out.println("DEBUG: Starting boss battle against " + bossName);
+        System.out.println("DEBUG: Selected potion: " + craftedPotion);
+        System.out.println("DEBUG: Effective potions: [" + leftGroupPotionType + " Potion, " + rightGroupPotionType + " Potion]");
+
         // Create semi-transparent overlay
         JPanel battleOverlay = new JPanel() {
             @Override
@@ -1738,12 +1726,31 @@ public class TimSortVisualization extends JPanel {
         Timer battleTimer = new Timer(5000, e -> {
             remove(battleOverlay);
 
-            // Determine the battle outcome
-            boolean correctChoice = "Fire Resistance Potion".equals(craftedPotion);
+            // Extract the actual potion type name from the craftedPotion string (remove " Potion" suffix)
+            String selectedPotionType = craftedPotion;
+            if (selectedPotionType.endsWith(" Potion")) {
+                selectedPotionType = selectedPotionType.substring(0, selectedPotionType.length() - 7);
+            }
+            System.out.println("DEBUG: Extracted potion type: " + selectedPotionType);
+
+            // Determine the correct potion to use against this boss
+            boolean correctChoice = false;
+
+            // For Flameclaw, the correct choice is Fire Resistance
+            if (bossName.equals("Flameclaw")) {
+                correctChoice = selectedPotionType.equals("Fire Resistance");
+                System.out.println("DEBUG: Correct choice for Flameclaw is Fire Resistance, selected: " + selectedPotionType);
+            }
+            // For Toxitar, the correct choice would be something else
+            else if (bossName.equals("Toxitar")) {
+                correctChoice = selectedPotionType.equals("Cold Resistance");
+                System.out.println("DEBUG: Correct choice for Toxitar is Cold Resistance, selected: " + selectedPotionType);
+            }
+            // Add more boss conditions as needed
 
             if (correctChoice) {
                 JOptionPane.showMessageDialog(this,
-                    "Excellent choice! The Fire Resistance Potion protected you from Flameclaw's attacks!",
+                    "Excellent choice! The " + selectedPotionType + " Potion protected you from " + bossName + "'s attacks!",
                     "Success!",
                     JOptionPane.INFORMATION_MESSAGE
                 );
@@ -1752,7 +1759,7 @@ public class TimSortVisualization extends JPanel {
                 controller.onBossBattleComplete(true, 1);
             } else {
                 JOptionPane.showMessageDialog(this,
-                    "Oh no! The Strength Potion wasn't effective against Flameclaw's flames!",
+                    "Oh no! The " + selectedPotionType + " Potion wasn't effective against " + bossName + "'s flames!",
                     "Failure",
                     JOptionPane.WARNING_MESSAGE
                 );
@@ -1880,11 +1887,18 @@ public class TimSortVisualization extends JPanel {
             phaseLabel.setText("Phase 2: The Hand of Balance");
             abilityButton.setText("Use Hand of Balance");
 
+            // Update the controller about the phase change for dynamic dialogue
+            controller.onPhaseAdvance(currentPhase, leftGroupPotionType, rightGroupPotionType);
+
             // IMPORTANT: Use arrangeIngredientsForSorting instead of useAbility
             arrangeIngredientsForSorting();
         } else if (currentPhase == 3) {
             phaseLabel.setText("Phase 3: The Mind of Unity");
             abilityButton.setText("Use Mind of Unity");
+
+            // Update the controller about the phase change for dynamic dialogue
+            controller.onPhaseAdvance(currentPhase, leftGroupPotionType, rightGroupPotionType);
+
             displayPotionOptions();
         } else {
             // Return to story mode after all phases
@@ -2337,7 +2351,7 @@ public class TimSortVisualization extends JPanel {
             // DO NOT call super.paintComponent() to avoid any background drawing
             // This is critical for complete transparency
 
-            Graphics2D g2d = (Graphics2D) g;
+             Graphics2D g2d = (Graphics2D) g;
             g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
             // Only draw the grid box if it's visible AND we're in Phase 1
@@ -2364,8 +2378,8 @@ public class TimSortVisualization extends JPanel {
                 }
             }
 
-            // Draw highlight if applicable
-            if (isHighlighted) {
+            // Draw highlight if applicable - only in Phase 1
+            if (isHighlighted && currentPhase == 1) {
                 g2d.setColor(highlightColor);
                 g2d.fillRoundRect(5, 5, getWidth() - 10, getHeight() - 10, 10, 10);
             }
@@ -2411,31 +2425,26 @@ public class TimSortVisualization extends JPanel {
                 g2d.drawImage(img, x, y, scaledWidth, scaledHeight, this);
             }
 
-            // For group labels (used in Phase 3), draw a colored box with the potion type
+            // For group labels (used in Phase 3), draw just text without any colored box
             if (isGroupLabel) {
-                // Set color based on potion type
+                // MODIFIED: No more colored backgrounds for potion labels
+                // Just draw the potion name text directly
+
+                // Get text color based on potion type (kept for text only)
+                Color textColor = Color.WHITE; // Default white text
                 if (potionType.contains("Fire")) {
-                    g2d.setColor(new Color(255, 80, 80, 180)); // Red for fire
+                    textColor = new Color(255, 80, 80); // Red for fire
                 } else if (potionType.contains("Cold")) {
-                    g2d.setColor(new Color(80, 80, 255, 180)); // Blue for cold
+                    textColor = new Color(80, 80, 255); // Blue for cold
                 } else if (potionType.contains("Strength")) {
-                    g2d.setColor(new Color(255, 140, 0, 180)); // Orange for strength
+                    textColor = new Color(255, 140, 0); // Orange for strength
                 } else if (potionType.contains("Dexterity")) {
-                    g2d.setColor(new Color(80, 200, 80, 180)); // Green for dexterity
-                } else {
-                    g2d.setColor(new Color(200, 200, 200, 180)); // Gray default
+                    textColor = new Color(80, 200, 80); // Green for dexterity
                 }
 
-                // Fill rounded rectangle
-                g2d.fillRoundRect(10, 10, getWidth() - 20, getHeight() - 20, 20, 20);
-
-                // Draw border
-                g2d.setColor(Color.WHITE);
-                g2d.drawRoundRect(10, 10, getWidth() - 20, getHeight() - 20, 20, 20);
-
-                // Draw potion name
+                // Draw potion name with appropriate color
                 g2d.setFont(new Font("SansSerif", Font.BOLD, 14));
-                g2d.setColor(Color.WHITE);
+                g2d.setColor(textColor);
 
                 // Split the potion name into lines if needed
                 FontMetrics fm = g2d.getFontMetrics();
@@ -2490,6 +2499,67 @@ public class TimSortVisualization extends JPanel {
         public boolean isGroupLabel() {
             return isGroupLabel;
         }
+    }
+    
+    
+    
+    
+    
+    // Store the colors for each potion type
+    private Color getColorForPotionType(String potionType) {
+        switch (potionType) {
+            case "Fire Resistance":
+                return new Color(255, 80, 80); // Red
+            case "Cold Resistance":
+                return new Color(80, 80, 255); // Blue
+            case "Strength":
+                return new Color(255, 140, 0); // Orange
+            case "Dexterity":
+                return new Color(0, 200, 0);   // Green
+            default:
+                return Color.WHITE;            // Default color
+        }
+    }
+    
+    
+    /**
+    * Get the description for a specific potion type
+    */
+    private String getPotionDescription(String potionType) {
+        switch (potionType) {
+            case "Fire Resistance":
+                return "Protects against fire attacks and extreme heat.";
+            case "Cold Resistance":
+                return "Protects against ice attacks and freezing temperatures.";
+            case "Strength":
+                return "Enhances physical strength and combat abilities.";
+            case "Dexterity":
+                return "Improves agility, reflexes, and precision.";
+            default:
+                return "A mysterious potion with unknown effects.";
+        }
+    }
+    
+    
+    /**
+    * Get the left group potion type identified in Phase 2
+    */
+    public String getLeftGroupPotionType() {
+        return leftGroupPotionType;
+    }
+
+    /**
+     * Get the right group potion type identified in Phase 2
+     */
+    public String getRightGroupPotionType() {
+        return rightGroupPotionType;
+    }
+
+    /**
+     * Get the crafted potion selected in Phase 3
+     */
+    public String getCraftedPotion() {
+        return craftedPotion;
     }
     
 //end of timsortvisualization class
