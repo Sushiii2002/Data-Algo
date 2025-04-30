@@ -12,7 +12,9 @@ import java.awt.*;
 import java.awt.event.*;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 
 /**
@@ -796,10 +798,139 @@ public class TimSortVisualization extends JPanel {
             // Hand of Balance - Apply automatic sorting
             applyHandOfBalanceAbility();
         } else if (currentPhase == 3) {
-            // Mind of Unity - Display potion options
-            displayPotionOptions();
+            // Mind of Unity - Animate potion options display
+            animatePotionOptions();
         }
     }
+    
+    
+    /**
+    * Animate the potion options appearing
+    * This is a new method to add to your class
+    */
+    private void animatePotionOptions() {
+        // First, disable ability button to prevent multiple animations
+        abilityButton.setEnabled(false);
+
+        // Collect all invisible components (ensure they're all JComponents)
+        List<JComponent> elementsToAnimate = new ArrayList<>();
+        for (Component comp : gridPanel.getComponents()) {
+            if (!comp.isVisible() && comp instanceof JComponent) {
+                elementsToAnimate.add((JComponent)comp);
+
+                // Store original bounds in a map instead of as client properties
+                Rectangle originalBounds = comp.getBounds();
+
+                // Set initial size (50% scale) while keeping center point the same
+                int centerX = originalBounds.x + originalBounds.width/2;
+                int centerY = originalBounds.y + originalBounds.height/2;
+                int initialWidth = originalBounds.width / 2;
+                int initialHeight = originalBounds.height / 2;
+                comp.setBounds(centerX - initialWidth/2, centerY - initialHeight/2, initialWidth, initialHeight);
+
+                // Make component visible
+                comp.setVisible(true);
+            }
+        }
+
+        // Create a map to store original bounds
+        final Map<JComponent, Rectangle> originalBoundsMap = new HashMap<>();
+        for (JComponent comp : elementsToAnimate) {
+            // Calculate original bounds based on the expected full size
+            int currentWidth = comp.getWidth() * 2; // Because we're starting at 50%
+            int currentHeight = comp.getHeight() * 2;
+            int currentX = comp.getX() - currentWidth/4; // Adjust X to maintain center
+            int currentY = comp.getY() - currentHeight/4; // Adjust Y to maintain center
+
+            // Store the calculated full-size bounds
+            originalBoundsMap.put(comp, new Rectangle(currentX, currentY, currentWidth, currentHeight));
+        }
+
+        // Create animation timer
+        final int TOTAL_FRAMES = 50; // 2 seconds @ 25 fps
+        final int[] currentFrame = {0};
+
+        Timer animationTimer = new Timer(40, new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                currentFrame[0]++;
+                float progress = (float) currentFrame[0] / TOTAL_FRAMES;
+
+                // Apply easing function for smooth animation
+                float easedProgress;
+                if (progress < 0.5) {
+                    easedProgress = 4 * progress * progress * progress;
+                } else {
+                    float f = progress - 1;
+                    easedProgress = 1 + 4 * f * f * f;
+                }
+
+                // Update all components
+                for (JComponent comp : elementsToAnimate) {
+                    if (comp != null) {
+                        // Adjust transparency for JPanel components
+                        if (comp instanceof JPanel) {
+                            float alpha = easedProgress;
+                            ((JPanel) comp).setBackground(new Color(0f, 0f, 0f, alpha * 0.5f));
+                        }
+
+                        // Get original bounds
+                        Rectangle origBounds = originalBoundsMap.get(comp);
+                        if (origBounds != null) {
+                            int centerX = origBounds.x + origBounds.width/2;
+                            int centerY = origBounds.y + origBounds.height/2;
+
+                            // Calculate current size (50% to 100%)
+                            float scale = 0.5f + (easedProgress * 0.5f);
+                            int currentWidth = (int)(origBounds.width * scale);
+                            int currentHeight = (int)(origBounds.height * scale);
+
+                            // Position to keep centered during scaling
+                            comp.setBounds(
+                                centerX - currentWidth/2,
+                                centerY - currentHeight/2,
+                                currentWidth,
+                                currentHeight
+                            );
+                        }
+                    }
+                }
+
+                // Repaint panel
+                gridPanel.repaint();
+
+                // Stop animation when complete
+                if (currentFrame[0] >= TOTAL_FRAMES) {
+                    ((Timer)e.getSource()).stop();
+
+                    // Restore exact original bounds
+                    for (JComponent comp : elementsToAnimate) {
+                        Rectangle origBounds = originalBoundsMap.get(comp);
+                        if (origBounds != null) {
+                            comp.setBounds(origBounds);
+                        }
+
+                        // Reset any transparency settings for JPanels
+                        if (comp instanceof JPanel) {
+                            ((JPanel) comp).setBackground(new Color(0, 0, 0, 0));
+                        }
+                    }
+
+                    // Update instruction
+                    instructionLabel.setText("Choose which potion to craft by clicking on it. Consider what would be most effective against Flameclaw.");
+
+                    // Force refresh
+                    gridPanel.revalidate();
+                    gridPanel.repaint();
+                }
+            }
+        });
+
+        // Start animation
+        animationTimer.start();
+    }
+
+    
     
     /**
      * Highlight natural runs in the ingredient grid
@@ -1343,86 +1474,117 @@ public class TimSortVisualization extends JPanel {
     * Display potion options in Phase 3
     */
     private void displayPotionOptions() {
-        // Clear the grid panel
-        gridPanel.removeAll();
+    // Clear the grid panel
+    gridPanel.removeAll();
 
-        // Update the instruction
-        instructionLabel.setText("Use your 'Mind of Unity' to choose which potion to craft. Click on a potion to select it.");
+    // Create potion option labels - initially invisible
+    IngredientItem frostPotion = new IngredientItem(1, "blue");
+    frostPotion.setPotionType("Fire Resistance Potion");
+    frostPotion.setGroupLabel(true);
+    frostPotion.setLocation(GameConstants.WINDOW_WIDTH / 4 - INGREDIENT_SIZE, 250);
+    frostPotion.setSize(INGREDIENT_SIZE * 2, INGREDIENT_SIZE * 2);
+    frostPotion.setVisible(false); // Initially invisible
+    gridPanel.add(frostPotion);
 
-        // Create potion option labels
-        IngredientItem frostPotion = new IngredientItem(1, "blue");
-        frostPotion.setPotionType("Fire Resistance Potion");
-        frostPotion.setGroupLabel(true);
-        frostPotion.setBoxVisible(false); // IMPORTANT: Disable grid box in Phase 3
-        frostPotion.setLocation(GameConstants.WINDOW_WIDTH / 4 - INGREDIENT_SIZE, 200);
-        frostPotion.setSize(INGREDIENT_SIZE * 2, INGREDIENT_SIZE * 2);
-        gridPanel.add(frostPotion);
+    IngredientItem strengthPotion = new IngredientItem(2, "red");
+    strengthPotion.setPotionType("Strength Potion");
+    strengthPotion.setGroupLabel(true);
+    strengthPotion.setLocation((GameConstants.WINDOW_WIDTH * 3) / 4 - INGREDIENT_SIZE, 250);
+    strengthPotion.setSize(INGREDIENT_SIZE * 2, INGREDIENT_SIZE * 2);
+    strengthPotion.setVisible(false); // Initially invisible
+    gridPanel.add(strengthPotion);
 
-        IngredientItem strengthPotion = new IngredientItem(2, "red");
-        strengthPotion.setPotionType("Strength Potion");
-        strengthPotion.setGroupLabel(true);
-        strengthPotion.setBoxVisible(false); // IMPORTANT: Disable grid box in Phase 3
-        strengthPotion.setLocation((GameConstants.WINDOW_WIDTH * 3) / 4 - INGREDIENT_SIZE, 200);
-        strengthPotion.setSize(INGREDIENT_SIZE * 2, INGREDIENT_SIZE * 2);
-        gridPanel.add(strengthPotion);
+    // Load and display potion images with labels - initially invisible
+    ImageIcon frostPotionImg = resourceManager.getImage("/gameproject/resources/potions/fire_resistance_potion.png");
+    ImageIcon strengthPotionImg = resourceManager.getImage("/gameproject/resources/potions/strength_potion.png");
 
-        // Load and display potion images with labels
-        ImageIcon frostPotionImg = resourceManager.getImage("/gameproject/resources/potions/fire_resistance_potion.png");
-        ImageIcon strengthPotionImg = resourceManager.getImage("/gameproject/resources/potions/strength_potion.png");
-
-        if (frostPotionImg != null) {
-            JLabel frostImgLabel = new JLabel(new ImageIcon(frostPotionImg.getImage().getScaledInstance(120, 120, Image.SCALE_SMOOTH)));
-            frostImgLabel.setBounds(GameConstants.WINDOW_WIDTH / 4 - 60, 180, 120, 120);
-            gridPanel.add(frostImgLabel);
-        }
-
-        if (strengthPotionImg != null) {
-            JLabel strengthImgLabel = new JLabel(new ImageIcon(strengthPotionImg.getImage().getScaledInstance(120, 120, Image.SCALE_SMOOTH)));
-            strengthImgLabel.setBounds((GameConstants.WINDOW_WIDTH * 3) / 4 - 60, 180, 120, 120);
-            gridPanel.add(strengthImgLabel);
-        }
-
-        // Add descriptions with better styling
-        JLabel frostLabel = new JLabel("Fire Resistance Potion", JLabel.CENTER);
-        frostLabel.setFont(new Font("SansSerif", Font.BOLD, 16));
-        frostLabel.setForeground(Color.CYAN);
-        frostLabel.setBounds(GameConstants.WINDOW_WIDTH / 4 - 150, 400, 300, 30);
-        gridPanel.add(frostLabel);
-
-        JLabel strengthLabel = new JLabel("Strength Potion", JLabel.CENTER);
-        strengthLabel.setFont(new Font("SansSerif", Font.BOLD, 16));
-        strengthLabel.setForeground(Color.RED);
-        strengthLabel.setBounds((GameConstants.WINDOW_WIDTH * 3) / 4 - 150, 400, 300, 30);
-        gridPanel.add(strengthLabel);
-
-        // Add potion descriptions
-        JTextArea frostDesc = new JTextArea("Protects against fire attacks and extreme heat.");
-        frostDesc.setEditable(false);
-        frostDesc.setWrapStyleWord(true);
-        frostDesc.setLineWrap(true);
-        frostDesc.setOpaque(false);
-        frostDesc.setForeground(Color.WHITE);
-        frostDesc.setFont(new Font("SansSerif", Font.PLAIN, 14));
-        frostDesc.setBounds(GameConstants.WINDOW_WIDTH / 4 - 150, 430, 300, 60);
-        gridPanel.add(frostDesc);
-
-        JTextArea strengthDesc = new JTextArea("Enhances physical strength and combat abilities.");
-        strengthDesc.setEditable(false);
-        strengthDesc.setWrapStyleWord(true);
-        strengthDesc.setLineWrap(true);
-        strengthDesc.setOpaque(false);
-        strengthDesc.setForeground(Color.WHITE);
-        strengthDesc.setFont(new Font("SansSerif", Font.PLAIN, 14));
-        strengthDesc.setBounds((GameConstants.WINDOW_WIDTH * 3) / 4 - 150, 430, 300, 60);
-        gridPanel.add(strengthDesc);
-
-        // Disable check button until a potion is selected
-        checkButton.setEnabled(false);
-
-        // Update UI
-        gridPanel.revalidate();
-        gridPanel.repaint();
+    JLabel frostImgLabel = null;
+    if (frostPotionImg != null) {
+        frostImgLabel = new JLabel(new ImageIcon(frostPotionImg.getImage().getScaledInstance(120, 120, Image.SCALE_SMOOTH)));
+        frostImgLabel.setBounds(GameConstants.WINDOW_WIDTH / 4 - 60, 180, 120, 120);
+        frostImgLabel.setVisible(false); // Initially invisible
+        gridPanel.add(frostImgLabel);
     }
+
+    JLabel strengthImgLabel = null;
+    if (strengthPotionImg != null) {
+        strengthImgLabel = new JLabel(new ImageIcon(strengthPotionImg.getImage().getScaledInstance(120, 120, Image.SCALE_SMOOTH)));
+        strengthImgLabel.setBounds((GameConstants.WINDOW_WIDTH * 3) / 4 - 60, 180, 120, 120);
+        strengthImgLabel.setVisible(false); // Initially invisible
+        gridPanel.add(strengthImgLabel);
+    }
+
+    // Add descriptions with better styling - initially invisible
+    JLabel frostLabel = new JLabel("Fire Resistance Potion", JLabel.CENTER);
+    frostLabel.setFont(new Font("SansSerif", Font.BOLD, 16));
+    frostLabel.setForeground(Color.CYAN);
+    frostLabel.setBounds(GameConstants.WINDOW_WIDTH / 4 - 150, 400, 300, 30);
+    frostLabel.setVisible(false); // Initially invisible
+    gridPanel.add(frostLabel);
+
+    JLabel strengthLabel = new JLabel("Strength Potion", JLabel.CENTER);
+    strengthLabel.setFont(new Font("SansSerif", Font.BOLD, 16));
+    strengthLabel.setForeground(Color.RED);
+    strengthLabel.setBounds((GameConstants.WINDOW_WIDTH * 3) / 4 - 150, 400, 300, 30);
+    strengthLabel.setVisible(false); // Initially invisible
+    gridPanel.add(strengthLabel);
+
+    // Add potion descriptions - initially invisible
+    JTextArea frostDesc = new JTextArea("Protects against fire attacks and extreme heat.");
+    frostDesc.setEditable(false);
+    frostDesc.setWrapStyleWord(true);
+    frostDesc.setLineWrap(true);
+    frostDesc.setOpaque(false);
+    frostDesc.setForeground(Color.WHITE);
+    frostDesc.setFont(new Font("SansSerif", Font.PLAIN, 14));
+    frostDesc.setBounds(GameConstants.WINDOW_WIDTH / 4 - 150, 430, 300, 60);
+    frostDesc.setVisible(false); // Initially invisible
+    gridPanel.add(frostDesc);
+
+    JTextArea strengthDesc = new JTextArea("Enhances physical strength and combat abilities.");
+    strengthDesc.setEditable(false);
+    strengthDesc.setWrapStyleWord(true);
+    strengthDesc.setLineWrap(true);
+    strengthDesc.setOpaque(false);
+    strengthDesc.setForeground(Color.WHITE);
+    strengthDesc.setFont(new Font("SansSerif", Font.PLAIN, 14));
+    strengthDesc.setBounds((GameConstants.WINDOW_WIDTH * 3) / 4 - 150, 430, 300, 60);
+    strengthDesc.setVisible(false); // Initially invisible
+    gridPanel.add(strengthDesc);
+
+    // Update instruction
+    instructionLabel.setText("Use your 'Mind of Unity' to choose which potion to craft. Click the button below.");
+
+    // Enable ability button
+    abilityButton.setText("Use Mind of Unity");
+    abilityButton.setEnabled(true);
+
+    // Disable check button until a potion is selected
+    checkButton.setEnabled(false);
+
+    // Add click listeners to potions for selection
+    frostPotion.addMouseListener(new MouseAdapter() {
+        @Override
+        public void mouseClicked(MouseEvent e) {
+            if (frostPotion.isVisible()) {
+                selectPotionGroup(1); // Fire Resistance Potion
+            }
+        }
+    });
+    
+    strengthPotion.addMouseListener(new MouseAdapter() {
+        @Override
+        public void mouseClicked(MouseEvent e) {
+            if (strengthPotion.isVisible()) {
+                selectPotionGroup(2); // Strength Potion
+            }
+        }
+    });
+
+    // Update UI
+    gridPanel.revalidate();
+    gridPanel.repaint();
+}
     
     /**
     * Modified check phase completion to account for automatic sorting
@@ -2045,7 +2207,6 @@ public class TimSortVisualization extends JPanel {
         
 
         // Set button labels
-
         switch (currentPhase) {
             case 1:
                 abilityButton.setText("Use Eye of Pattern");
@@ -2063,9 +2224,11 @@ public class TimSortVisualization extends JPanel {
 
             case 3:
                 abilityButton.setText("Use Mind of Unity");
-                instructionLabel.setText("Use your 'Mind of Unity' to choose which potion to craft.");
-                // Setup Phase 3
+                instructionLabel.setText("Use your 'Mind of Unity' ability to reveal the potions you can craft.");
+                // Set up Phase 3 - but don't display potions yet
                 displayPotionOptions();
+                // Enable the ability button explicitly
+                abilityButton.setEnabled(true);
                 break;
         }
 
