@@ -493,13 +493,14 @@ public class TimSortVisualization extends JPanel {
         // Clear the grid panel
         gridPanel.removeAll();
 
-        // Create sets of ingredients for each potion type
+        // Create sets of ingredients for each potion type with correct colors
         // Fire Resistance Potion (values 1-5)
         String[] fireIngredients = {"pumpkin", "apples", "peppers", "dragon_fire_glands", "fire_crystal"};
         for (int i = 0; i < 5; i++) {
             IngredientItem ingredient = new IngredientItem(i + 1, "red");
             ingredient.setIngredientName(fireIngredients[i]);
             ingredient.setPotionType("fire");
+            // Set background color will be handled in paintComponent
             allIngredients.add(ingredient);
         }
 
@@ -509,24 +510,27 @@ public class TimSortVisualization extends JPanel {
             IngredientItem ingredient = new IngredientItem(i + 6, "blue");
             ingredient.setIngredientName(coldIngredients[i]);
             ingredient.setPotionType("cold");
+            // Set background color will be handled in paintComponent
             allIngredients.add(ingredient);
         }
 
-        // Strength Potion (values 11-15)
+        // Strength Potion (values 11-15) - now with yellow background
         String[] strengthIngredients = {"corn", "powdered_giant_insect", "troll_sweat", "powdered_minotaur_horn", "dragon_bone"};
         for (int i = 0; i < 5; i++) {
-            IngredientItem ingredient = new IngredientItem(i + 11, "green");
+            IngredientItem ingredient = new IngredientItem(i + 11, "yellow");
             ingredient.setIngredientName(strengthIngredients[i]);
             ingredient.setPotionType("strength");
+            // Set background color will be handled in paintComponent
             allIngredients.add(ingredient);
         }
 
-        // Dexterity Potion (values 16-20)
+        // Dexterity Potion (values 16-20) - now with green background
         String[] dexterityIngredients = {"banana_leaf", "maple_sap", "powdered_jackalope_antlers", "griffon_feathers", "dragon_sinew"};
         for (int i = 0; i < 5; i++) {
-            IngredientItem ingredient = new IngredientItem(i + 16, "yellow");
+            IngredientItem ingredient = new IngredientItem(i + 16, "green");
             ingredient.setIngredientName(dexterityIngredients[i]);
             ingredient.setPotionType("dexterity");
+            // Set background color will be handled in paintComponent
             allIngredients.add(ingredient);
         }
 
@@ -543,7 +547,7 @@ public class TimSortVisualization extends JPanel {
         gridPanel.revalidate();
         gridPanel.repaint();
     }
-    
+
     
     /**
     * Position ingredients in the 4×5 grid
@@ -756,38 +760,55 @@ public class TimSortVisualization extends JPanel {
         // First, disable ability button to prevent multiple animations
         abilityButton.setEnabled(false);
 
-        // Collect all invisible components (ensure they're all JComponents)
-        List<JComponent> elementsToAnimate = new ArrayList<>();
+        // Separate lists for different types of components
+        List<JComponent> textElements = new ArrayList<>();     // Text labels & descriptions (no scaling)
+        List<JComponent> imageElements = new ArrayList<>();    // Potion images (keep scaling)
+        Map<JComponent, Rectangle> imageElementBounds = new HashMap<>(); // Original bounds for image elements
+
+        // Classify all invisible components
         for (Component comp : gridPanel.getComponents()) {
             if (!comp.isVisible() && comp instanceof JComponent) {
-                elementsToAnimate.add((JComponent)comp);
-
-                // Store original bounds in a map instead of as client properties
+                // Store original bounds
                 Rectangle originalBounds = comp.getBounds();
 
-                // Set initial size (50% scale) while keeping center point the same
-                int centerX = originalBounds.x + originalBounds.width/2;
-                int centerY = originalBounds.y + originalBounds.height/2;
-                int initialWidth = originalBounds.width / 2;
-                int initialHeight = originalBounds.height / 2;
-                comp.setBounds(centerX - initialWidth/2, centerY - initialHeight/2, initialWidth, initialHeight);
-
-                // Make component visible
+                // Make component visible but initially transparent
                 comp.setVisible(true);
+
+                // Check component type to decide how to animate it
+                if (comp instanceof JLabel) {
+                    JLabel label = (JLabel) comp;
+
+                    // Check if this is an image label (potion bottle) or text label
+                    if (label.getIcon() != null) {
+                        // This is an image label (potion)
+                        imageElements.add(label);
+                        imageElementBounds.put(label, originalBounds);
+
+                        // Set initial size (50% scale) for image while keeping center point
+                        int centerX = originalBounds.x + originalBounds.width/2;
+                        int centerY = originalBounds.y + originalBounds.height/2;
+                        int initialWidth = originalBounds.width / 2;
+                        int initialHeight = originalBounds.height / 2;
+                        label.setBounds(centerX - initialWidth/2, centerY - initialHeight/2, initialWidth, initialHeight);
+                    } else {
+                        // This is a text label (titles, descriptions)
+                        textElements.add(label);
+                    }
+                } 
+                else if (comp instanceof JTextArea) {
+                    // Text descriptions
+                    textElements.add((JComponent)comp);
+                }
+                else if (comp instanceof JPanel) {
+                    // For panels, set initial transparency to 0
+                    ((JPanel) comp).setBackground(new Color(0f, 0f, 0f, 0f));
+                    textElements.add((JComponent)comp);
+                }
+                else {
+                    // Default to text treatment for any other component types
+                    textElements.add((JComponent)comp);
+                }
             }
-        }
-
-        // Create a map to store original bounds
-        final Map<JComponent, Rectangle> originalBoundsMap = new HashMap<>();
-        for (JComponent comp : elementsToAnimate) {
-            // Calculate original bounds based on the expected full size
-            int currentWidth = comp.getWidth() * 2; // Because we're starting at 50%
-            int currentHeight = comp.getHeight() * 2;
-            int currentX = comp.getX() - currentWidth/4; // Adjust X to maintain center
-            int currentY = comp.getY() - currentHeight/4; // Adjust Y to maintain center
-
-            // Store the calculated full-size bounds
-            originalBoundsMap.put(comp, new Rectangle(currentX, currentY, currentWidth, currentHeight));
         }
 
         // Create animation timer
@@ -809,30 +830,35 @@ public class TimSortVisualization extends JPanel {
                     easedProgress = 1 + 4 * f * f * f;
                 }
 
-                // Update all components
-                for (JComponent comp : elementsToAnimate) {
-                    if (comp != null) {
-                        // NO BACKGROUND COLORS OR OVERLAYS ARE APPLIED
+                // Animate text elements (fade only, no scaling)
+                for (JComponent comp : textElements) {
+                    if (comp instanceof JPanel) {
+                        float alpha = easedProgress;
+                        ((JPanel) comp).setBackground(new Color(0f, 0f, 0f, alpha * 0.5f));
+                    }
+                    // For labels and other components, we'll use a trick with AlphaComposite
+                    // But this happens naturally through parent component alpha handling
+                }
 
-                        // Get original bounds
-                        Rectangle origBounds = originalBoundsMap.get(comp);
-                        if (origBounds != null) {
-                            int centerX = origBounds.x + origBounds.width/2;
-                            int centerY = origBounds.y + origBounds.height/2;
+                // Animate image elements (both fade AND scale)
+                for (JComponent comp : imageElements) {
+                    Rectangle origBounds = imageElementBounds.get(comp);
+                    if (origBounds != null) {
+                        int centerX = origBounds.x + origBounds.width/2;
+                        int centerY = origBounds.y + origBounds.height/2;
 
-                            // Calculate current size (50% to 100%)
-                            float scale = 0.5f + (easedProgress * 0.5f);
-                            int currentWidth = (int)(origBounds.width * scale);
-                            int currentHeight = (int)(origBounds.height * scale);
+                        // Calculate current size (50% to 100%)
+                        float scale = 0.5f + (easedProgress * 0.5f);
+                        int currentWidth = (int)(origBounds.width * scale);
+                        int currentHeight = (int)(origBounds.height * scale);
 
-                            // Position to keep centered during scaling
-                            comp.setBounds(
-                                centerX - currentWidth/2,
-                                centerY - currentHeight/2,
-                                currentWidth,
-                                currentHeight
-                            );
-                        }
+                        // Position to keep centered during scaling
+                        comp.setBounds(
+                            centerX - currentWidth/2,
+                            centerY - currentHeight/2,
+                            currentWidth,
+                            currentHeight
+                        );
                     }
                 }
 
@@ -843,11 +869,18 @@ public class TimSortVisualization extends JPanel {
                 if (currentFrame[0] >= TOTAL_FRAMES) {
                     ((Timer)e.getSource()).stop();
 
-                    // Restore exact original bounds
-                    for (JComponent comp : elementsToAnimate) {
-                        Rectangle origBounds = originalBoundsMap.get(comp);
+                    // Restore exact original bounds for image elements
+                    for (JComponent comp : imageElements) {
+                        Rectangle origBounds = imageElementBounds.get(comp);
                         if (origBounds != null) {
                             comp.setBounds(origBounds);
+                        }
+                    }
+
+                    // Set final transparency for panels
+                    for (JComponent comp : textElements) {
+                        if (comp instanceof JPanel) {
+                            ((JPanel) comp).setBackground(new Color(0, 0, 0, 0.5f));
                         }
                     }
 
@@ -873,33 +906,32 @@ public class TimSortVisualization extends JPanel {
     private void highlightNaturalRuns() {
         identifiedRuns.clear();
 
-        // Find runs for each potion type
+        // Find runs for each potion type with corrected colors
         List<IngredientItem> fireRun = findRunByPotionType("fire");
         if (!fireRun.isEmpty()) {
             identifiedRuns.add(fireRun);
-            highlightRun(fireRun, new Color(255, 50, 50, 80)); // Red highlight
+            highlightRun(fireRun, new Color(255, 50, 50, 80)); // Red highlight for fire
         }
 
         List<IngredientItem> coldRun = findRunByPotionType("cold");
         if (!coldRun.isEmpty()) {
             identifiedRuns.add(coldRun);
-            highlightRun(coldRun, new Color(50, 50, 255, 80)); // Blue highlight
+            highlightRun(coldRun, new Color(50, 50, 255, 80)); // Blue highlight for cold
         }
 
         List<IngredientItem> strengthRun = findRunByPotionType("strength");
         if (!strengthRun.isEmpty()) {
             identifiedRuns.add(strengthRun);
-            highlightRun(strengthRun, new Color(50, 200, 50, 80)); // Green highlight
+            highlightRun(strengthRun, new Color(255, 200, 50, 80)); // Yellow highlight for strength
         }
 
         List<IngredientItem> dexterityRun = findRunByPotionType("dexterity");
         if (!dexterityRun.isEmpty()) {
             identifiedRuns.add(dexterityRun);
-            highlightRun(dexterityRun, new Color(255, 200, 50, 80)); // Yellow highlight
+            highlightRun(dexterityRun, new Color(50, 200, 50, 80)); // Green highlight for dexterity
         }
 
-        // No need to make grid boxes visible here since they're visible by default now
-        // Just update the instruction
+        // Update the instruction
         instructionLabel.setText("Natural runs highlighted! Select exactly 10 ingredients that form sequences.");
 
         // Enable check button if exactly 10 ingredients are selected
@@ -1412,107 +1444,189 @@ public class TimSortVisualization extends JPanel {
         // Clear the grid panel
         gridPanel.removeAll();
 
-        // Get potion types from Phase 2 - use stored values from leftGroupPotionType and rightGroupPotionType
-        String potion1Type = leftGroupPotionType;  // From Phase 2 left group
-        String potion2Type = rightGroupPotionType; // From Phase 2 right group
+        // Define the potion image size (increased by another 50 pixels)
+        final int POTION_IMAGE_SIZE = 220;            // Now 220x220 pixels
+        final int LABEL_HEIGHT = 25;                 // Height for title text
+        final int DESC_HEIGHT = 60;                  // Height for description text
+        final int PADDING_BELOW_IMAGE = 20;          // Space between image and title
+        final int PADDING_BELOW_TITLE = 10;          // Space between title and description
 
-        // Create invisible clickable areas for the potions
-        IngredientItem potion1ClickArea = new IngredientItem(1, "transparent");
-        potion1ClickArea.setPotionType("");
-        potion1ClickArea.setLocation(GameConstants.WINDOW_WIDTH / 4 - INGREDIENT_SIZE, 250);
-        potion1ClickArea.setSize(INGREDIENT_SIZE * 2, INGREDIENT_SIZE * 2);
-        potion1ClickArea.setVisible(false);
-        gridPanel.add(potion1ClickArea);
+        // Calculate vertical positions with proper spacing
+        final int IMAGE_Y = 180;                     // Starting position for potion images
+        final int TITLE_Y = IMAGE_Y + POTION_IMAGE_SIZE + PADDING_BELOW_IMAGE;  // Position for titles
+        final int DESC_Y = TITLE_Y + LABEL_HEIGHT + PADDING_BELOW_TITLE;        // Position for descriptions
 
-        IngredientItem potion2ClickArea = new IngredientItem(2, "transparent");
-        potion2ClickArea.setPotionType("");
-        potion2ClickArea.setLocation((GameConstants.WINDOW_WIDTH * 3) / 4 - INGREDIENT_SIZE, 250);
-        potion2ClickArea.setSize(INGREDIENT_SIZE * 2, INGREDIENT_SIZE * 2);
-        potion2ClickArea.setVisible(false);
-        gridPanel.add(potion2ClickArea);
+        // DYNAMIC POTION DETERMINATION - Based on selected ingredients from Phase 1
+        // Count ingredients by type to determine which potions to show
+        Map<String, Integer> potionTypeCounts = new HashMap<>();
+        potionTypeCounts.put("fire", 0);
+        potionTypeCounts.put("cold", 0);
+        potionTypeCounts.put("strength", 0);
+        potionTypeCounts.put("dexterity", 0);
 
-        // Load and display potion images dynamically based on potion types from Phase 2
-        // Determine image paths based on potion types
-        String potion1ImagePath = "/gameproject/resources/potions/" + 
-                                 potion1Type.toLowerCase().replace(" ", "_") + "_potion.png";
-        String potion2ImagePath = "/gameproject/resources/potions/" + 
-                                 potion2Type.toLowerCase().replace(" ", "_") + "_potion.png";
+        // Analyze selected ingredients from Phase 1
+        for (IngredientItem ingredient : selectedIngredients) {
+            int value = ingredient.getValue();
+            String potionType;
 
-        ImageIcon potion1Img = resourceManager.getImage(potion1ImagePath);
-        ImageIcon potion2Img = resourceManager.getImage(potion2ImagePath);
+            // Determine potion type based on ingredient value
+            if (value >= 1 && value <= 5) {
+                potionType = "fire";
+            } else if (value >= 6 && value <= 10) {
+                potionType = "cold";
+            } else if (value >= 11 && value <= 15) {
+                potionType = "strength";
+            } else if (value >= 16 && value <= 20) {
+                potionType = "dexterity";
+            } else {
+                potionType = "unknown";
+            }
 
-        // Increased potion image size (50px larger than original)
-        int potionImageSize = 170; // Original 120px + 50px
-
-        // Potion 1 image (left side)
-        JLabel potion1ImgLabel = null;
-        if (potion1Img != null) {
-            potion1ImgLabel = new JLabel(new ImageIcon(potion1Img.getImage().getScaledInstance(potionImageSize, potionImageSize, Image.SCALE_SMOOTH)));
-            // Adjust position to keep centered with larger size
-            potion1ImgLabel.setBounds(
-                GameConstants.WINDOW_WIDTH / 4 - potionImageSize/2, 
-                180 - (potionImageSize - 120)/2, 
-                potionImageSize, 
-                potionImageSize
-            );
-            potion1ImgLabel.setVisible(false);
-            gridPanel.add(potion1ImgLabel);
+            // Increment count for this potion type
+            potionTypeCounts.put(potionType, potionTypeCounts.getOrDefault(potionType, 0) + 1);
         }
 
-        // Potion 2 image (right side)
-        JLabel potion2ImgLabel = null;
-        if (potion2Img != null) {
-            potion2ImgLabel = new JLabel(new ImageIcon(potion2Img.getImage().getScaledInstance(potionImageSize, potionImageSize, Image.SCALE_SMOOTH)));
-            // Adjust position to keep centered with larger size
-            potion2ImgLabel.setBounds(
-                (GameConstants.WINDOW_WIDTH * 3) / 4 - potionImageSize/2, 
-                180 - (potionImageSize - 120)/2, 
-                potionImageSize, 
-                potionImageSize
-            );
-            potion2ImgLabel.setVisible(false);
-            gridPanel.add(potion2ImgLabel);
+        // Determine the two most common potion types
+        List<Map.Entry<String, Integer>> sortedCounts = new ArrayList<>(potionTypeCounts.entrySet());
+        sortedCounts.sort((a, b) -> b.getValue() - a.getValue()); // Sort in descending order
+
+        // Default to fire and strength if no ingredients were selected
+        String leftPotionType = "fire";
+        String rightPotionType = "strength";
+
+        // Set potion types based on most common ingredients
+        if (sortedCounts.size() >= 1 && sortedCounts.get(0).getValue() > 0) {
+            leftPotionType = sortedCounts.get(0).getKey();
+        }
+        if (sortedCounts.size() >= 2 && sortedCounts.get(1).getValue() > 0) {
+            rightPotionType = sortedCounts.get(1).getKey();
+        } else if (sortedCounts.size() >= 1 && sortedCounts.get(0).getValue() > 0) {
+            // If only one type had ingredients, use the second most common
+            for (String type : potionTypeCounts.keySet()) {
+                if (!type.equals(leftPotionType)) {
+                    rightPotionType = type;
+                    break;
+                }
+            }
         }
 
-        // Add potion title labels with correct colors from Phase 2
-        JLabel potion1Label = new JLabel(potion1Type + " Potion", JLabel.CENTER);
-        potion1Label.setFont(new Font("SansSerif", Font.BOLD, 16));
-        potion1Label.setForeground(getColorForPotionType(potion1Type)); // Use dynamic color
-        potion1Label.setBounds(GameConstants.WINDOW_WIDTH / 4 - 150, 350, 300, 30);
-        potion1Label.setVisible(false);
-        gridPanel.add(potion1Label);
+        // Define potion information lookup
+        Map<String, String[]> potionInfo = new HashMap<>();
+        potionInfo.put("fire", new String[]{"Fire Resistance Potion", 
+                                           "Protects against fire attacks and extreme heat.",
+                                           "/gameproject/resources/potions/fire_resistance_potion.png",
+                                           "RED"});  // RED for Fire Resistance
+        potionInfo.put("cold", new String[]{"Cold Resistance Potion", 
+                                           "Protects against ice attacks and freezing temperatures.",
+                                           "/gameproject/resources/potions/cold_resistance_potion.png",
+                                           "CYAN"}); // CYAN for Cold Resistance
+        potionInfo.put("strength", new String[]{"Strength Potion", 
+                                              "Enhances physical strength and combat abilities.",
+                                              "/gameproject/resources/potions/strength_potion.png",
+                                              "YELLOW"}); // YELLOW for Strength
+        potionInfo.put("dexterity", new String[]{"Dexterity Potion", 
+                                               "Improves agility, reflexes, and movement speed.",
+                                               "/gameproject/resources/potions/dexterity_potion.png",
+                                               "GREEN"});
 
-        JLabel potion2Label = new JLabel(potion2Type + " Potion", JLabel.CENTER);
-        potion2Label.setFont(new Font("SansSerif", Font.BOLD, 16));
-        potion2Label.setForeground(getColorForPotionType(potion2Type)); // Use dynamic color
-        potion2Label.setBounds((GameConstants.WINDOW_WIDTH * 3) / 4 - 150, 350, 300, 30);
-        potion2Label.setVisible(false);
-        gridPanel.add(potion2Label);
+        // Get position for left potion
+        int leftX = GameConstants.WINDOW_WIDTH / 4 - (POTION_IMAGE_SIZE / 2);
 
-        // Add potion descriptions - based on potion type
-        String potion1Description = getPotionDescription(potion1Type);
-        JTextArea potion1Desc = new JTextArea(potion1Description);
-        potion1Desc.setEditable(false);
-        potion1Desc.setWrapStyleWord(true);
-        potion1Desc.setLineWrap(true);
-        potion1Desc.setOpaque(false);
-        potion1Desc.setForeground(Color.WHITE);
-        potion1Desc.setFont(new Font("SansSerif", Font.PLAIN, 14));
-        potion1Desc.setBounds(GameConstants.WINDOW_WIDTH / 4 - 150, 380, 300, 60);
-        potion1Desc.setVisible(false);
-        gridPanel.add(potion1Desc);
+        // Create invisible components for the left potion
+        // 1. Get potion info
+        String[] leftPotionData = potionInfo.get(leftPotionType);
+        String leftPotionName = leftPotionData[0];
+        String leftPotionDesc = leftPotionData[1];
+        String leftPotionImgPath = leftPotionData[2];
+        Color leftPotionColor = getColorForName(leftPotionData[3]);
 
-        String potion2Description = getPotionDescription(potion2Type);
-        JTextArea potion2Desc = new JTextArea(potion2Description);
-        potion2Desc.setEditable(false);
-        potion2Desc.setWrapStyleWord(true);
-        potion2Desc.setLineWrap(true);
-        potion2Desc.setOpaque(false);
-        potion2Desc.setForeground(Color.WHITE);
-        potion2Desc.setFont(new Font("SansSerif", Font.PLAIN, 14));
-        potion2Desc.setBounds((GameConstants.WINDOW_WIDTH * 3) / 4 - 150, 380, 300, 60);
-        potion2Desc.setVisible(false);
-        gridPanel.add(potion2Desc);
+        // 2. Create potion image label
+        ImageIcon leftPotionImg = resourceManager.getImage(leftPotionImgPath);
+        if (leftPotionImg != null) {
+            JLabel leftImgLabel = new JLabel(new ImageIcon(leftPotionImg.getImage().getScaledInstance(
+                    POTION_IMAGE_SIZE, POTION_IMAGE_SIZE, Image.SCALE_SMOOTH)));
+            leftImgLabel.setBounds(leftX, IMAGE_Y, POTION_IMAGE_SIZE, POTION_IMAGE_SIZE);
+            leftImgLabel.setVisible(false); // Initially invisible
+            gridPanel.add(leftImgLabel);
+        }
+
+        // 3. Create potion title label
+        JLabel leftTitleLabel = new JLabel(leftPotionName, JLabel.CENTER);
+        leftTitleLabel.setFont(new Font("SansSerif", Font.BOLD, 16));
+        leftTitleLabel.setForeground(leftPotionColor);
+        leftTitleLabel.setBounds(leftX - 65, TITLE_Y, POTION_IMAGE_SIZE + 130, LABEL_HEIGHT); 
+        leftTitleLabel.setVisible(false); // Initially invisible
+        gridPanel.add(leftTitleLabel);
+
+        // 4. Create potion description
+        JTextArea leftDescLabel = new JTextArea(leftPotionDesc);
+        leftDescLabel.setEditable(false);
+        leftDescLabel.setWrapStyleWord(true);
+        leftDescLabel.setLineWrap(true);
+        leftDescLabel.setOpaque(false);
+        leftDescLabel.setForeground(Color.WHITE);
+        leftDescLabel.setFont(new Font("SansSerif", Font.PLAIN, 14));
+        leftDescLabel.setBounds(leftX - 65, DESC_Y, POTION_IMAGE_SIZE + 130, DESC_HEIGHT);
+        leftDescLabel.setVisible(false); // Initially invisible
+        gridPanel.add(leftDescLabel);
+
+        // Get position for right potion
+        int rightX = (GameConstants.WINDOW_WIDTH * 3) / 4 - (POTION_IMAGE_SIZE / 2);
+
+        // Create invisible components for the right potion
+        // 1. Get potion info
+        String[] rightPotionData = potionInfo.get(rightPotionType);
+        String rightPotionName = rightPotionData[0];
+        String rightPotionDesc = rightPotionData[1];
+        String rightPotionImgPath = rightPotionData[2];
+        Color rightPotionColor = getColorForName(rightPotionData[3]);
+
+        // 2. Create potion image label
+        ImageIcon rightPotionImg = resourceManager.getImage(rightPotionImgPath);
+        if (rightPotionImg != null) {
+            JLabel rightImgLabel = new JLabel(new ImageIcon(rightPotionImg.getImage().getScaledInstance(
+                    POTION_IMAGE_SIZE, POTION_IMAGE_SIZE, Image.SCALE_SMOOTH)));
+            rightImgLabel.setBounds(rightX, IMAGE_Y, POTION_IMAGE_SIZE, POTION_IMAGE_SIZE);
+            rightImgLabel.setVisible(false); // Initially invisible
+            gridPanel.add(rightImgLabel);
+        }
+
+        // 3. Create potion title label
+        JLabel rightTitleLabel = new JLabel(rightPotionName, JLabel.CENTER);
+        rightTitleLabel.setFont(new Font("SansSerif", Font.BOLD, 16));
+        rightTitleLabel.setForeground(rightPotionColor);
+        rightTitleLabel.setBounds(rightX - 65, TITLE_Y, POTION_IMAGE_SIZE + 130, LABEL_HEIGHT);
+        rightTitleLabel.setVisible(false); // Initially invisible
+        gridPanel.add(rightTitleLabel);
+
+        // 4. Create potion description
+        JTextArea rightDescLabel = new JTextArea(rightPotionDesc);
+        rightDescLabel.setEditable(false);
+        rightDescLabel.setWrapStyleWord(true);
+        rightDescLabel.setLineWrap(true);
+        rightDescLabel.setOpaque(false);
+        rightDescLabel.setForeground(Color.WHITE);
+        rightDescLabel.setFont(new Font("SansSerif", Font.PLAIN, 14));
+        rightDescLabel.setBounds(rightX - 65, DESC_Y, POTION_IMAGE_SIZE + 130, DESC_HEIGHT);
+        rightDescLabel.setVisible(false); // Initially invisible
+        gridPanel.add(rightDescLabel);
+
+        // Create potion option labels for click detection (behind the scenes)
+        IngredientItem leftPotionItem = new IngredientItem(1, "blue");
+        leftPotionItem.setPotionType(leftPotionName);
+        leftPotionItem.setGroupLabel(true);
+        leftPotionItem.setLocation(leftX, IMAGE_Y);
+        leftPotionItem.setSize(POTION_IMAGE_SIZE, POTION_IMAGE_SIZE);
+        leftPotionItem.setVisible(false); // Initially invisible
+        gridPanel.add(leftPotionItem);
+
+        IngredientItem rightPotionItem = new IngredientItem(2, "red");
+        rightPotionItem.setPotionType(rightPotionName);
+        rightPotionItem.setGroupLabel(true);
+        rightPotionItem.setLocation(rightX, IMAGE_Y);
+        rightPotionItem.setSize(POTION_IMAGE_SIZE, POTION_IMAGE_SIZE);
+        rightPotionItem.setVisible(false); // Initially invisible
+        gridPanel.add(rightPotionItem);
 
         // Update instruction
         instructionLabel.setText("Use your 'Mind of Unity' to choose which potion to craft. Click the button below.");
@@ -1525,55 +1639,56 @@ public class TimSortVisualization extends JPanel {
         checkButton.setEnabled(false);
 
         // Add click listeners to potions for selection
-        potion1ClickArea.addMouseListener(new MouseAdapter() {
+        leftPotionItem.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
-                if (potion1ClickArea.isVisible()) {
-                    selectPotionGroup(1); // First potion
+                if (leftPotionItem.isVisible()) {
+                    selectPotionGroup(1); // Left potion
+
+                    // Store the selected potion name
+                    craftedPotion = leftPotionName;
                 }
             }
         });
 
-        potion2ClickArea.addMouseListener(new MouseAdapter() {
+        rightPotionItem.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
-                if (potion2ClickArea.isVisible()) {
-                    selectPotionGroup(2); // Second potion
+                if (rightPotionItem.isVisible()) {
+                    selectPotionGroup(2); // Right potion
+
+                    // Store the selected potion name
+                    craftedPotion = rightPotionName;
                 }
             }
         });
-
-        // Make the potion images also clickable
-        if (potion1ImgLabel != null) {
-            final JLabel finalPotion1ImgLabel = potion1ImgLabel; // Create final reference
-            potion1ImgLabel.addMouseListener(new MouseAdapter() {
-                @Override
-                public void mouseClicked(MouseEvent e) {
-                    if (finalPotion1ImgLabel.isVisible()) {
-                        selectPotionGroup(1); // First potion
-                    }
-                }
-            });
-            potion1ImgLabel.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        }
-
-        if (potion2ImgLabel != null) {
-            final JLabel finalPotion2ImgLabel = potion2ImgLabel; // Create final reference
-            potion2ImgLabel.addMouseListener(new MouseAdapter() {
-                @Override
-                public void mouseClicked(MouseEvent e) {
-                    if (finalPotion2ImgLabel.isVisible()) {
-                        selectPotionGroup(2); // Second potion
-                    }
-                }
-            });
-            potion2ImgLabel.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        }
 
         // Update UI
         gridPanel.revalidate();
         gridPanel.repaint();
     }
+    
+    
+    
+    
+    
+    /**
+    * Helper method to convert color name string to Color object
+    */
+    private Color getColorForName(String colorName) {
+        switch (colorName.toUpperCase()) {
+            case "RED": return Color.RED;
+            case "GREEN": return new Color(0, 180, 0);  // Brighter green
+            case "BLUE": return Color.BLUE;
+            case "CYAN": return Color.CYAN;
+            case "YELLOW": return new Color(255, 215, 0);  // Gold yellow
+            case "ORANGE": return new Color(255, 165, 0);  // Orange
+            case "PURPLE": return new Color(128, 0, 128);  // Purple
+            default: return Color.WHITE;
+        }
+    }
+    
+    
     
     /**
     * Modified check phase completion to account for automatic sorting
