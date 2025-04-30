@@ -1441,232 +1441,224 @@ public class TimSortVisualization extends JPanel {
     * Display potion options in Phase 3 based on potions identified in Phase 2
     */
     private void displayPotionOptions() {
-        // Clear the grid panel
-        gridPanel.removeAll();
+    // Clear the grid panel
+    gridPanel.removeAll();
 
-        // Define the potion image size (increased by another 50 pixels)
-        final int POTION_IMAGE_SIZE = 220;            // Now 220x220 pixels
-        final int LABEL_HEIGHT = 25;                 // Height for title text
-        final int DESC_HEIGHT = 60;                  // Height for description text
-        final int PADDING_BELOW_IMAGE = 20;          // Space between image and title
-        final int PADDING_BELOW_TITLE = 10;          // Space between title and description
+    // Define the potion image size
+    final int POTION_IMAGE_SIZE = 220;            // Size is 220x220 pixels
+    final int LABEL_HEIGHT = 25;                  // Height for title text
+    final int DESC_HEIGHT = 60;                   // Height for description text
+    final int PADDING_BELOW_IMAGE = 20;           // Space between image and title
+    final int PADDING_BELOW_TITLE = 10;           // Space between title and description
 
-        // Calculate vertical positions with proper spacing
-        final int IMAGE_Y = 180;                     // Starting position for potion images
-        final int TITLE_Y = IMAGE_Y + POTION_IMAGE_SIZE + PADDING_BELOW_IMAGE;  // Position for titles
-        final int DESC_Y = TITLE_Y + LABEL_HEIGHT + PADDING_BELOW_TITLE;        // Position for descriptions
+    // Calculate vertical positions with proper spacing
+    final int IMAGE_Y = 180;                      // Starting position for potion images
+    final int TITLE_Y = IMAGE_Y + POTION_IMAGE_SIZE + PADDING_BELOW_IMAGE;  // Position for titles
+    final int DESC_Y = TITLE_Y + LABEL_HEIGHT + PADDING_BELOW_TITLE;        // Position for descriptions
 
-        // DYNAMIC POTION DETERMINATION - Based on selected ingredients from Phase 1
-        // Count ingredients by type to determine which potions to show
-        Map<String, Integer> potionTypeCounts = new HashMap<>();
-        potionTypeCounts.put("fire", 0);
-        potionTypeCounts.put("cold", 0);
-        potionTypeCounts.put("strength", 0);
-        potionTypeCounts.put("dexterity", 0);
+    // DYNAMIC POTION DETERMINATION - Based on selected ingredients from Phase 1
+    // Count ingredients by type to determine which potions to show
+    Map<String, Integer> potionTypeCounts = new HashMap<>();
+    potionTypeCounts.put("fire", 0);
+    potionTypeCounts.put("cold", 0);
+    potionTypeCounts.put("strength", 0);
+    potionTypeCounts.put("dexterity", 0);
 
-        // Analyze selected ingredients from Phase 1
-        for (IngredientItem ingredient : selectedIngredients) {
-            int value = ingredient.getValue();
-            String potionType;
+    // Analyze selected ingredients from Phase 1
+    for (IngredientItem ingredient : selectedIngredients) {
+        int value = ingredient.getValue();
+        String potionType;
 
-            // Determine potion type based on ingredient value
-            if (value >= 1 && value <= 5) {
-                potionType = "fire";
-            } else if (value >= 6 && value <= 10) {
-                potionType = "cold";
-            } else if (value >= 11 && value <= 15) {
-                potionType = "strength";
-            } else if (value >= 16 && value <= 20) {
-                potionType = "dexterity";
-            } else {
-                potionType = "unknown";
-            }
-
-            // Increment count for this potion type
-            potionTypeCounts.put(potionType, potionTypeCounts.getOrDefault(potionType, 0) + 1);
+        // Determine potion type based on ingredient value
+        if (value >= 1 && value <= 5) {
+            potionType = "fire";
+        } else if (value >= 6 && value <= 10) {
+            potionType = "cold";
+        } else if (value >= 11 && value <= 15) {
+            potionType = "strength";
+        } else if (value >= 16 && value <= 20) {
+            potionType = "dexterity";
+        } else {
+            potionType = "unknown";
         }
 
-        // Determine the two most common potion types
-        List<Map.Entry<String, Integer>> sortedCounts = new ArrayList<>(potionTypeCounts.entrySet());
-        sortedCounts.sort((a, b) -> b.getValue() - a.getValue()); // Sort in descending order
-
-        // Default to fire and strength if no ingredients were selected
-        String leftPotionType = "fire";
-        String rightPotionType = "strength";
-
-        // Set potion types based on most common ingredients
-        if (sortedCounts.size() >= 1 && sortedCounts.get(0).getValue() > 0) {
-            leftPotionType = sortedCounts.get(0).getKey();
-        }
-        if (sortedCounts.size() >= 2 && sortedCounts.get(1).getValue() > 0) {
-            rightPotionType = sortedCounts.get(1).getKey();
-        } else if (sortedCounts.size() >= 1 && sortedCounts.get(0).getValue() > 0) {
-            // If only one type had ingredients, use the second most common
-            for (String type : potionTypeCounts.keySet()) {
-                if (!type.equals(leftPotionType)) {
-                    rightPotionType = type;
-                    break;
-                }
-            }
-        }
-
-        // Define potion information lookup
-        Map<String, String[]> potionInfo = new HashMap<>();
-        potionInfo.put("fire", new String[]{"Fire Resistance Potion", 
-                                           "Protects against fire attacks and extreme heat.",
-                                           "/gameproject/resources/potions/fire_resistance_potion.png",
-                                           "RED"});  // RED for Fire Resistance
-        potionInfo.put("cold", new String[]{"Cold Resistance Potion", 
-                                           "Protects against ice attacks and freezing temperatures.",
-                                           "/gameproject/resources/potions/cold_resistance_potion.png",
-                                           "CYAN"}); // CYAN for Cold Resistance
-        potionInfo.put("strength", new String[]{"Strength Potion", 
-                                              "Enhances physical strength and combat abilities.",
-                                              "/gameproject/resources/potions/strength_potion.png",
-                                              "YELLOW"}); // YELLOW for Strength
-        potionInfo.put("dexterity", new String[]{"Dexterity Potion", 
-                                               "Improves agility, reflexes, and movement speed.",
-                                               "/gameproject/resources/potions/dexterity_potion.png",
-                                               "GREEN"});
-
-        // Get position for left potion
-        int leftX = GameConstants.WINDOW_WIDTH / 4 - (POTION_IMAGE_SIZE / 2);
-
-        // Create invisible components for the left potion
-        // 1. Get potion info
-        String[] leftPotionData = potionInfo.get(leftPotionType);
-        String leftPotionName = leftPotionData[0];
-        String leftPotionDesc = leftPotionData[1];
-        String leftPotionImgPath = leftPotionData[2];
-        Color leftPotionColor = getColorForName(leftPotionData[3]);
-
-        // 2. Create potion image label
-        ImageIcon leftPotionImg = resourceManager.getImage(leftPotionImgPath);
-        if (leftPotionImg != null) {
-            JLabel leftImgLabel = new JLabel(new ImageIcon(leftPotionImg.getImage().getScaledInstance(
-                    POTION_IMAGE_SIZE, POTION_IMAGE_SIZE, Image.SCALE_SMOOTH)));
-            leftImgLabel.setBounds(leftX, IMAGE_Y, POTION_IMAGE_SIZE, POTION_IMAGE_SIZE);
-            leftImgLabel.setVisible(false); // Initially invisible
-            gridPanel.add(leftImgLabel);
-        }
-
-        // 3. Create potion title label
-        JLabel leftTitleLabel = new JLabel(leftPotionName, JLabel.CENTER);
-        leftTitleLabel.setFont(new Font("SansSerif", Font.BOLD, 16));
-        leftTitleLabel.setForeground(leftPotionColor);
-        leftTitleLabel.setBounds(leftX - 65, TITLE_Y, POTION_IMAGE_SIZE + 130, LABEL_HEIGHT); 
-        leftTitleLabel.setVisible(false); // Initially invisible
-        gridPanel.add(leftTitleLabel);
-
-        // 4. Create potion description
-        JTextArea leftDescLabel = new JTextArea(leftPotionDesc);
-        leftDescLabel.setEditable(false);
-        leftDescLabel.setWrapStyleWord(true);
-        leftDescLabel.setLineWrap(true);
-        leftDescLabel.setOpaque(false);
-        leftDescLabel.setForeground(Color.WHITE);
-        leftDescLabel.setFont(new Font("SansSerif", Font.PLAIN, 14));
-        leftDescLabel.setBounds(leftX - 65, DESC_Y, POTION_IMAGE_SIZE + 130, DESC_HEIGHT);
-        leftDescLabel.setVisible(false); // Initially invisible
-        gridPanel.add(leftDescLabel);
-
-        // Get position for right potion
-        int rightX = (GameConstants.WINDOW_WIDTH * 3) / 4 - (POTION_IMAGE_SIZE / 2);
-
-        // Create invisible components for the right potion
-        // 1. Get potion info
-        String[] rightPotionData = potionInfo.get(rightPotionType);
-        String rightPotionName = rightPotionData[0];
-        String rightPotionDesc = rightPotionData[1];
-        String rightPotionImgPath = rightPotionData[2];
-        Color rightPotionColor = getColorForName(rightPotionData[3]);
-
-        // 2. Create potion image label
-        ImageIcon rightPotionImg = resourceManager.getImage(rightPotionImgPath);
-        if (rightPotionImg != null) {
-            JLabel rightImgLabel = new JLabel(new ImageIcon(rightPotionImg.getImage().getScaledInstance(
-                    POTION_IMAGE_SIZE, POTION_IMAGE_SIZE, Image.SCALE_SMOOTH)));
-            rightImgLabel.setBounds(rightX, IMAGE_Y, POTION_IMAGE_SIZE, POTION_IMAGE_SIZE);
-            rightImgLabel.setVisible(false); // Initially invisible
-            gridPanel.add(rightImgLabel);
-        }
-
-        // 3. Create potion title label
-        JLabel rightTitleLabel = new JLabel(rightPotionName, JLabel.CENTER);
-        rightTitleLabel.setFont(new Font("SansSerif", Font.BOLD, 16));
-        rightTitleLabel.setForeground(rightPotionColor);
-        rightTitleLabel.setBounds(rightX - 65, TITLE_Y, POTION_IMAGE_SIZE + 130, LABEL_HEIGHT);
-        rightTitleLabel.setVisible(false); // Initially invisible
-        gridPanel.add(rightTitleLabel);
-
-        // 4. Create potion description
-        JTextArea rightDescLabel = new JTextArea(rightPotionDesc);
-        rightDescLabel.setEditable(false);
-        rightDescLabel.setWrapStyleWord(true);
-        rightDescLabel.setLineWrap(true);
-        rightDescLabel.setOpaque(false);
-        rightDescLabel.setForeground(Color.WHITE);
-        rightDescLabel.setFont(new Font("SansSerif", Font.PLAIN, 14));
-        rightDescLabel.setBounds(rightX - 65, DESC_Y, POTION_IMAGE_SIZE + 130, DESC_HEIGHT);
-        rightDescLabel.setVisible(false); // Initially invisible
-        gridPanel.add(rightDescLabel);
-
-        // Create potion option labels for click detection (behind the scenes)
-        IngredientItem leftPotionItem = new IngredientItem(1, "blue");
-        leftPotionItem.setPotionType(leftPotionName);
-        leftPotionItem.setGroupLabel(true);
-        leftPotionItem.setLocation(leftX, IMAGE_Y);
-        leftPotionItem.setSize(POTION_IMAGE_SIZE, POTION_IMAGE_SIZE);
-        leftPotionItem.setVisible(false); // Initially invisible
-        gridPanel.add(leftPotionItem);
-
-        IngredientItem rightPotionItem = new IngredientItem(2, "red");
-        rightPotionItem.setPotionType(rightPotionName);
-        rightPotionItem.setGroupLabel(true);
-        rightPotionItem.setLocation(rightX, IMAGE_Y);
-        rightPotionItem.setSize(POTION_IMAGE_SIZE, POTION_IMAGE_SIZE);
-        rightPotionItem.setVisible(false); // Initially invisible
-        gridPanel.add(rightPotionItem);
-
-        // Update instruction
-        instructionLabel.setText("Use your 'Mind of Unity' to choose which potion to craft. Click the button below.");
-
-        // Enable ability button
-        abilityButton.setText("Use Mind of Unity");
-        abilityButton.setEnabled(true);
-
-        // Disable check button until a potion is selected
-        checkButton.setEnabled(false);
-
-        // Add click listeners to potions for selection
-        leftPotionItem.addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseClicked(MouseEvent e) {
-                if (leftPotionItem.isVisible()) {
-                    selectPotionGroup(1); // Left potion
-
-                    // Store the selected potion name
-                    craftedPotion = leftPotionName;
-                }
-            }
-        });
-
-        rightPotionItem.addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseClicked(MouseEvent e) {
-                if (rightPotionItem.isVisible()) {
-                    selectPotionGroup(2); // Right potion
-
-                    // Store the selected potion name
-                    craftedPotion = rightPotionName;
-                }
-            }
-        });
-
-        // Update UI
-        gridPanel.revalidate();
-        gridPanel.repaint();
+        // Increment count for this potion type
+        potionTypeCounts.put(potionType, potionTypeCounts.getOrDefault(potionType, 0) + 1);
     }
+
+    // Determine the two most common potion types
+    List<Map.Entry<String, Integer>> sortedCounts = new ArrayList<>(potionTypeCounts.entrySet());
+    sortedCounts.sort((a, b) -> b.getValue() - a.getValue()); // Sort in descending order
+
+    // Default to fire and strength if no ingredients were selected
+    String leftPotionType = "fire";
+    String rightPotionType = "strength";
+
+    // Set potion types based on most common ingredients
+    if (sortedCounts.size() >= 1 && sortedCounts.get(0).getValue() > 0) {
+        leftPotionType = sortedCounts.get(0).getKey();
+    }
+    if (sortedCounts.size() >= 2 && sortedCounts.get(1).getValue() > 0) {
+        rightPotionType = sortedCounts.get(1).getKey();
+    } else if (sortedCounts.size() >= 1 && sortedCounts.get(0).getValue() > 0) {
+        // If only one type had ingredients, use the second most common
+        for (String type : potionTypeCounts.keySet()) {
+            if (!type.equals(leftPotionType)) {
+                rightPotionType = type;
+                break;
+            }
+        }
+    }
+
+    // Define potion information lookup
+    Map<String, String[]> potionInfo = new HashMap<>();
+    potionInfo.put("fire", new String[]{"Fire Resistance Potion", 
+                                       "Protects against fire attacks and extreme heat.",
+                                       "/gameproject/resources/potions/fire_resistance_potion.png"});
+    potionInfo.put("cold", new String[]{"Cold Resistance Potion", 
+                                       "Protects against ice attacks and freezing temperatures.",
+                                       "/gameproject/resources/potions/cold_resistance_potion.png"});
+    potionInfo.put("strength", new String[]{"Strength Potion", 
+                                          "Enhances physical strength and combat abilities.",
+                                          "/gameproject/resources/potions/strength_potion.png"});
+    potionInfo.put("dexterity", new String[]{"Dexterity Potion", 
+                                           "Improves agility, reflexes, and movement speed.",
+                                           "/gameproject/resources/potions/dexterity_potion.png"});
+
+    // Get position for left potion
+    int leftX = GameConstants.WINDOW_WIDTH / 4 - (POTION_IMAGE_SIZE / 2);
+
+    // Create invisible components for the left potion
+    // 1. Get potion info
+    String[] leftPotionData = potionInfo.get(leftPotionType);
+    String leftPotionName = leftPotionData[0];
+    String leftPotionDesc = leftPotionData[1];
+    String leftPotionImgPath = leftPotionData[2];
+
+    // 2. Create potion image label
+    ImageIcon leftPotionImg = resourceManager.getImage(leftPotionImgPath);
+    if (leftPotionImg != null) {
+        JLabel leftImgLabel = new JLabel(new ImageIcon(leftPotionImg.getImage().getScaledInstance(
+                POTION_IMAGE_SIZE, POTION_IMAGE_SIZE, Image.SCALE_SMOOTH)));
+        leftImgLabel.setBounds(leftX, IMAGE_Y, POTION_IMAGE_SIZE, POTION_IMAGE_SIZE);
+        leftImgLabel.setVisible(false); // Initially invisible
+        gridPanel.add(leftImgLabel);
+    }
+
+    // 3. Create potion title label - CENTERED OVER POTION
+    JLabel leftTitleLabel = new JLabel(leftPotionName, JLabel.CENTER);
+    leftTitleLabel.setFont(new Font("SansSerif", Font.BOLD, 16));
+    leftTitleLabel.setForeground(Color.WHITE); // White text, no background color
+    // Center the title over the potion
+    int leftTitleWidth = POTION_IMAGE_SIZE + 130;
+    leftTitleLabel.setBounds(leftX - (leftTitleWidth - POTION_IMAGE_SIZE)/2, TITLE_Y, leftTitleWidth, LABEL_HEIGHT);
+    leftTitleLabel.setVisible(false); // Initially invisible
+    gridPanel.add(leftTitleLabel);
+
+    // 4. Create potion description - REPLACED JTEXTAREA WITH JLABEL FOR BETTER CENTERING
+    JLabel leftDescLabel = new JLabel("<html><div style='text-align:center;'>" + leftPotionDesc + "</div></html>", JLabel.CENTER);
+    leftDescLabel.setFont(new Font("SansSerif", Font.PLAIN, 14));
+    leftDescLabel.setForeground(Color.WHITE);
+    // Center the description below the title with same width
+    leftDescLabel.setBounds(leftX - (leftTitleWidth - POTION_IMAGE_SIZE)/2, DESC_Y, leftTitleWidth, DESC_HEIGHT);
+    leftDescLabel.setVisible(false); // Initially invisible
+    gridPanel.add(leftDescLabel);
+
+    // Get position for right potion
+    int rightX = (GameConstants.WINDOW_WIDTH * 3) / 4 - (POTION_IMAGE_SIZE / 2);
+
+    // Create invisible components for the right potion
+    // 1. Get potion info
+    String[] rightPotionData = potionInfo.get(rightPotionType);
+    String rightPotionName = rightPotionData[0];
+    String rightPotionDesc = rightPotionData[1];
+    String rightPotionImgPath = rightPotionData[2];
+
+    // 2. Create potion image label
+    ImageIcon rightPotionImg = resourceManager.getImage(rightPotionImgPath);
+    if (rightPotionImg != null) {
+        JLabel rightImgLabel = new JLabel(new ImageIcon(rightPotionImg.getImage().getScaledInstance(
+                POTION_IMAGE_SIZE, POTION_IMAGE_SIZE, Image.SCALE_SMOOTH)));
+        rightImgLabel.setBounds(rightX, IMAGE_Y, POTION_IMAGE_SIZE, POTION_IMAGE_SIZE);
+        rightImgLabel.setVisible(false); // Initially invisible
+        gridPanel.add(rightImgLabel);
+    }
+
+    // 3. Create potion title label - CENTERED OVER POTION
+    JLabel rightTitleLabel = new JLabel(rightPotionName, JLabel.CENTER);
+    rightTitleLabel.setFont(new Font("SansSerif", Font.BOLD, 16));
+    rightTitleLabel.setForeground(Color.WHITE); // White text, no background color
+    // Center the title over the potion
+    int rightTitleWidth = POTION_IMAGE_SIZE + 130;
+    rightTitleLabel.setBounds(rightX - (rightTitleWidth - POTION_IMAGE_SIZE)/2, TITLE_Y, rightTitleWidth, LABEL_HEIGHT);
+    rightTitleLabel.setVisible(false); // Initially invisible
+    gridPanel.add(rightTitleLabel);
+
+    // 4. Create potion description - REPLACED JTEXTAREA WITH JLABEL FOR BETTER CENTERING
+    JLabel rightDescLabel = new JLabel("<html><div style='text-align:center;'>" + rightPotionDesc + "</div></html>", JLabel.CENTER);
+    rightDescLabel.setFont(new Font("SansSerif", Font.PLAIN, 14));
+    rightDescLabel.setForeground(Color.WHITE);
+    // Center the description below the title with same width
+    rightDescLabel.setBounds(rightX - (rightTitleWidth - POTION_IMAGE_SIZE)/2, DESC_Y, rightTitleWidth, DESC_HEIGHT);
+    rightDescLabel.setVisible(false); // Initially invisible
+    gridPanel.add(rightDescLabel);
+
+    // Create potion option labels for click detection (behind the scenes)
+    IngredientItem leftPotionItem = new IngredientItem(1, "blue");
+    leftPotionItem.setPotionType(leftPotionName);
+    leftPotionItem.setGroupLabel(true);
+    leftPotionItem.setLocation(leftX, IMAGE_Y);
+    leftPotionItem.setSize(POTION_IMAGE_SIZE, POTION_IMAGE_SIZE);
+    leftPotionItem.setVisible(false); // Initially invisible
+    gridPanel.add(leftPotionItem);
+
+    IngredientItem rightPotionItem = new IngredientItem(2, "red");
+    rightPotionItem.setPotionType(rightPotionName);
+    rightPotionItem.setGroupLabel(true);
+    rightPotionItem.setLocation(rightX, IMAGE_Y);
+    rightPotionItem.setSize(POTION_IMAGE_SIZE, POTION_IMAGE_SIZE);
+    rightPotionItem.setVisible(false); // Initially invisible
+    gridPanel.add(rightPotionItem);
+
+    // Update instruction
+    instructionLabel.setText("Use your 'Mind of Unity' to choose which potion to craft. Click the button below.");
+
+    // Enable ability button
+    abilityButton.setText("Use Mind of Unity");
+    abilityButton.setEnabled(true);
+
+    // Disable check button until a potion is selected
+    checkButton.setEnabled(false);
+
+    // Add click listeners to potions for selection
+    leftPotionItem.addMouseListener(new MouseAdapter() {
+        @Override
+        public void mouseClicked(MouseEvent e) {
+            if (leftPotionItem.isVisible()) {
+                selectPotionGroup(1); // Left potion
+
+                // Store the selected potion name
+                craftedPotion = leftPotionName;
+            }
+        }
+    });
+
+    rightPotionItem.addMouseListener(new MouseAdapter() {
+        @Override
+        public void mouseClicked(MouseEvent e) {
+            if (rightPotionItem.isVisible()) {
+                selectPotionGroup(2); // Right potion
+
+                // Store the selected potion name
+                craftedPotion = rightPotionName;
+            }
+        }
+    });
+
+    // Update UI
+    gridPanel.revalidate();
+    gridPanel.repaint();
+}
     
     
     
