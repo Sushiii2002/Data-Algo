@@ -3,8 +3,10 @@ package gameproject.ui;
 import gameproject.controller.GameController;
 import gameproject.model.GameModel;
 import gameproject.model.GameState;
+import gameproject.model.NarrativeSystem;
 import gameproject.util.ResourceManager;
 import gameproject.util.GameConstants;
+import gameproject.view.DialogueManager;
 
 import javax.swing.*;
 import javax.swing.plaf.basic.BasicButtonUI;
@@ -743,12 +745,33 @@ public class TimSortVisualization extends JPanel {
         if (currentPhase == 1) {
             // Eye of Pattern - Highlight runs
             highlightNaturalRuns();
+
+            // After a short delay, show the middle dialogue
+            Timer dialogueTimer = new Timer(1500, e -> {
+                showPhaseDialogue("phase1_middle");
+            });
+            dialogueTimer.setRepeats(false);
+            dialogueTimer.start();
         } else if (currentPhase == 2) {
             // Hand of Balance - Apply automatic sorting
             applyHandOfBalanceAbility();
+
+            // After sorting animation completes, show the middle dialogue
+            Timer dialogueTimer = new Timer(3000, e -> {
+                showPhaseDialogue("phase2_middle");
+            });
+            dialogueTimer.setRepeats(false);
+            dialogueTimer.start();
         } else if (currentPhase == 3) {
             // Mind of Unity - Animate potion options display
             animatePotionOptions();
+
+            // After animation completes, show the decision dialogue
+            Timer dialogueTimer = new Timer(2500, e -> {
+                showPhaseDialogue("phase3_decision");
+            });
+            dialogueTimer.setRepeats(false);
+            dialogueTimer.start();
         }
     }
     
@@ -1687,19 +1710,19 @@ public class TimSortVisualization extends JPanel {
     */
     private void checkPhaseCompletion() {
         if (currentPhase == 1) {
-            // Phase 1 code unchanged
             if (selectedIngredients.size() == MAX_SELECTIONS) {
                 boolean hasValidRuns = checkValidRuns();
 
                 if (hasValidRuns) {
-                    JOptionPane.showMessageDialog(this,
-                        "Well done! Your Eye of Pattern has identified natural sequences!",
-                        "Phase 1 Complete",
-                        JOptionPane.INFORMATION_MESSAGE
-                    );
+                    // Show phase completion dialogue first
+                    showPhaseDialogue("phase1_end");
 
+                    // After dialogue ends, the DialogueEndListener will call resumeAfterDialogue
+                    // which will allow the phase to be marked as completed
                     phaseCompleted = true;
-                    Timer transitionTimer = new Timer(1500, e -> {
+
+                    // Phase transition will happen after dialogue ends
+                    Timer transitionTimer = new Timer(500, e -> {
                         advanceToNextPhase();
                     });
                     transitionTimer.setRepeats(false);
@@ -1714,28 +1737,17 @@ public class TimSortVisualization extends JPanel {
                 }
             }
         } else if (currentPhase == 2) {
-            // Check if both groups are actually sorted - using our verification method
+            // Check if both groups are properly sorted
             boolean leftSorted = isGroupSorted(leftGroup);
             boolean rightSorted = isGroupSorted(rightGroup);
 
-            // Debug output
-            System.out.println("Checking Phase 2 completion:");
-            System.out.println("Left group sorted: " + leftSorted + ", flag: " + isLeftGroupSorted);
-            System.out.println("Right group sorted: " + rightSorted + ", flag: " + isRightGroupSorted);
-            System.out.println("Left group size: " + leftGroup.size() + ", Right group size: " + rightGroup.size());
-            System.out.println("Left group potion type: " + leftGroupPotionType);
-            System.out.println("Right group potion type: " + rightGroupPotionType);
-
-            // Now check if the ability has been used AND the groups are sorted
             if (isLeftGroupSorted && isRightGroupSorted && leftSorted && rightSorted) {
-                JOptionPane.showMessageDialog(this,
-                    "Well done! Your Hand of Balance has arranged the ingredients perfectly!",
-                    "Phase 2 Complete",
-                    JOptionPane.INFORMATION_MESSAGE
-                );
+                // Show phase completion dialogue first
+                showPhaseDialogue("phase2_end");
 
+                // After dialogue ends, transition will occur
                 phaseCompleted = true;
-                Timer transitionTimer = new Timer(1500, e -> {
+                Timer transitionTimer = new Timer(500, e -> {
                     advanceToNextPhase();
                 });
                 transitionTimer.setRepeats(false);
@@ -1748,26 +1760,27 @@ public class TimSortVisualization extends JPanel {
                     JOptionPane.INFORMATION_MESSAGE
                 );
             } else {
-                // This should rarely happen - something is wrong with the sorting
+                // Something is wrong with the sorting
                 JOptionPane.showMessageDialog(this,
                     "The ingredients aren't properly sorted yet. Try again!",
                     "Try Again",
                     JOptionPane.WARNING_MESSAGE
                 );
                 loseLife();
-
-                // Try to recover - reset the flags to force them to use the ability again
                 isLeftGroupSorted = false;
                 isRightGroupSorted = false;
             }
         } else if (currentPhase == 3) {
-            // Phase 3 - now using the dynamic dialogue
             if (craftedPotion != null) {
-                System.out.println("DEBUG: Starting boss battle with crafted potion: " + craftedPotion);
-                System.out.println("DEBUG: Left potion type: " + leftGroupPotionType);
-                System.out.println("DEBUG: Right potion type: " + rightGroupPotionType);
+                // Show phase completion dialogue first
+                showPhaseDialogue("phase3_end");
 
-                startBossBattle("Flameclaw");
+                // After dialogue ends, start boss battle
+                Timer bossTimer = new Timer(500, e -> {
+                    startBossBattle("Flameclaw");
+                });
+                bossTimer.setRepeats(false);
+                bossTimer.start();
             }
         }
     }
@@ -2265,6 +2278,24 @@ public class TimSortVisualization extends JPanel {
 
             // Then initialize the proper phase UI
             initializePhaseUI();
+
+            // Add a slight delay before showing the start dialogue
+            Timer dialogueTimer = new Timer(1000, e -> {
+                // Show the appropriate dialogue for this phase
+                switch (currentPhase) {
+                    case 1:
+                        showPhaseDialogue("phase1_start");
+                        break;
+                    case 2:
+                        showPhaseDialogue("phase2_start");
+                        break;
+                    case 3:
+                        showPhaseDialogue("phase3_start");
+                        break;
+                }
+            });
+            dialogueTimer.setRepeats(false);
+            dialogueTimer.start();
         }
     }
 
@@ -2645,6 +2676,102 @@ public class TimSortVisualization extends JPanel {
             default:
                 return "A mysterious potion with unknown effects.";
         }
+    }
+    
+    
+    
+    /**
+    * Add this method to TimSortVisualization class to show phase dialogues
+    */
+    private void showPhaseDialogue(String dialogueKey) {
+        // Create semi-transparent overlay
+        JPanel dialogueOverlay = new JPanel() {
+            @Override
+            protected void paintComponent(Graphics g) {
+                super.paintComponent(g);
+                // Dark semi-transparent background (70% opacity)
+                g.setColor(new Color(0, 0, 0, 180));
+                g.fillRect(0, 0, getWidth(), getHeight());
+            }
+        };
+        dialogueOverlay.setLayout(null);
+        dialogueOverlay.setBounds(0, 0, GameConstants.WINDOW_WIDTH, GameConstants.WINDOW_HEIGHT);
+        dialogueOverlay.setOpaque(false);
+        add(dialogueOverlay, 0);
+
+        // Get the dialogue sequence from NarrativeSystem
+        NarrativeSystem narrativeSystem = NarrativeSystem.getInstance();
+        List<NarrativeSystem.DialogueEntry> dialogueSequence = 
+            narrativeSystem.getDialogueSequence(dialogueKey);
+
+        if (dialogueSequence == null || dialogueSequence.isEmpty()) {
+            // If no dialogue found, just remove the overlay
+            remove(dialogueOverlay);
+            repaint();
+            return;
+        }
+
+        // Create a dialogue manager specifically for this overlay
+        DialogueManager phaseDialogueManager = new DialogueManager(controller);
+        phaseDialogueManager.setBounds(0, 0, GameConstants.WINDOW_WIDTH, GameConstants.WINDOW_HEIGHT);
+        dialogueOverlay.add(phaseDialogueManager);
+
+        // Start the dialogue sequence
+        phaseDialogueManager.startDialogue(dialogueSequence);
+
+        // Add a listener to remove the overlay when dialogue ends
+        phaseDialogueManager.setDialogueEndListener(new DialogueManager.DialogueEndListener() {
+            @Override
+            public void onDialogueEnd() {
+                // Remove the overlay when dialogue completes
+                remove(dialogueOverlay);
+                repaint();
+
+                // Resume any paused game elements if needed
+                resumeAfterDialogue();
+            }
+        });
+
+        // Pause any active timers or animations during dialogue
+        pauseDuringDialogue();
+
+        // Force revalidate and repaint
+        revalidate();
+        repaint();
+    }
+    
+    
+    /**
+    * Pause game elements during dialogue
+    */
+    private void pauseDuringDialogue() {
+        // Pause any active timers
+        if (gameTimer != null && gameTimer.isRunning()) {
+            gameTimer.stop();
+        }
+
+        // Disable buttons during dialogue
+        abilityButton.setEnabled(false);
+        checkButton.setEnabled(false);
+        hintButton.setEnabled(false);
+        pauseButton.setEnabled(false);
+    }
+
+    
+    /**
+    * Resume game elements after dialogue ends
+    */
+    private void resumeAfterDialogue() {
+        // Resume timers if they were active before
+        if (gameTimer != null) {
+            gameTimer.start();
+        }
+
+        // Re-enable buttons
+        abilityButton.setEnabled(true);
+        checkButton.setEnabled(currentPhase == 1 ? selectedIngredients.size() == MAX_SELECTIONS : true);
+        hintButton.setEnabled(true);
+        pauseButton.setEnabled(true);
     }
     
     
