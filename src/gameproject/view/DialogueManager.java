@@ -66,6 +66,10 @@ public class DialogueManager extends JPanel {
     private static final float CHARACTER_NAME_FONT_SIZE = 28.0f; // Increased from 24 to 28
     private static final float CHARACTER_NAME_BOSS_FONT_SIZE = 30.0f; // Increased from 26 to 30
     
+    
+    
+    private DialogueEndListener dialogueEndListener;
+    
     /**
      * Custom panel for drawing portraits with themed borders
      */
@@ -520,17 +524,22 @@ public class DialogueManager extends JPanel {
         isDialoguePlaying = false;
         dialoguePanel.setVisible(false);
         setVisible(false);
-        
+
         // Clear components
         portraitPanel.setPortrait(null);
         characterNameLabel.setText("");
         dialogueTextLabel.setText("");
-        
+
         // Signal the narrative system to advance the story
         narrativeSystem.advanceStory();
-        
+
         // Notify controller that dialogue has ended
         controller.onDialogueSequenceEnded();
+
+        // Notify the dialogue end listener if one is set
+        if (dialogueEndListener != null) {
+            dialogueEndListener.onDialogueEnd();
+        }
     }
     
     /**
@@ -546,4 +555,14 @@ public class DialogueManager extends JPanel {
         // No additional background painting
     }
     
+    
+    
+    
+    public interface DialogueEndListener {
+        void onDialogueEnd();
+    }
+    
+    public void setDialogueEndListener(DialogueEndListener listener) {
+        this.dialogueEndListener = listener;
+    }
 }
