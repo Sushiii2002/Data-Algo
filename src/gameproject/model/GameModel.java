@@ -14,6 +14,11 @@ public class GameModel {
     private int currentLevel;
     private String currentDifficulty;
     
+    // Add these fields to GameModel class
+    private String leftPotionType = "Fire Resistance";  // Default value
+    private String rightPotionType = "Strength";        // Default value
+    private String selectedPotion = null;     
+    
     /**
      * Constructor - Initialize the game model
      */
@@ -64,4 +69,50 @@ public class GameModel {
     public void setCurrentDifficulty(String difficulty) {
         this.currentDifficulty = difficulty;
     }
+    
+    
+    /**
+    * Get the left potion type
+    */
+    public String getLeftPotionType() {
+        return leftPotionType;
+    }
+
+    /**
+     * Set the left potion type
+     */
+    public void setLeftPotionType(String type) {
+        this.leftPotionType = type;
+    }
+
+    /**
+     * Get the right potion type
+     */
+    public String getRightPotionType() {
+        return rightPotionType;
+    }
+
+    /**
+     * Set the right potion type
+     */
+    public void setRightPotionType(String type) {
+        this.rightPotionType = type;
+    }
+
+    /**
+     * Get the selected potion
+     */
+    public String getSelectedPotion() {
+        return selectedPotion;
+    }
+
+    /**
+     * Set the selected potion
+     */
+    public void setSelectedPotion(String potion) {
+        this.selectedPotion = potion;
+    }
+    
+    
+    
 }
