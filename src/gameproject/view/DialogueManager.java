@@ -363,20 +363,40 @@ public class DialogueManager extends JPanel {
      * Start displaying a dialogue sequence
      */
     public void startDialogue(List<NarrativeSystem.DialogueEntry> dialogueSequence) {
-        if (dialogueSequence == null || dialogueSequence.isEmpty()) {
+            if (dialogueSequence == null || dialogueSequence.isEmpty()) {
+            System.out.println("DEBUG: Empty dialogue sequence received!");
             return;
         }
-        
+
+        System.out.println("DEBUG: Starting dialogue sequence with " + dialogueSequence.size() + " entries");
+
         this.currentDialogueSequence = dialogueSequence;
         this.currentDialogueIndex = 0;
         this.isDialoguePlaying = true;
-        
-        // Show the dialogue panel
+
+        // IMPORTANT: Ensure the dialogue panel is visible and in the foreground
         dialoguePanel.setVisible(true);
         setVisible(true);
-        
+
+        // IMPORTANT: Force panel to be on top
+        if (getParent() != null) {
+            getParent().setComponentZOrder(this, 0);
+        }
+
+        // Log panel visibility state
+        System.out.println("DEBUG: DialogueManager visible: " + isVisible() + 
+                           ", Panel visible: " + dialoguePanel.isVisible());
+
+        // Ensure bounds are valid - Cover the entire screen
+        setBounds(0, 0, 1024, 768); // Match GameConstants.WINDOW_WIDTH/HEIGHT
+        System.out.println("DEBUG: DialogueManager bounds: " + getBounds());
+
         // Display first dialogue entry
         displayDialogueEntry(currentDialogueSequence.get(currentDialogueIndex));
+
+        // IMPORTANT: Force repaint to update the display
+        revalidate();
+        repaint();
     }
     
     /**
@@ -427,20 +447,20 @@ public class DialogueManager extends JPanel {
             dialogueTextLabel.setText("");
             return;
         }
-        
+
         // Calculate the correct width for text wrapping
-        // This is critical to prevent text cutoff
-        int textWidth = dialogueTextLabel.getWidth() - 150; // Increased margin from 10 to 40 for greater safety
-        
+        // Increase the margin to prevent text cutoff
+        int textWidth = dialogueTextLabel.getWidth() - 200; // Increased margin for greater safety
+
         // Create HTML with specific width to force proper text wrapping
         StringBuilder html = new StringBuilder();
         html.append("<html><div style='width: ").append(textWidth).append("px;'>");
-        
+
         // Replace newlines with HTML breaks
         html.append(text.replace("\n", "<br>"));
-        
+
         html.append("</div></html>");
-        
+
         // Set the wrapped text
         dialogueTextLabel.setText(html.toString());
     }
@@ -451,7 +471,7 @@ public class DialogueManager extends JPanel {
     private void loadCharacterPortrait(String characterName, String emotion) {
         // Format character name to match file naming
         String formattedName = characterName.toLowerCase().replace(" ", "_");
-        
+
         // Create portrait file path
         String portraitPath;
         if (emotion != null && !emotion.isEmpty()) {
@@ -459,22 +479,42 @@ public class DialogueManager extends JPanel {
         } else {
             portraitPath = "/gameproject/resources/characters/" + formattedName + ".png";
         }
-        
+
         // Check if portrait is already cached
         String cacheKey = portraitPath;
         ImageIcon portrait = portraitCache.get(cacheKey);
-        
+
         // If not in cache, load it
         if (portrait == null) {
             portrait = resourceManager.getImage(portraitPath);
-            
+
             // If emotion-specific portrait not found, try default portrait
             if (portrait == null && emotion != null && !emotion.isEmpty()) {
-                LOGGER.log(Level.INFO, "Emotion portrait not found: {0}. Falling back to default.", portraitPath);
-                portraitPath = "/gameproject/resources/characters/" + formattedName + ".png";
-                portrait = resourceManager.getImage(portraitPath);
+                LOGGER.log(Level.INFO, "Emotion portrait not found: {0}. Trying to locate available emotion portraits...", portraitPath);
+
+                // Check for available Toxitar emotion portraits based on your screenshot
+                if (characterName.equalsIgnoreCase("Toxitar")) {
+                    // Try the emotion portraits we know exist
+                    String[] knownEmotions = {"attacking", "weakened"};
+
+                    for (String knownEmotion : knownEmotions) {
+                        String altPath = "/gameproject/resources/characters/" + formattedName + "_" + knownEmotion + ".png";
+                        portrait = resourceManager.getImage(altPath);
+
+                        if (portrait != null) {
+                            LOGGER.log(Level.INFO, "Found alternative emotion portrait: {0}", altPath);
+                            break;
+                        }
+                    }
+                }
+
+                // If still not found, use default portrait
+                if (portrait == null) {
+                    portraitPath = "/gameproject/resources/characters/" + formattedName + ".png";
+                    portrait = resourceManager.getImage(portraitPath);
+                }
             }
-            
+
             // If still not found, use silhouette placeholder
             if (portrait == null) {
                 LOGGER.log(Level.WARNING, "Character portrait not found: {0}. Using placeholder.", portraitPath);
@@ -484,10 +524,10 @@ public class DialogueManager extends JPanel {
                 portraitCache.put(cacheKey, portrait);
             }
         }
-        
-        // Set the portrait in panel
-        portraitPanel.setPortrait(portrait);
-    }
+    
+    // Set the portrait in panel
+    portraitPanel.setPortrait(portrait);
+}
     
     /**
      * Advance to the next dialogue entry
@@ -495,16 +535,19 @@ public class DialogueManager extends JPanel {
     private void advanceDialogue() {
         // Stop animation
         typewriterTimer.stop();
-        
+
+        // IMPORTANT: Clear the previous dialogue text completely
+        updateDialogueText("");
+
         // Move to next dialogue
         currentDialogueIndex++;
-        
+
         // Check if we've reached the end of the sequence
         if (currentDialogueIndex >= currentDialogueSequence.size()) {
             endDialogueSequence();
             return;
         }
-        
+
         // Display next dialogue entry
         displayDialogueEntry(currentDialogueSequence.get(currentDialogueIndex));
     }
@@ -533,21 +576,27 @@ public class DialogueManager extends JPanel {
         characterNameLabel.setText("");
         dialogueTextLabel.setText("");
 
-        // Check if this was a boss battle result dialogue
-        if (isBossBattleResultDialogue) {
-            isBossBattleResultDialogue = false;
-            // Transition to level selection after boss battle result dialogue
-            controller.showLevelSelection();
-        } else {
-            // Signal the narrative system to advance the story
-            narrativeSystem.advanceStory();
-            // Notify controller that dialogue has ended
-            controller.onDialogueSequenceEnded();
-        }
+        System.out.println("DEBUG: Dialogue sequence ended, calling dialogue end listener");
 
         // Notify the dialogue end listener if one is set
         if (dialogueEndListener != null) {
             dialogueEndListener.onDialogueEnd();
+            // IMPORTANT: Reset the listener to prevent it from being called again
+            dialogueEndListener = null;
+        } else {
+            System.out.println("DEBUG: No dialogue end listener set");
+
+            // Check if this was a boss battle result dialogue
+            if (isBossBattleResultDialogue) {
+                isBossBattleResultDialogue = false;
+                System.out.println("DEBUG: Was boss battle result dialogue, going to level selection");
+                // Transition to level selection after boss battle result dialogue
+                controller.showLevelSelection();
+            } else {
+                // Signal the narrative system to advance the story
+                System.out.println("DEBUG: Notifying controller dialogue ended");
+                controller.onDialogueSequenceEnded();
+            }
         }
     }
     

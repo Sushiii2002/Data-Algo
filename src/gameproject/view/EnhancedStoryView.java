@@ -42,6 +42,9 @@ public class EnhancedStoryView extends JPanel {
     // Current phase tracking
     private int currentPhase = -1; // -1 indicates story intro
     
+    private boolean skipToGameplay = false;
+    
+    
     /**
      * Constructor - Initialize the enhanced story view
      */
@@ -187,32 +190,47 @@ public class EnhancedStoryView extends JPanel {
      * Start the story presentation
      */
     public void startStory() {
+        // Reset the skip flag
+        skipToGameplay = false;
+
         // Reset state
         alphaLevel = 0.0f;
         currentPhase = -1;
-        
+
         // Make all components invisible initially
         titleLabel.setVisible(false);
         storyContentPanel.setVisible(false);
         phaseIndicatorsPanel.setVisible(false);
-        
+
         // Start fade in animation
         isFadingIn = true;
         fadeInTimer.start();
-        
+
         // Start the narrative system
         narrativeSystem.startNarrative();
-        
+
         // Show prologue dialogues after a short delay
         Timer delayTimer = new Timer(1000, new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 // Show title
                 titleLabel.setVisible(true);
-                
+
                 // Start prologue dialogue
                 List<NarrativeSystem.DialogueEntry> prologueDialogues = 
                     narrativeSystem.getNextDialogueSequence();
+
+                // IMPORTANT: Set dialogue end listener before starting dialogue
+                dialogueManager.setDialogueEndListener(new DialogueManager.DialogueEndListener() {
+                    @Override
+                    public void onDialogueEnd() {
+                        // This should trigger gameplay for Level 1
+                        System.out.println("DEBUG: Level 1 prologue dialogue ended, starting Phase 1");
+                        skipToGameplay = true;
+                        controller.startPhaseGameplay(1);
+                    }
+                });
+
                 dialogueManager.startDialogue(prologueDialogues);
             }
         });
@@ -224,6 +242,12 @@ public class EnhancedStoryView extends JPanel {
      * Handle dialogue sequence end event
      */
     public void onDialogueSequenceEnded() {
+        // If we're already set to skip to gameplay, don't do anything
+        if (skipToGameplay) {
+            System.out.println("DEBUG: Dialogue sequence ended, but skipToGameplay is true - letting controller handle it");
+            return;
+        }
+
         // Determine what to do based on current phase
         if (currentPhase == -1) {
             // Prologue ended, transition to Phase 1
@@ -442,6 +466,9 @@ public class EnhancedStoryView extends JPanel {
     * Start the Level 2 story presentation
     */
     public void startLevel2Story() {
+        // Reset skip flag
+        skipToGameplay = false;
+
         // Reset state
         alphaLevel = 0.0f;
         currentPhase = -1;
@@ -469,10 +496,12 @@ public class EnhancedStoryView extends JPanel {
                 List<NarrativeSystem.DialogueEntry> level2IntroDialogues = 
                     narrativeSystem.getDialogueSequence("level2_intro");
 
-                // Set a completion handler for the dialogue manager
+                // IMPORTANT: Set a completion handler BEFORE starting dialogue
                 dialogueManager.setDialogueEndListener(new DialogueManager.DialogueEndListener() {
                     @Override
                     public void onDialogueEnd() {
+                        System.out.println("DEBUG: Level 2 intro dialogue ended, starting Phase 1");
+                        skipToGameplay = true;
                         // Explicitly start Phase 1 of Level 2
                         controller.startPhaseGameplay(1);
                     }
@@ -546,16 +575,54 @@ public class EnhancedStoryView extends JPanel {
             System.out.println("DEBUG: Retrieved selected potion from model: " + selectedPotion);
         }
 
+        
+        setVisible(true);
+        
+        
         // Get dynamic dialogue from NarrativeSystem
         List<NarrativeSystem.DialogueEntry> battleDialogues = 
-            narrativeSystem.getToxitarBattleOutcomeDialogue(success, selectedPotion);
+        narrativeSystem.getToxitarBattleOutcomeDialogue(success, selectedPotion);
+
+        System.out.println("DEBUG: Got battle dialogues, size: " + battleDialogues.size());
 
         // Set a special flag to indicate this is a boss battle result dialogue
         dialogueManager.setBossBattleResultDialogue(true);
+        
+        
+        // IMPORTANT: Make sure dialogueManager is visible and on top
+        dialogueManager.setVisible(true);
+        if (getComponentZOrder(dialogueManager) != 0) {
+            setComponentZOrder(dialogueManager, 0);
+        }
+
+        // Set a listener to go to level selection when dialogue ends
+        dialogueManager.setDialogueEndListener(new DialogueManager.DialogueEndListener() {
+            @Override
+            public void onDialogueEnd() {
+                System.out.println("DEBUG: Battle result dialogue ended, showing level selection");
+                controller.showLevelSelection();
+            }
+        });
+
+        // IMPORTANT: First have the controller show the enhanced story view
+        controller.model.setCurrentState(GameState.STORY_MODE);
+
+        // Log to verify dialogue state
+        System.out.println("DEBUG: Before starting dialogue - DialogueManager visible: " + 
+                           dialogueManager.isVisible());
 
         // Start the dialogue
         dialogueManager.startDialogue(battleDialogues);
+
+        // IMPORTANT: Force repaint
+        revalidate();
+        repaint();
     }
+    
+    
+    
+    
+    
     
     /**
     * Start dynamic dialogue for a specific phase in Level 2
@@ -563,6 +630,22 @@ public class EnhancedStoryView extends JPanel {
     public void startLevel2PhaseDialogue(int phase) {
         currentPhase = phase;
 
+        
+        
+        // If there are any existing dialogue panels, remove them
+        for (Component comp : getComponents()) {
+            if (comp instanceof JPanel && comp != dialogueManager) {
+                remove(comp);
+            }
+        }
+
+        // Make sure we're using a single dialogueManager instance
+        if (dialogueManager != null) {
+            // Clear any previous dialogue
+            dialogueManager.setVisible(false);
+        }
+        
+        
         // Get the potion types
         String leftPotionType = "Dexterity"; // Default for Level 2
         String rightPotionType = "Strength"; // Default for Level 2
@@ -586,14 +669,16 @@ public class EnhancedStoryView extends JPanel {
             }
         }
 
-        // Show phase indicators
-        phaseIndicatorsPanel.setVisible(true);
-
         // Get dynamic dialogue for Level 2 phase
         List<NarrativeSystem.DialogueEntry> dialogueSequence = 
             narrativeSystem.getDynamicLevel2Dialogue(phase, leftPotionType, rightPotionType);
 
-        // Start the dialogue
+        // Start the dialogue with clean slate
+        dialogueManager.setVisible(true);
         dialogueManager.startDialogue(dialogueSequence);
+
+        // Force repaint to ensure clean display
+        revalidate();
+        repaint();
     }
 }

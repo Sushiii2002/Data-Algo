@@ -1657,15 +1657,10 @@ public class TimSortVisualization extends JPanel {
         String leftPotionType = leftGroupPotionType;
         String rightPotionType = rightGroupPotionType;
 
-        // Modify for Level 2 - ensure Dexterity is one of the options
-        if (gameLevel == 2) {
-            // Make sure Dexterity is always one of the options for Toxitar
-            if (!leftPotionType.equals("Dexterity") && !rightPotionType.equals("Dexterity")) {
-                // If neither is Dexterity, replace the right one
-                rightPotionType = "Dexterity";
-            }
-        }
-
+        
+        System.out.println("DEBUG: Displaying potion options - Left: " + leftPotionType + ", Right: " + rightPotionType);
+        
+        
         // Define potion information lookup
         Map<String, String[]> potionInfo = new HashMap<>();
         potionInfo.put("Fire Resistance", new String[]{"Fire Resistance Potion", 
@@ -1683,13 +1678,55 @@ public class TimSortVisualization extends JPanel {
 
         // Add boss-specific descriptions for Level 2
         if (gameLevel == 2) {
-            potionInfo.put("Dexterity", new String[]{"Dexterity Potion", 
-                                         "Grants exceptional agility and reflexes - perfect for avoiding Toxitar's poison clouds.",
-                                         "/gameproject/resources/potions/dexterity_potion.png"});
-            potionInfo.put("Strength", new String[]{"Strength Potion", 
-                                        "Enhances physical power, but may not help avoid spreading poison.",
-                                        "/gameproject/resources/potions/strength_potion.png"});
-        }
+            // For Level 2 (Toxitar), add special descriptions
+            if (leftPotionType.equals("Dexterity")) {
+                potionInfo.put("Dexterity", new String[]{"Dexterity Potion", 
+                    "Grants exceptional agility and reflexes - perfect for avoiding Toxitar's poison clouds.",
+                    "/gameproject/resources/potions/dexterity_potion.png"});
+            } else {
+                // For other potion types, explain their effectiveness against Toxitar
+                if (leftPotionType.equals("Fire Resistance")) {
+                    potionInfo.put("Fire Resistance", new String[]{"Fire Resistance Potion", 
+                        "Protects against fire, but offers little defense against Toxitar's poison.",
+                        "/gameproject/resources/potions/fire_resistance_potion.png"});
+                } else if (leftPotionType.equals("Strength")) {
+                    potionInfo.put("Strength", new String[]{"Strength Potion", 
+                        "Enhances physical power, but may not help avoid Toxitar's spreading poison.",
+                        "/gameproject/resources/potions/strength_potion.png"});
+                }
+            }
+
+            // Do the same for right potion type
+            if (rightPotionType.equals("Dexterity")) {
+                potionInfo.put("Dexterity", new String[]{"Dexterity Potion", 
+                    "Grants exceptional agility and reflexes - perfect for avoiding Toxitar's poison clouds.",
+                    "/gameproject/resources/potions/dexterity_potion.png"});
+            } else {
+                // For other potion types, explain their effectiveness against Toxitar
+                if (rightPotionType.equals("Fire Resistance")) {
+                    potionInfo.put("Fire Resistance", new String[]{"Fire Resistance Potion", 
+                        "Protects against fire, but offers little defense against Toxitar's poison.",
+                        "/gameproject/resources/potions/fire_resistance_potion.png"});
+                } else if (rightPotionType.equals("Strength")) {
+                    potionInfo.put("Strength", new String[]{"Strength Potion", 
+                        "Enhances physical power, but may not help avoid Toxitar's spreading poison.",
+                        "/gameproject/resources/potions/strength_potion.png"});
+                }
+            }
+        } else {
+            // For Level 1 (Flameclaw), add special descriptions
+            if (leftPotionType.equals("Fire Resistance")) {
+                potionInfo.put("Fire Resistance", new String[]{"Fire Resistance Potion", 
+                    "Protects against fire attacks and extreme heat - ideal against Flameclaw.",
+                    "/gameproject/resources/potions/fire_resistance_potion.png"});
+            }
+
+            if (rightPotionType.equals("Fire Resistance")) {
+                potionInfo.put("Fire Resistance", new String[]{"Fire Resistance Potion", 
+                    "Protects against fire attacks and extreme heat - ideal against Flameclaw.",
+                    "/gameproject/resources/potions/fire_resistance_potion.png"});
+            }
+}
 
         // Get position for left potion
         int leftX = GameConstants.WINDOW_WIDTH / 4 - (POTION_IMAGE_SIZE / 2);
@@ -2067,60 +2104,62 @@ public class TimSortVisualization extends JPanel {
 
         // After a delay, show battle outcome
         Timer battleTimer = new Timer(5000, e -> {
-            // IMPORTANT: Remove battle overlay before proceeding
-            remove(battleOverlay);
+        // IMPORTANT: Remove battle overlay before proceeding
+        remove(battleOverlay);
 
-            // Extract the actual potion type name from the craftedPotion string (remove " Potion" suffix)
-            String selectedPotionType = craftedPotion;
-            if (selectedPotionType.endsWith(" Potion")) {
-                selectedPotionType = selectedPotionType.substring(0, selectedPotionType.length() - 7);
-            }
-            System.out.println("DEBUG: Extracted potion type: " + selectedPotionType);
+        // Extract the actual potion type name from the craftedPotion string
+        String selectedPotionType = craftedPotion;
+        if (selectedPotionType.endsWith(" Potion")) {
+            selectedPotionType = selectedPotionType.substring(0, selectedPotionType.length() - 7);
+        }
+        System.out.println("DEBUG: Extracted potion type: " + selectedPotionType);
 
-            // Determine the correct potion to use against this boss
-            boolean correctChoice = false;
+        // Determine the correct potion to use against this boss
+        boolean correctChoice = false;
 
-            // Check against the current boss
-            if (bossName.equals("Flameclaw")) {
-                correctChoice = selectedPotionType.equals("Fire Resistance");
-                System.out.println("DEBUG: Correct choice for Flameclaw is Fire Resistance, selected: " + selectedPotionType);
-            } else if (bossName.equals("Toxitar")) {
-                correctChoice = selectedPotionType.equals("Dexterity");
-                System.out.println("DEBUG: Correct choice for Toxitar is Dexterity, selected: " + selectedPotionType);
-            }
+        // Check against the current boss
+        if (bossName.equals("Flameclaw")) {
+            correctChoice = selectedPotionType.equals("Fire Resistance");
+            System.out.println("DEBUG: Correct choice for Flameclaw is Fire Resistance, selected: " + selectedPotionType);
+        } else if (bossName.equals("Toxitar")) {
+            correctChoice = selectedPotionType.equals("Dexterity");
+            System.out.println("DEBUG: Correct choice for Toxitar is Dexterity, selected: " + selectedPotionType);
+        }
 
-            // IMPORTANT: Clear the grid panel completely before showing result
-            gridPanel.removeAll();
+        // IMPORTANT: Clear the grid panel completely before showing result
+        gridPanel.removeAll();
 
-            // IMPORTANT: Properly finish the phase before showing result
-            finishCurrentPhase();
+        // IMPORTANT: Properly finish the phase before showing result
+        finishCurrentPhase();
 
-            // Store the selected potion in the model for use in dialogue
-            controller.model.setSelectedPotion(craftedPotion);
+        // Store the selected potion in the model for use in dialogue
+        controller.model.setSelectedPotion(craftedPotion);
 
-            // Determine boss level based on name
-            int bossLevel = bossName.equals("Flameclaw") ? 1 : 2;
+        // Determine boss level based on name
+        int bossLevel = bossName.equals("Flameclaw") ? 1 : 2;
 
-            if (correctChoice) {
-                JOptionPane.showMessageDialog(this,
-                    "Excellent choice! The " + selectedPotionType + " Potion was effective against " + bossName + "!",
-                    "Success!",
-                    JOptionPane.INFORMATION_MESSAGE
-                );
+        // IMPORTANT: Add debug to see what's happening
+        System.out.println("DEBUG: Signaling boss battle complete to controller");
+        
+        // Don't show a popup here, let the controller handle it with proper dialogue
 
-                // Signal successful boss battle
-                controller.onBossBattleComplete(true, bossLevel);
-            } else {
-                JOptionPane.showMessageDialog(this,
-                    "Oh no! The " + selectedPotionType + " Potion wasn't effective against " + bossName + "!",
-                    "Failure",
-                    JOptionPane.WARNING_MESSAGE
-                );
+        if (correctChoice) {
+            JOptionPane.showMessageDialog(this,
+                "Excellent choice! The " + selectedPotionType + " Potion was effective against " + bossName + "!",
+                "Success!",
+                JOptionPane.INFORMATION_MESSAGE
+            );
+        } else {
+            JOptionPane.showMessageDialog(this,
+                "Oh no! The " + selectedPotionType + " Potion wasn't effective against " + bossName + "!",
+                "Failure",
+                JOptionPane.WARNING_MESSAGE
+            );
+        }
 
-                // Signal failed boss battle
-                controller.onBossBattleComplete(false, bossLevel);
-            }
-        });
+        // Signal successful boss battle
+        controller.onBossBattleComplete(correctChoice, bossLevel);
+    });
         battleTimer.setRepeats(false);
         battleTimer.start();
     }
@@ -3044,6 +3083,15 @@ public class TimSortVisualization extends JPanel {
         // Prefix the dialogue key with the level if it's Level 2
         String dialogueKey = (gameLevel == 2) ? "level2_" + baseDialogueKey : baseDialogueKey;
 
+        
+        // IMPORTANT: Remove any existing dialogue overlays first
+        for (Component comp : getComponents()) {
+            if (comp instanceof JPanel && comp.getName() != null && 
+                comp.getName().equals("dialogueOverlay")) {
+                remove(comp);
+            }
+        }
+        
         // Create semi-transparent overlay
         JPanel dialogueOverlay = new JPanel() {
             @Override
@@ -3054,6 +3102,8 @@ public class TimSortVisualization extends JPanel {
                 g.fillRect(0, 0, getWidth(), getHeight());
             }
         };
+        dialogueOverlay.setName("dialogueOverlay");
+        
         dialogueOverlay.setLayout(null);
         dialogueOverlay.setBounds(0, 0, GameConstants.WINDOW_WIDTH, GameConstants.WINDOW_HEIGHT);
         dialogueOverlay.setOpaque(false);
