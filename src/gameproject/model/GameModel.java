@@ -166,14 +166,14 @@ public class GameModel {
     /**
     * Get the correct potion type for the current boss
     */
-    public String getCorrectPotionForCurrentBoss() {
+        public String getCorrectPotionForCurrentBoss() {
         switch (gameLevel) {
             case 1:
                 return "Fire Resistance Potion";
             case 2:
                 return "Dexterity Potion";
             case 3:
-                return "Cold Resistance Potion";
+                return "Strength Potion";  // Updated for Lord Chaosa
             default:
                 return "Fire Resistance Potion"; // Default
         }

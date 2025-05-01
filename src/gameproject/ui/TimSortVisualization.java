@@ -87,6 +87,7 @@ public class TimSortVisualization extends JPanel {
     private int gameLevel = 1; // Default to Level 1
     private String currentBossName = "Flameclaw"; // Default to Level 1 boss
     private String[] toxitarHints = new String[3]; 
+    private String[] lordChaosaHints = new String[3];
     
     
     
@@ -260,7 +261,32 @@ public class TimSortVisualization extends JPanel {
         this.gameLevel = level;
 
         // Update boss-specific elements
-        if (level == 2) {
+        if (level == 3) {
+            // Level 3 - Lord Chaosa
+            currentBossName = "LordChaosa";
+
+            // Update hints for Lord Chaosa
+            String[] lordChaosaHints = new String[] {
+                "Look for ingredients with orange and brown coloring that enhance raw physical power.",
+                "Sort each group from foundational to peak. The proper sequence builds power progressively.",
+                "Against reality-warping chaos, only overwhelming physical force can break through the distortion."
+            };
+
+            // Store the hints
+            this.lordChaosaHints = lordChaosaHints;
+
+            // Update phase label with Level 3 context
+            if (currentPhase == 1) {
+                phaseLabel.setText("Phase 1: The Eye of Pattern (Level 3 - Lord Chaosa)");
+                instructionLabel.setText("Identify strength-enhancing ingredients to counter Lord Chaosa's reality distortions.");
+            } else if (currentPhase == 2) {
+                phaseLabel.setText("Phase 2: The Hand of Balance (Level 3 - Lord Chaosa)");
+                instructionLabel.setText("Sort the ingredients to craft potions of raw strength.");
+            } else if (currentPhase == 3) {
+                phaseLabel.setText("Phase 3: The Mind of Unity (Level 3 - Lord Chaosa)");
+                instructionLabel.setText("Choose which potion will be most effective against Lord Chaosa's reality-warping powers.");
+            }
+        } else if (level == 2) {
             // Level 2 - Toxitar
             currentBossName = "Toxitar";
 
@@ -299,7 +325,7 @@ public class TimSortVisualization extends JPanel {
             }
         }
     }
-    
+
     
     
     
@@ -309,21 +335,28 @@ public class TimSortVisualization extends JPanel {
     * Get the appropriate hint based on game level and phase
     */
     private String getLevelSpecificHint(int phase) {
-        if (gameLevel == 2) {
-            // Toxitar hints
+        if (gameLevel == 3) {
+            // Lord Chaosa hints
+            if (phase >= 1 && phase <= 3) {
+                return lordChaosaHints[phase - 1];
+            }
+        } else if (gameLevel == 2) {
+            // Toxitar hints (existing code)
             if (phase >= 1 && phase <= 3) {
                 return toxitarHints[phase - 1];
             }
         } else {
-            // Flameclaw hints (default)
+            // Flameclaw hints (existing code)
             if (phase == 1) {
                 return "Look for ingredients with similar properties. Blue ingredients enhance movement!";
             } else if (phase == 2) {
                 return "Sort each group from lowest to highest value. The order is crucial for potion effectiveness.";
             } else if (phase == 3) {
-                return "Against Toxitar's poison, consider how to avoid it completely rather than trying to resist it.";
+                return "Against Flameclaw's fire, consider what would protect you rather than what would make you powerful.";
             }
         }
+
+        // Default hint if no specific one is available
         return "Observe the natural patterns in the ingredients and follow the guidance of the characters.";
     }
     
@@ -331,7 +364,20 @@ public class TimSortVisualization extends JPanel {
     * Start a boss battle with the appropriate boss based on game level
     */
     private void startBossBattle() {
-        String bossName = (gameLevel == 2) ? "Toxitar" : "Flameclaw";
+        String bossName = "";
+        switch (gameLevel) {
+            case 1:
+                bossName = "Flameclaw";
+                break;
+            case 2:
+                bossName = "Toxitar";
+                break;
+            case 3:
+                bossName = "LordChaosa";
+                break;
+            default:
+                bossName = "Flameclaw";
+        }
         startBossBattle(bossName);
     }
     
@@ -594,9 +640,45 @@ public class TimSortVisualization extends JPanel {
 
         // Clear the grid panel
         gridPanel.removeAll();
+        if (gameLevel == 3) {
+                // For Level 3 (Lord Chaosa), prioritize Strength and Cold Resistance ingredients
 
-        // Create sets of ingredients with correct colors
-        if (gameLevel == 2) {
+                // Strength Potion (values 11-15) with orange background - most important for Lord Chaosa
+                String[] strengthIngredients = {"corn", "powdered_giant_insect", "troll_sweat", "powdered_minotaur_horn", "dragon_bone"};
+                for (int i = 0; i < 5; i++) {
+                    IngredientItem ingredient = new IngredientItem(i + 11, "orange");
+                    ingredient.setIngredientName(strengthIngredients[i]);
+                    ingredient.setPotionType("strength");
+                    allIngredients.add(ingredient);
+                }
+
+                // Cold Resistance Potion (values 6-10) with blue background - second priority
+                String[] coldIngredients = {"strawberries", "wasabi", "mint", "dragon_ice_glands", "ice_crystal"};
+                for (int i = 0; i < 5; i++) {
+                    IngredientItem ingredient = new IngredientItem(i + 6, "blue");
+                    ingredient.setIngredientName(coldIngredients[i]);
+                    ingredient.setPotionType("cold");
+                    allIngredients.add(ingredient);
+                }
+
+                // Dexterity Potion (values 16-20) - less important for Lord Chaosa
+                String[] dexterityIngredients = {"banana_leaf", "maple_sap", "powdered_jackalope_antlers", "griffon_feathers", "dragon_sinew"};
+                for (int i = 0; i < 5; i++) {
+                    IngredientItem ingredient = new IngredientItem(i + 16, "green");
+                    ingredient.setIngredientName(dexterityIngredients[i]);
+                    ingredient.setPotionType("dexterity");
+                    allIngredients.add(ingredient);
+                }
+
+                // Fire Resistance Potion (values 1-5) - least important for Lord Chaosa
+                String[] fireIngredients = {"pumpkin", "apples", "peppers", "dragon_fire_glands", "fire_crystal"};
+                for (int i = 0; i < 5; i++) {
+                    IngredientItem ingredient = new IngredientItem(i + 1, "red");
+                    ingredient.setIngredientName(fireIngredients[i]);
+                    ingredient.setPotionType("fire");
+                    allIngredients.add(ingredient);
+                }
+        } else if (gameLevel == 2) {
             // For Level 2 (Toxitar), prioritize Dexterity and Strength ingredients
 
             // Dexterity Potion (values 16-20) with green background - most important for Toxitar
@@ -863,6 +945,24 @@ public class TimSortVisualization extends JPanel {
             craftedPotion = rightGroupPotionType + " Potion";
             System.out.println("DEBUG: Selected right potion: " + craftedPotion);
         }
+        
+        
+        if (gameLevel == 3) {
+            String message = craftedPotion + " selected!";
+
+            if (craftedPotion.contains("Strength")) {
+                message += "\n\nThis potion grants tremendous physical power, perfect for breaking through Lord Chaosa's reality distortions.";
+            } else if (craftedPotion.contains("Cold")) {
+                message += "\n\nThis potion provides protection against cold, but may not be effective against Lord Chaosa's reality-warping abilities.";
+            } else {
+                message += "\n\nConsider whether this potion will be effective against Lord Chaosa's reality-warping powers.";
+            }
+
+            JOptionPane.showMessageDialog(this, message, "Potion Selection", JOptionPane.INFORMATION_MESSAGE);
+        } else {
+            // Original message for other levels
+            JOptionPane.showMessageDialog(this, "You've selected the " + craftedPotion + "!", "Potion Selection", JOptionPane.INFORMATION_MESSAGE);
+        }
 
         // Show confirmation
         JOptionPane.showMessageDialog(this,
@@ -1067,7 +1167,34 @@ public class TimSortVisualization extends JPanel {
     private void highlightNaturalRuns() {
         identifiedRuns.clear();
 
-        if (gameLevel == 2) {
+        if (gameLevel == 3) {
+            // For Level 3 (Lord Chaosa), highlight strength ingredients the most prominently
+
+            // Find runs for each potion type with adjusted colors for Level 3
+            List<IngredientItem> strengthRun = findRunByPotionType("strength");
+            if (!strengthRun.isEmpty()) {
+                identifiedRuns.add(strengthRun);
+                highlightRun(strengthRun, new Color(255, 140, 0, 120)); // Brighter orange highlight for strength (most important)
+            }
+
+            List<IngredientItem> coldRun = findRunByPotionType("cold");
+            if (!coldRun.isEmpty()) {
+                identifiedRuns.add(coldRun);
+                highlightRun(coldRun, new Color(80, 80, 220, 100)); // Blue highlight for cold (secondary)
+            }
+
+            List<IngredientItem> dexterityRun = findRunByPotionType("dexterity");
+            if (!dexterityRun.isEmpty()) {
+                identifiedRuns.add(dexterityRun);
+                highlightRun(dexterityRun, new Color(50, 200, 50, 60)); // Dimmer green highlight (less important)
+            }
+
+            List<IngredientItem> fireRun = findRunByPotionType("fire");
+            if (!fireRun.isEmpty()) {
+                identifiedRuns.add(fireRun);
+                highlightRun(fireRun, new Color(255, 50, 50, 60)); // Dimmer red highlight (least important)
+            }
+        } else if (gameLevel == 2) {
             // For Level 2 (Toxitar), highlight dexterity ingredients the most prominently
 
             // Find runs for each potion type with adjusted colors for Level 2
@@ -1124,7 +1251,9 @@ public class TimSortVisualization extends JPanel {
         }
 
         // Update the instruction
-        if (gameLevel == 2) {
+        if (gameLevel == 3) {
+            instructionLabel.setText("Natural runs highlighted! Select exactly 10 ingredients that form sequences. Orange ingredients enhance strength!");
+        } else if (gameLevel == 2) {
             instructionLabel.setText("Natural runs highlighted! Select exactly 10 ingredients that form sequences. Green ingredients enhance agility!");
         } else {
             instructionLabel.setText("Natural runs highlighted! Select exactly 10 ingredients that form sequences. Blue ingredients resist fire!");
@@ -1458,6 +1587,10 @@ public class TimSortVisualization extends JPanel {
     * Apply the Hand of Balance ability to sort ingredients
     */
     private void applyHandOfBalanceAbility() {
+        // Determine potion types based on the ingredients in each group
+        leftGroupPotionType = determinePotionType(leftGroup);
+        rightGroupPotionType = determinePotionType(rightGroup);
+        
         // First, sort both groups using our existing method
         sortGroup(leftGroup);
         sortGroup(rightGroup);
@@ -1513,6 +1646,33 @@ public class TimSortVisualization extends JPanel {
 
         // Disable the ability button during animation
         abilityButton.setEnabled(false);
+        
+        // Update boss-specific headers for Level 3
+        if (gameLevel == 3) {
+            // Set potion type relevant to Lord Chaosa
+            // For Level 3, prefer Strength and Cold Resistance potions
+            if (!leftGroupPotionType.equals("Strength") && !leftGroupPotionType.equals("Cold Resistance")) {
+                if (leftGroup.stream().anyMatch(item -> item.getPotionType().equals("strength"))) {
+                    leftGroupPotionType = "Strength";
+                } else if (leftGroup.stream().anyMatch(item -> item.getPotionType().equals("cold"))) {
+                    leftGroupPotionType = "Cold Resistance";
+                }
+            }
+
+            if (!rightGroupPotionType.equals("Strength") && !rightGroupPotionType.equals("Cold Resistance")) {
+                if (rightGroup.stream().anyMatch(item -> item.getPotionType().equals("strength"))) {
+                    rightGroupPotionType = "Strength";
+                } else if (rightGroup.stream().anyMatch(item -> item.getPotionType().equals("cold"))) {
+                    rightGroupPotionType = "Cold Resistance";
+                }
+            }
+        }
+        
+        
+        
+        
+        
+        
 
         // Define Y positions for the rows with proper spacing
         int ingredientsY1 = 220;   // First ingredients row
@@ -3312,6 +3472,59 @@ public class TimSortVisualization extends JPanel {
         repaint();
     }
     
+    
+    
+    
+    
+    
+    
+    
+    /**
+    * Reset all phases for Level 3
+    */
+    public void resetForLevel3() {
+        // Set game level to 3
+        gameLevel = 3;
+
+        // Reset phase tracking
+        currentPhase = 1;
+        phaseCompleted = false;
+
+        // Clear all data structures
+        allIngredients.clear();
+        selectedIngredients.clear();
+        identifiedRuns.clear();
+        leftGroup.clear();
+        rightGroup.clear();
+        mergedItems.clear();
+        craftedPotion = null;
+
+        // Set Lord Chaosa as the current boss
+        currentBossName = "LordChaosa";
+
+        // Clear UI
+        gridPanel.removeAll();
+
+        // Reset UI state
+        abilityButton.setText("Use Eye of Pattern");
+        instructionLabel.setText("Identify ingredients that enhance strength to counter Lord Chaosa's reality distortions.");
+        checkButton.setEnabled(false);
+
+        // Update phase label
+        phaseLabel.setText("Phase 1: The Eye of Pattern (Lord Chaosa)");
+
+        // Update the hints for Lord Chaosa
+        lordChaosaHints = new String[] {
+            "Look for ingredients with orange and brown coloring that enhance raw physical power.",
+            "Sort each group from foundational to peak. The proper sequence builds power progressively.",
+            "Against reality-warping chaos, only overwhelming physical force can break through the distortion."
+        };
+
+        // Force UI refresh
+        revalidate();
+        repaint();
+    }
+
     
 //end of timsortvisualization class
 }

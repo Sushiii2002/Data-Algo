@@ -79,8 +79,11 @@ public class LevelSelectionView extends JPanel {
             levelBox.addMouseListener(new MouseAdapter() {
                 @Override
                 public void mouseClicked(MouseEvent e) {
-                    // For Level 2, set the game level properly
-                    if (level == 2) {
+                    if (level == 1) {
+                        // Level 1 is always accessible
+                        controller.model.setGameLevel(1);
+                        controller.startLevel("Beginner", 1);
+                    } else if (level == 2) {
                         // Check if Level 1 is completed first
                         if (controller.isLevelCompleted("Beginner", 1)) {
                             controller.model.setGameLevel(2);
@@ -91,10 +94,17 @@ public class LevelSelectionView extends JPanel {
                                 "Level Locked",
                                 JOptionPane.WARNING_MESSAGE);
                         }
-                    } else {
-                        // For other levels, use the default behavior
-                        controller.model.setGameLevel(level);
-                        controller.startLevel("Beginner", level);
+                    } else if (level == 3) {
+                        // Check if Level 2 is completed first
+                        if (controller.isLevelCompleted("Intermediate", 1)) {
+                            controller.model.setGameLevel(3);
+                            controller.startLevel("Advanced", 1);
+                        } else {
+                            JOptionPane.showMessageDialog(LevelSelectionView.this,
+                                "You must complete Level 2 first!",
+                                "Level Locked",
+                                JOptionPane.WARNING_MESSAGE);
+                        }
                     }
                 }
             });
