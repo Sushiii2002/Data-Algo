@@ -187,6 +187,18 @@ public class LevelConfig {
             5
         ));
         
+        levels.add(new LevelConfig(
+            "Advanced", 
+            1, 
+            GameState.TIMSORT_CHALLENGE,
+            "Use TimSort principles to craft a Strength potion capable of breaking through Lord Chaosa's reality distortions.",
+            new int[]{14, 7, 11, 5, 8, 16, 9, 12, 3, 10, 18, 6},
+            30,
+            "Focus on ingredients that enhance physical strength. Raw power is needed to break through reality distortions.",
+            "Mountains",
+            5
+        ));
+        
         // Set time limits for intermediate and advanced levels
         for (LevelConfig level : levels) {
             if (level.getDifficulty().equals("Intermediate")) {

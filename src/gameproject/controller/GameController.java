@@ -280,7 +280,7 @@ public class GameController {
 
         // Show appropriate dialogue based on outcome with dynamic content
         if (bossLevel == 1) {
-            // Flameclaw (Level 1)
+            // Flameclaw (Level 1) - Existing code
             enhancedStoryView.showBossBattleResult(success, bossLevel);
 
             // Record progress if successful
@@ -295,26 +295,36 @@ public class GameController {
                 transitionTimer.start();
             }
         } else if (bossLevel == 2) {
-            // IMPORTANT: For Toxitar specifically, use the specialized method
-            System.out.println("DEBUG: Showing Level 2 boss battle result for Toxitar");
-
-            // Make sure enhanced story view is visible
-            enhancedStoryView.setVisible(true);
-
-            // Force repaint before showing dialogue
-            enhancedStoryView.revalidate();
-            enhancedStoryView.repaint();
-
-            // Short delay to ensure UI is updated
-            Timer dialogueTimer = new Timer(500, e -> {
-                enhancedStoryView.showLevel2BossBattleResult(success, selectedPotion);
-            });
-            dialogueTimer.setRepeats(false);
-            dialogueTimer.start();
+            // Toxitar (Level 2) - existing code
+            enhancedStoryView.showLevel2BossBattleResult(success, selectedPotion);
 
             // Record progress if successful
             if (success) {
                 progressTracker.completeLevel("Intermediate", 1, 3);
+
+                // After successful completion of Level 2, transition to Level 3
+                Timer transitionTimer = new Timer(5000, e -> {
+                    transitionToLevel3();
+                });
+                transitionTimer.setRepeats(false);
+                transitionTimer.start();
+            }
+        } else if (bossLevel == 3) {
+            // Lord Chaosa (Level 3) - new code
+            enhancedStoryView.showLevel3BossBattleResult(success, selectedPotion);
+
+            // Record progress if successful
+            if (success) {
+                progressTracker.completeLevel("Advanced", 1, 3);
+
+                // After successful completion of Level 3, show game completion dialogue
+                if (success) {
+                    Timer completionTimer = new Timer(5000, e -> {
+                        showGameCompletion();
+                    });
+                    completionTimer.setRepeats(false);
+                    completionTimer.start();
+                }
             }
         }
     }
@@ -337,15 +347,24 @@ public class GameController {
             }
         }
 
+        // Special handling for Level 3
+        if (difficulty.equals("Advanced") && level == 1) {
+            // This is Level 3 in the game
+            model.setGameLevel(3);
+            // Reset TimSort visualization for Level 3
+            timSortVisualization.resetAllPhases();
+            timSortVisualization.setGameLevel(3);
+            startLevel3FromSelection();
+        }
         // Special handling for Level 2
-        if (difficulty.equals("Intermediate") && level == 1) {
+        else if (difficulty.equals("Intermediate") && level == 1) {
             // This is Level 2 in the game
             model.setGameLevel(2);
             // Reset TimSort visualization for Level 2
             timSortVisualization.resetAllPhases();
             timSortVisualization.setGameLevel(2);
             startLevel2FromSelection();
-        }
+        } 
         // For Level 1, start the story
         else if (difficulty.equals("Beginner") && level == 1) {
             model.setGameLevel(1);
@@ -494,7 +513,8 @@ public class GameController {
             model.setRightPotionType(rightPotionType);
         }
 
-        // We can use these when returning to story mode to show dynamic dialogue
+        // Store potion types in model via controller for dialogue access
+        storePotionTypes(leftPotionType, rightPotionType);
     }
     
     
@@ -602,6 +622,103 @@ public class GameController {
             model.setRightPotionType(rightPotionType);
             System.out.println("DEBUG: Stored potion types in model: " + leftPotionType + ", " + rightPotionType);
         }
+    }
+    
+    
+    
+    /**
+    * Handle completion of Level 2 and transition to Level 3
+    */
+    public void onLevel2Complete() {
+        // Update game level
+        model.setGameLevel(3);
+
+        // Show transition dialogue
+        List<NarrativeSystem.DialogueEntry> transitionDialogues = 
+            narrativeSystem.getDialogueSequence("level2to3_transition");
+        enhancedStoryView.showTransitionDialogue(transitionDialogues, this::startLevel3);
+    }
+    
+    /**
+        * Start Level 3 with Lord Chaosa as the boss
+        */
+    private void startLevel3() {
+        // Set Level 3 in the model
+        model.setGameLevel(3);
+        model.setCurrentState(GameState.STORY_MODE);
+        model.setCurrentLevel(1); // Reset to first phase
+
+        // Reset TimSort visualization for Level 3
+        timSortVisualization.resetAllPhases();
+        timSortVisualization.setGameLevel(3);
+
+        // Show Level 3 story introduction
+        cardLayout.show(mainPanel, "enhancedStory");
+        enhancedStoryView.startLevel3Story();
+    }
+    
+    
+    /**
+    * Start Level 3 directly from level selection
+    */
+    public void startLevel3FromSelection() {
+        // Set Level 3 in the model
+        model.setGameLevel(3);
+        model.setCurrentState(GameState.STORY_MODE);
+        model.setCurrentLevel(1); // Start at phase 1
+
+        // Reset TimSort visualization for Level 3
+        timSortVisualization.resetAllPhases();
+        timSortVisualization.setGameLevel(3);
+
+        // Show Level 3 story introduction
+        cardLayout.show(mainPanel, "enhancedStory");
+        enhancedStoryView.startLevel3Story();
+    }
+    
+    
+    
+    /**
+    * Transition from Level 2 to Level 3 after defeating Toxitar
+    */
+    private void transitionToLevel3() {
+        // Update game level in model
+        model.setGameLevel(3);
+        model.setCurrentLevel(1); // Reset to first phase
+
+        // Show transition dialogue
+        List<NarrativeSystem.DialogueEntry> transitionDialogues = 
+            narrativeSystem.getDialogueSequence("level2to3_transition");
+
+        if (transitionDialogues != null && !transitionDialogues.isEmpty()) {
+            cardLayout.show(mainPanel, "enhancedStory");
+            enhancedStoryView.showTransitionDialogue(transitionDialogues, () -> {
+                startLevel3();
+            });
+        } else {
+            // Fallback if dialogue is missing
+            startLevel3();
+        }
+    }
+    
+    
+    
+    
+    /**
+    * Show game completion dialogue and return to main menu
+    */
+    private void showGameCompletion() {
+        // Get completion dialogue
+        List<NarrativeSystem.DialogueEntry> completionDialogues = 
+            narrativeSystem.getDialogueSequence("game_completion");
+
+        // Show the enhanced story view
+        cardLayout.show(mainPanel, "enhancedStory");
+
+        // Show completion dialogue with transition to main menu
+        enhancedStoryView.showCompletionDialogue(completionDialogues, () -> {
+            showMainMenu();
+        });
     }
     
     

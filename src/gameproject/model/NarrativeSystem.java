@@ -268,7 +268,102 @@ public class NarrativeSystem {
         level1to2TransitionDialogues.add(new DialogueEntry("Tima", "I'm ready, Master Ordin. What ingredients should we seek?", "determined"));
         dialogueSequences.put("level1to2_transition", level1to2TransitionDialogues);
         
-        // Add more dialogue sequences for Level 3 following the same pattern
+        // Level 2 to Level 3 transition dialogues
+        List<DialogueEntry> level2to3TransitionDialogues = new ArrayList<>();
+        level2to3TransitionDialogues.add(new DialogueEntry("ElderHarmony", "You've defeated Toxitar! The land is safe from the poison, but I fear our greatest challenge yet approaches.", "concerned"));
+        level2to3TransitionDialogues.add(new DialogueEntry("Tima", "What could be worse than Toxitar's corruption?", "concerned"));
+        level2to3TransitionDialogues.add(new DialogueEntry("ElderHarmony", "The final prophecy speaks of Lord Chaosa, a being of pure chaos who can warp reality itself.", "grave"));
+        level2to3TransitionDialogues.add(new DialogueEntry("MasterOrdin", "This is the final test of the Harmony of Order. Chaosa's power threatens the very fabric of our world.", "serious"));
+        level2to3TransitionDialogues.add(new DialogueEntry("ScholarMerion", "Lord Chaosa's ability to manipulate reality makes conventional defenses useless. Only raw power can break through such chaos.", "analyzing"));
+        level2to3TransitionDialogues.add(new DialogueEntry("MasterOrdin", "Tima, you must use the Harmony of Order one final time to craft a potion that can counter Lord Chaosa's reality-warping abilities.", "instructing"));
+        level2to3TransitionDialogues.add(new DialogueEntry("Tima", "I will not fail. The balance of our world depends on it.", "determined"));
+        dialogueSequences.put("level2to3_transition", level2to3TransitionDialogues);
+
+        // Level 3 intro dialogue
+        List<DialogueEntry> level3IntroDialogues = new ArrayList<>();
+        level3IntroDialogues.add(new DialogueEntry("ElderHarmony", "The skies have darkened as Lord Chaosa approaches. Reality itself bends in his presence.", "panicked"));
+        level3IntroDialogues.add(new DialogueEntry("Tima", "How do we fight something that can alter reality?", "concerned"));
+        level3IntroDialogues.add(new DialogueEntry("MasterOrdin", "When chaos bends reality, only overwhelming force can break through. We need a potion that grants immense strength.", "serious"));
+        level3IntroDialogues.add(new DialogueEntry("ScholarMerion", "Lord Chaosa feeds on uncertainty and confusion. His greatest weakness is direct, overwhelming power.", "analyzing"));
+        level3IntroDialogues.add(new DialogueEntry("Runa", "I sense the fabric of nature itself tearing. We must act quickly before everything we know is consumed by the void.", "urgent"));
+        level3IntroDialogues.add(new DialogueEntry("MasterOrdin", "Once more, we must employ the three sacred principles of the Harmony of Order. This time, our focus must be strength.", "determined"));
+        dialogueSequences.put("level3_intro", level3IntroDialogues);
+
+        // Phase 1 - Eye of Pattern (Level 3)
+        List<DialogueEntry> level3Phase1Start = new ArrayList<>();
+        level3Phase1Start.add(new DialogueEntry("MasterOrdin", "First, we must employ the Eye of Pattern to identify ingredients with properties of raw power and strength.", "instructing"));
+        level3Phase1Start.add(new DialogueEntry("MasterOrdin", "Look for ingredients that naturally enhance physical might - they often have distinctive colors and properties.", "instructing"));
+        dialogueSequences.put("level3_phase1_start", level3Phase1Start);
+
+        List<DialogueEntry> level3Phase1Middle = new ArrayList<>();
+        level3Phase1Middle.add(new DialogueEntry("Runa", "Chaosa's reality distortions can only be overcome by pure, overwhelming force. Ingredients of strength are our best hope.", "warning"));
+        level3Phase1Middle.add(new DialogueEntry("Tima", "So I need ingredients that enhance raw power?", "understanding"));
+        level3Phase1Middle.add(new DialogueEntry("Runa", "Yes! Look for ingredients with solid, substantial qualities. They often appear in earthy, rich colors.", "helpful"));
+        dialogueSequences.put("level3_phase1_middle", level3Phase1Middle);
+
+        List<DialogueEntry> level3Phase1End = new ArrayList<>();
+        level3Phase1End.add(new DialogueEntry("MasterOrdin", "Excellent identification! These ingredients indeed have properties of great strength. Now we must arrange them with the Hand of Balance.", "praising"));
+        dialogueSequences.put("level3_phase1_end", level3Phase1End);
+
+        // Phase 2 - Hand of Balance (Level 3)
+        List<DialogueEntry> level3Phase2Start = new ArrayList<>();
+        level3Phase2Start.add(new DialogueEntry("MasterOrdin", "The Hand of Balance teaches us to sort and arrange our ingredients with precision. For strength potions, the sequence must reflect building power.", "instructing"));
+        level3Phase2Start.add(new DialogueEntry("MasterOrdin", "Arrange these ingredients from foundation to pinnacle - the essence of strength requires a proper progression.", "instructing"));
+        dialogueSequences.put("level3_phase2_start", level3Phase2Start);
+
+        List<DialogueEntry> level3Phase2Middle = new ArrayList<>();
+        level3Phase2Middle.add(new DialogueEntry("MerchantBalz", "I once traded with warriors from the northern mountains. They used similar ingredients to enhance their strength before battle.", "reminiscing"));
+        level3Phase2Middle.add(new DialogueEntry("Tima", "How did they prepare them?", "curious"));
+        level3Phase2Middle.add(new DialogueEntry("MerchantBalz", "They were methodical about the progression - first the foundational elements, then building to the peak of power. The sequence amplified the strength manifold.", "explaining"));
+        dialogueSequences.put("level3_phase2_middle", level3Phase2Middle);
+
+        List<DialogueEntry> level3Phase2End = new ArrayList<>();
+        level3Phase2End.add(new DialogueEntry("ScholarMerion", "Your arrangement is perfect! These grouped ingredients could create either a Strength potion or a Cold Resistance potion. The final decision will determine our success against Lord Chaosa.", "analyzing"));
+        level3Phase2End.add(new DialogueEntry("MasterOrdin", "Now for the Mind of Unity - the final sacred principle that will complete our potion.", "instructing"));
+        dialogueSequences.put("level3_phase2_end", level3Phase2End);
+
+        // Phase 3 - Mind of Unity (Level 3)
+        List<DialogueEntry> level3Phase3Start = new ArrayList<>();
+        level3Phase3Start.add(new DialogueEntry("MasterOrdin", "The Mind of Unity teaches us that separate elements must be combined with intention and purpose. You must choose which potion to craft.", "instructing"));
+        level3Phase3Start.add(new DialogueEntry("Tima", "I must decide between strength and cold resistance to counter Lord Chaosa's reality distortions.", "contemplative"));
+        dialogueSequences.put("level3_phase3_start", level3Phase3Start);
+
+        List<DialogueEntry> level3Phase3Decision = new ArrayList<>();
+        level3Phase3Decision.add(new DialogueEntry("Runa", "Chaosa approaches! Reality twists and warps around him!", "urgent"));
+        level3Phase3Decision.add(new DialogueEntry("MerchantBalz", "Cold cannot freeze chaos itself.", "warning"));
+        level3Phase3Decision.add(new DialogueEntry("ScholarMerion", "When reality bends, only overwhelming force can cut through the distortion and reach the truth.", "advising"));
+        dialogueSequences.put("level3_phase3_decision", level3Phase3Decision);
+
+        List<DialogueEntry> level3Phase3End = new ArrayList<>();
+        level3Phase3End.add(new DialogueEntry("MasterOrdin", "The potion is complete! Now you must face Lord Chaosa!", "encouraging"));
+        dialogueSequences.put("level3_phase3_end", level3Phase3End);
+
+        // Boss battle - Lord Chaosa success scenario
+        List<DialogueEntry> level3BossSuccessDialogues = new ArrayList<>();
+        level3BossSuccessDialogues.add(new DialogueEntry("LordChaosa", "REALITY IS MINE TO COMMAND! YOUR WORLD WILL DISSOLVE!", "attacking"));
+        level3BossSuccessDialogues.add(new DialogueEntry("Tima", "Your chaos cannot stand against pure strength!", "confident"));
+        level3BossSuccessDialogues.add(new DialogueEntry("LordChaosa", "IMPOSSIBLE! MY DISTORTIONS... FAILING!", "weakened"));
+        level3BossSuccessDialogues.add(new DialogueEntry("Tima", "The Harmony of Order brings strength to break through your chaos!", "triumphant"));
+        level3BossSuccessDialogues.add(new DialogueEntry("MasterOrdin", "Magnificent! Your mastery of all three principles allowed you to craft the perfect Strength potion!", "praising"));
+        dialogueSequences.put("boss3_success", level3BossSuccessDialogues);
+
+        // Boss battle - Lord Chaosa failure scenario
+        List<DialogueEntry> level3BossFailureDialogues = new ArrayList<>();
+        level3BossFailureDialogues.add(new DialogueEntry("LordChaosa", "REALITY IS MINE TO COMMAND! YOUR WORLD WILL DISSOLVE!", "attacking"));
+        level3BossFailureDialogues.add(new DialogueEntry("Tima", "Your chaos ends here!", "confident"));
+        level3BossFailureDialogues.add(new DialogueEntry("LordChaosa", "COLD CANNOT FREEZE THE FABRIC OF REALITY ITSELF!", "triumphant"));
+        level3BossFailureDialogues.add(new DialogueEntry("MasterOrdin", "Retreat! The potion isn't effective! We must try again with a different approach!", "protecting"));
+        dialogueSequences.put("boss3_failure", level3BossFailureDialogues);
+
+        // Add in game completion dialogue
+        List<DialogueEntry> gameCompletionDialogues = new ArrayList<>();
+        gameCompletionDialogues.add(new DialogueEntry("ElderHarmony", "You've done it, Tima! All three chaos beasts have been defeated!", "excited"));
+        gameCompletionDialogues.add(new DialogueEntry("MasterOrdin", "Your mastery of the Harmony of Order is complete. You are truly a master alchemist now.", "praising"));
+        gameCompletionDialogues.add(new DialogueEntry("Tima", "I couldn't have done it without your guidance, Master Ordin, and the help of everyone in the village.", "grateful"));
+        gameCompletionDialogues.add(new DialogueEntry("ScholarMerion", "Your journey has shown that order can always triumph over chaos when approached with wisdom and patience.", "thoughtful"));
+        gameCompletionDialogues.add(new DialogueEntry("Runa", "The balance of nature is restored, and our lands can flourish once more.", "happy"));
+        gameCompletionDialogues.add(new DialogueEntry("ElderHarmony", "The prophecy is fulfilled. Peace returns to our world, thanks to your courage and skill.", "relieved"));
+        dialogueSequences.put("game_completion", gameCompletionDialogues);
     }
     
     
@@ -801,6 +896,153 @@ public class NarrativeSystem {
     
     
     
+    /**
+    * Get dynamic dialogue for Level 3 (Lord Chaosa) based on player choices
+    * @param phase The current phase (1, 2, or 3)
+    * @param leftPotionType The potion type identified on the left
+    * @param rightPotionType The potion type identified on the right
+    * @return List of DialogueEntry objects with dynamic content focused on Lord Chaosa
+    */
+    public List<DialogueEntry> getDynamicLevel3Dialogue(int phase, String leftPotionType, String rightPotionType) {
+        List<DialogueEntry> dialogueSequence = new ArrayList<>();
+
+        // Phase 1 - Eye of Pattern for Level 3
+        if (phase == 1) {
+            dialogueSequence.add(new DialogueEntry("MasterOrdin", 
+                "The Eye of Pattern reveals natural sequences even in chaos. For Lord Chaosa, we need ingredients that enhance raw strength and power.", 
+                "instructing"));
+            dialogueSequence.add(new DialogueEntry("ScholarMerion", 
+                "Lord Chaosa's power bends reality itself. Only overwhelming force can cut through such distortions.", 
+                "analyzing"));
+            dialogueSequence.add(new DialogueEntry("MasterOrdin", 
+                "Look for ingredients that naturally enhance physical might - they often have distinctive orange and brown coloring and solid properties.", 
+                "instructing"));
+        }
+        // Phase 2 - Hand of Balance for Level 3
+        else if (phase == 2) {
+            dialogueSequence.add(new DialogueEntry("MasterOrdin", 
+                "The Hand of Balance teaches us that even the mightiest ingredients must be properly arranged. Sort these carefully to maximize their potential.",
+                "instructing"));
+
+            dialogueSequence.add(new DialogueEntry("MerchantBalz", 
+                "In my travels, I've met warriors who used similar ingredients to perform feats of incredible strength.",
+                "reminiscing"));
+
+            dialogueSequence.add(new DialogueEntry("MasterOrdin", 
+                "Indeed, Balz. The potency of strength-enhancing ingredients depends greatly on their arrangement.",
+                "agreeing"));
+        }
+        // Phase 3 - Mind of Unity for Level 3
+        else if (phase == 3) {
+            dialogueSequence.add(new DialogueEntry("MasterOrdin", 
+                "The Mind of Unity allows you to combine separate elements into a single, powerful whole. Now you must choose which potion to craft against Lord Chaosa.", 
+                "instructing"));
+
+            // Left potion type dialogue customized for Lord Chaosa
+            if (leftPotionType.equals("Strength")) {
+                dialogueSequence.add(new DialogueEntry("ScholarMerion", 
+                    "This " + leftPotionType + " potion would greatly enhance your physical power - the raw force needed to break through Chaosa's reality distortions.", 
+                    "analyzing"));
+            } 
+            else if (leftPotionType.equals("Cold Resistance")) {
+                dialogueSequence.add(new DialogueEntry("ScholarMerion", 
+                    "This " + leftPotionType + " potion would shield against ice and cold, but Chaosa's power isn't thermal in nature - it's reality itself being twisted.", 
+                    "concerned"));
+            }
+            else if (leftPotionType.equals("Dexterity")) {
+                dialogueSequence.add(new DialogueEntry("ScholarMerion", 
+                    "This " + leftPotionType + " potion would enhance your speed and reflexes, but agility alone cannot counter the fundamental distortion of reality.", 
+                    "concerned"));
+            }
+            else if (leftPotionType.equals("Fire Resistance")) {
+                dialogueSequence.add(new DialogueEntry("ScholarMerion", 
+                    "This " + leftPotionType + " potion would protect against heat and flames, but Lord Chaosa's power is far more fundamental than elemental fire.", 
+                    "concerned"));
+            }
+
+            // Right potion type dialogue customized for Lord Chaosa
+            if (rightPotionType.equals("Strength")) {
+                dialogueSequence.add(new DialogueEntry("Runa", 
+                    "A " + rightPotionType + " potion would grant you incredible physical might, allowing you to cut through the reality distortions with pure force.", 
+                    "suggesting"));
+            } 
+            else if (rightPotionType.equals("Cold Resistance")) {
+                dialogueSequence.add(new DialogueEntry("Runa", 
+                    "A " + rightPotionType + " potion protects against ice and frost, but cannot freeze the chaos of warped reality.", 
+                    "cautioning"));
+            }
+            else if (rightPotionType.equals("Dexterity")) {
+                dialogueSequence.add(new DialogueEntry("Runa", 
+                    "A " + rightPotionType + " potion enhances speed, but when reality itself is the enemy, no amount of quickness will help you evade it.", 
+                    "warning"));
+            }
+            else if (rightPotionType.equals("Fire Resistance")) {
+                dialogueSequence.add(new DialogueEntry("Runa", 
+                    "A " + rightPotionType + " potion would be ineffective against Lord Chaosa's reality warping, which has nothing to do with fire or heat.", 
+                    "warning"));
+            }
+
+            // Add a specific hint about Lord Chaosa
+            dialogueSequence.add(new DialogueEntry("MasterOrdin", 
+                "Lord Chaosa's power bends the very fabric of reality. Consider what force could cut through such fundamental distortion.", 
+                "guiding"));
+        }
+
+        return dialogueSequence;
+    }
     
+    
+    
+    /**
+    * Get dynamic hints for Level 3 based on the current phase
+    */
+    public String getDynamicLevel3Hint(int phase) {
+        switch(phase) {
+            case 1:
+                return "Look for ingredients with orange and brown coloring that indicate strength and solidity. These enhance raw power, which is key to fighting Lord Chaosa.";
+            case 2:
+                return "Arrange the ingredients from foundational to pinnacle. For strength potions, the proper sequence builds power progressively.";
+            case 3:
+                return "Against reality-warping powers, only raw overwhelming force can break through the distortions. Which potion would give you that ability?";
+            default:
+                return "Focus on strength and power. Lord Chaosa's reality distortions can only be overcome by overwhelming force.";
+        }
+    }
+    
+    
+    
+    /**
+    * Get dynamic boss battle outcome dialogue for Lord Chaosa
+    */
+    public List<DialogueEntry> getLordChaosaBattleOutcomeDialogue(boolean success, String selectedPotion) {
+        List<DialogueEntry> battleDialogues = new ArrayList<>();
+
+        if (success) {
+            // Strength potion was used successfully
+            battleDialogues.add(new DialogueEntry("LordChaosa", "REALITY BENDS TO MY WILL! YOUR WORLD IS MINE!", "attacking"));
+            battleDialogues.add(new DialogueEntry("Tima", "Your chaos cannot withstand true strength!", "determined"));
+            battleDialogues.add(new DialogueEntry("LordChaosa", "IMPOSSIBLE! MY DISTORTIONS... FAILING!", "weakened"));
+            battleDialogues.add(new DialogueEntry("Tima", "The " + selectedPotion + " gives me the power to break through your illusions!", "triumphant"));
+            battleDialogues.add(new DialogueEntry("MasterOrdin", "Excellent choice with the " + selectedPotion + "! Your enhanced strength allows you to cut through the reality distortions!", "praising"));
+        } else {
+            // Wrong potion was selected
+            battleDialogues.add(new DialogueEntry("LordChaosa", "REALITY BENDS TO MY WILL! YOUR WORLD IS MINE!", "attacking"));
+            battleDialogues.add(new DialogueEntry("Tima", "Your chaos ends here!", "determined"));
+
+            if (selectedPotion.contains("Cold")) {
+                battleDialogues.add(new DialogueEntry("LordChaosa", "COLD CANNOT FREEZE THE FABRIC OF REALITY ITSELF!", "attacking"));
+            } else if (selectedPotion.contains("Fire")) {
+                battleDialogues.add(new DialogueEntry("LordChaosa", "FIRE CANNOT BURN THROUGH THE VOID BETWEEN REALITIES!", "attacking"));
+            } else if (selectedPotion.contains("Dexterity")) {
+                battleDialogues.add(new DialogueEntry("LordChaosa", "YOU CANNOT OUTRUN THE COLLAPSE OF REALITY!", "attacking"));
+            } else {
+                battleDialogues.add(new DialogueEntry("LordChaosa", "YOUR POTION IS USELESS AGAINST THE VOID!", "attacking"));
+            }
+
+            battleDialogues.add(new DialogueEntry("MasterOrdin", "Retreat! The " + selectedPotion + " isn't effective against Lord Chaosa's reality warping! We need a different approach!", "protecting"));
+        }
+
+        return battleDialogues;
+    }
     
 }

@@ -306,10 +306,14 @@ public class EnhancedStoryView extends JPanel {
         phaseIndicatorsPanel.setVisible(true);
 
         // Determine if we're in Level 2 to get the appropriate dialogue
+        boolean isLevel3 = controller.model.getGameLevel() == 3;
         boolean isLevel2 = controller.model.getGameLevel() == 2;
         List<NarrativeSystem.DialogueEntry> dialogueSequence;
 
-        if (isLevel2) {
+        if (isLevel3) {
+            // Get Level 3 specific dialogue
+            dialogueSequence = narrativeSystem.getDynamicLevel3Dialogue(phase, leftPotionType, rightPotionType);
+        } else if (isLevel2) {
             // Get Level 2 specific dialogue
             dialogueSequence = narrativeSystem.getDynamicLevel2Dialogue(phase, leftPotionType, rightPotionType);
         } else {
@@ -325,23 +329,31 @@ public class EnhancedStoryView extends JPanel {
      * Show boss battle result with dynamic dialogue
      */
     public void showBossBattleResult(boolean success, int bossLevel) {
-        // Get the potion types and selected potion from TimSortVisualization
-        String leftPotionType = "Fire Resistance"; // Default
-        String rightPotionType = "Strength";       // Default
-        String selectedPotion = "Unknown Potion";  // Default
-
-        // If we have a reference to the TimSortVisualization, get the actual values
+        // Get the potion types and selected potion
+        String selectedPotion = controller.model.getSelectedPotion();
 
         // Set the boss battle outcome in narrative system with dynamic details
         narrativeSystem.setBossBattleOutcome(success, bossLevel, selectedPotion);
 
-        // Get appropriate dialogue sequence - now with dynamic content
+        // Get appropriate dialogue sequence
         String dialogueKey = success ? "boss" + bossLevel + "_success" : "boss" + bossLevel + "_failure";
         List<NarrativeSystem.DialogueEntry> battleDialogues = 
             narrativeSystem.getDialogueSequence(dialogueKey);
 
-        // Set a special flag to indicate this is a boss battle result dialogue
-        dialogueManager.setBossBattleResultDialogue(true);
+        // Special handling for Level 3 completion
+        if (bossLevel == 3 && success) {
+            // Set a special listener for game completion
+            dialogueManager.setDialogueEndListener(new DialogueManager.DialogueEndListener() {
+                @Override
+                public void onDialogueEnd() {
+                    // Show game completion dialogue
+                    showGameCompletionDialogue();
+                }
+            });
+        } else {
+            // Set a special flag to indicate this is a boss battle result dialogue
+            dialogueManager.setBossBattleResultDialogue(true);
+        }
 
         // Start the dialogue
         dialogueManager.startDialogue(battleDialogues);
@@ -681,4 +693,269 @@ public class EnhancedStoryView extends JPanel {
         revalidate();
         repaint();
     }
+    
+    
+    
+    
+    
+    
+    /**
+    * Start the Level 3 story presentation
+    */
+    public void startLevel3Story() {
+        // Reset skip flag
+        skipToGameplay = false;
+
+        // Reset state
+        alphaLevel = 0.0f;
+        currentPhase = -1;
+
+        // Make all components invisible initially
+        titleLabel.setVisible(false);
+        storyContentPanel.setVisible(false);
+        phaseIndicatorsPanel.setVisible(false);
+
+        // Start fade in animation
+        isFadingIn = true;
+        fadeInTimer.start();
+
+        // Set the title text for Level 3
+        titleLabel.setText("The Reality Warper: Lord Chaosa");
+
+        // Show Level 3 intro dialogues after a short delay
+        Timer delayTimer = new Timer(1000, new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                // Show title
+                titleLabel.setVisible(true);
+
+                // Get the dialogue sequence
+                List<NarrativeSystem.DialogueEntry> level3IntroDialogues = 
+                    narrativeSystem.getDialogueSequence("level3_intro");
+
+                // IMPORTANT: Set a completion handler BEFORE starting dialogue
+                dialogueManager.setDialogueEndListener(new DialogueManager.DialogueEndListener() {
+                    @Override
+                    public void onDialogueEnd() {
+                        System.out.println("DEBUG: Level 3 intro dialogue ended, starting Phase 1");
+                        skipToGameplay = true;
+                        // Explicitly start Phase 1 of Level 3
+                        controller.startPhaseGameplay(1);
+                    }
+                });
+
+                // Start the dialogue
+                dialogueManager.startDialogue(level3IntroDialogues);
+            }
+        });
+        delayTimer.setRepeats(false);
+        delayTimer.start();
+    }
+    
+    
+    
+    
+    
+    /**
+    * Start dynamic dialogue for a specific phase in Level 3
+    */
+    public void startLevel3PhaseDialogue(int phase) {
+        currentPhase = phase;
+
+        // If there are any existing dialogue panels, remove them
+        for (Component comp : getComponents()) {
+            if (comp instanceof JPanel && comp != dialogueManager) {
+                remove(comp);
+            }
+        }
+
+        // Make sure we're using a single dialogueManager instance
+        if (dialogueManager != null) {
+            // Clear any previous dialogue
+            dialogueManager.setVisible(false);
+        }
+
+        // Get the potion types
+        String leftPotionType = "Strength"; // Default for Level 3
+        String rightPotionType = "Cold Resistance"; // Default for Level 3
+
+        // Update phase indicators
+        for (int i = 0; i < phaseLabels.length; i++) {
+            if (i == currentPhase) {
+                phaseLabels[i].setForeground(Color.WHITE);
+                phaseLabels[i].setBorder(BorderFactory.createCompoundBorder(
+                    BorderFactory.createMatteBorder(0, 0, 2, 0, Color.WHITE),
+                    BorderFactory.createEmptyBorder(5, 15, 5, 15)
+                ));
+            } else if (i < currentPhase) {
+                // Completed phases
+                phaseLabels[i].setForeground(new Color(200, 200, 200));
+                phaseLabels[i].setBorder(BorderFactory.createEmptyBorder(5, 15, 5, 15));
+            } else {
+                // Future phases
+                phaseLabels[i].setForeground(Color.GRAY);
+                phaseLabels[i].setBorder(BorderFactory.createEmptyBorder(5, 15, 5, 15));
+            }
+        }
+
+        // Get dynamic dialogue for Level 3 phase
+        List<NarrativeSystem.DialogueEntry> dialogueSequence = 
+            narrativeSystem.getDynamicLevel3Dialogue(phase, leftPotionType, rightPotionType);
+
+        // Start the dialogue with clean slate
+        dialogueManager.setVisible(true);
+        dialogueManager.startDialogue(dialogueSequence);
+
+        // Force repaint to ensure clean display
+        revalidate();
+        repaint();
+    }
+    
+    
+    /**
+    * Show boss battle result for Level 3 (Lord Chaosa)
+    */
+    public void showLevel3BossBattleResult(boolean success, String selectedPotion) {
+        // Get the potion from the model if not provided
+        if (selectedPotion == null || selectedPotion.isEmpty()) {
+            selectedPotion = controller.model.getSelectedPotion();
+            System.out.println("DEBUG: Retrieved selected potion from model: " + selectedPotion);
+        }
+
+        setVisible(true);
+
+        // Get dynamic dialogue from NarrativeSystem
+        List<NarrativeSystem.DialogueEntry> battleDialogues = 
+            narrativeSystem.getLordChaosaBattleOutcomeDialogue(success, selectedPotion);
+
+        System.out.println("DEBUG: Got Lord Chaosa battle dialogues, size: " + battleDialogues.size());
+
+        // Set a special flag to indicate this is a boss battle result dialogue
+        dialogueManager.setBossBattleResultDialogue(true);
+
+        // IMPORTANT: Make sure dialogueManager is visible and on top
+        dialogueManager.setVisible(true);
+        if (getComponentZOrder(dialogueManager) != 0) {
+            setComponentZOrder(dialogueManager, 0);
+        }
+
+        // If successful, set a listener to show game completion when dialogue ends
+        if (success) {
+            dialogueManager.setDialogueEndListener(new DialogueManager.DialogueEndListener() {
+                @Override
+                public void onDialogueEnd() {
+                    System.out.println("DEBUG: Battle success dialogue ended, showing game completion");
+                    // Show game completion dialogue
+                    showGameCompletionDialogue();
+                }
+            });
+        } else {
+            // If failed, set a listener to go to level selection when dialogue ends
+            dialogueManager.setDialogueEndListener(new DialogueManager.DialogueEndListener() {
+                @Override
+                public void onDialogueEnd() {
+                    System.out.println("DEBUG: Battle failure dialogue ended, showing level selection");
+                    controller.showLevelSelection();
+                }
+            });
+        }
+
+        // IMPORTANT: First have the controller show the enhanced story view
+        controller.model.setCurrentState(GameState.STORY_MODE);
+
+        // Log to verify dialogue state
+        System.out.println("DEBUG: Before starting dialogue - DialogueManager visible: " + 
+                           dialogueManager.isVisible());
+
+        // Start the dialogue
+        dialogueManager.startDialogue(battleDialogues);
+
+        // IMPORTANT: Force repaint
+        revalidate();
+        repaint();
+    }
+    
+    
+    
+    /**
+    * Show game completion dialogue after defeating Lord Chaosa
+    */
+    public void showGameCompletionDialogue() {
+        // Get the game completion dialogue
+        List<NarrativeSystem.DialogueEntry> completionDialogues = 
+            narrativeSystem.getDialogueSequence("game_completion");
+
+        if (completionDialogues == null || completionDialogues.isEmpty()) {
+            System.out.println("ERROR: No game completion dialogues found");
+            controller.showMainMenu();
+            return;
+        }
+
+        // Set title for completion
+        titleLabel.setText("The Harmony of Order Restored");
+        titleLabel.setVisible(true);
+
+        // Set a listener to go to main menu when completion dialogue ends
+        dialogueManager.setDialogueEndListener(new DialogueManager.DialogueEndListener() {
+            @Override
+            public void onDialogueEnd() {
+                System.out.println("DEBUG: Game completion dialogue ended, returning to main menu");
+                controller.showMainMenu();
+            }
+        });
+
+        // Start the dialogue
+        dialogueManager.startDialogue(completionDialogues);
+    }
+    
+    
+    
+    
+    
+    
+    /**
+    * Show completion dialogue with custom callback
+    */
+    public void showCompletionDialogue(List<NarrativeSystem.DialogueEntry> dialogueSequence, Runnable onCompleteAction) {
+        // Create semi-transparent overlay
+        JPanel dialogueOverlay = new JPanel() {
+            @Override
+            protected void paintComponent(Graphics g) {
+                super.paintComponent(g);
+                // Dark semi-transparent background (70% opacity)
+                g.setColor(new Color(0, 0, 0, 180));
+                g.fillRect(0, 0, getWidth(), getHeight());
+            }
+        };
+        dialogueOverlay.setLayout(null);
+        dialogueOverlay.setBounds(0, 0, GameConstants.WINDOW_WIDTH, GameConstants.WINDOW_HEIGHT);
+        dialogueOverlay.setOpaque(false);
+
+        // Add overlay
+        add(dialogueOverlay, 0);
+
+        // Create a dialogue manager specifically for this overlay
+        DialogueManager completionDialogueManager = new DialogueManager(controller);
+        completionDialogueManager.setBounds(0, 0, GameConstants.WINDOW_WIDTH, GameConstants.WINDOW_HEIGHT);
+        dialogueOverlay.add(completionDialogueManager);
+
+        // Set a listener to run the callback when dialogue ends
+        completionDialogueManager.setDialogueEndListener(new DialogueManager.DialogueEndListener() {
+            @Override
+            public void onDialogueEnd() {
+                // Remove the overlay
+                remove(dialogueOverlay);
+                repaint();
+
+                // Execute the callback action
+                if (onCompleteAction != null) {
+                    onCompleteAction.run();
+                }
+            }
+        });
+
+        // Start the dialogue sequence
+        completionDialogueManager.startDialogue(dialogueSequence);
+    }
+    
 }
