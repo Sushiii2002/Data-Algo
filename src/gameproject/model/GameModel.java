@@ -20,6 +20,8 @@ public class GameModel {
     private String selectedPotion = null;     
     private boolean bossBattleCompleted = false;
     
+    private int gameLevel = 1; // Default to Level 1
+    
     
     
     /**
@@ -123,5 +125,57 @@ public class GameModel {
 
     public void setBossBattleCompleted(boolean completed) {
         this.bossBattleCompleted = completed;
+    }
+    
+    /**
+    * Get the current game level (1, 2, or 3)
+    */
+    public int getGameLevel() {
+        return gameLevel;
+    }
+    
+    
+    /**
+    * Set the current game level
+    */
+    public void setGameLevel(int level) {
+        if (level >= 1 && level <= 3) {
+            this.gameLevel = level;
+        }
+    }
+    
+    
+    /**
+    * Get the current boss name based on game level
+    */
+    public String getCurrentBossName() {
+        switch (gameLevel) {
+            case 1:
+                return "Flameclaw";
+            case 2:
+                return "Toxitar";
+            case 3:
+                return "LordChaosa";
+            default:
+                return "Flameclaw"; // Default
+        }
+    }
+    
+    
+    
+    /**
+    * Get the correct potion type for the current boss
+    */
+    public String getCorrectPotionForCurrentBoss() {
+        switch (gameLevel) {
+            case 1:
+                return "Fire Resistance Potion";
+            case 2:
+                return "Dexterity Potion";
+            case 3:
+                return "Cold Resistance Potion";
+            default:
+                return "Fire Resistance Potion"; // Default
+        }
     }
 }

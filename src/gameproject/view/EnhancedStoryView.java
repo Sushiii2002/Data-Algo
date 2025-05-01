@@ -428,4 +428,156 @@ public class EnhancedStoryView extends JPanel {
         // Restore original composite
         g2d.setComposite(originalComposite);
     }
+    
+    
+    
+    
+    /**
+    * Start the Level 2 story presentation
+    */
+    public void startLevel2Story() {
+        // Reset state
+        alphaLevel = 0.0f;
+        currentPhase = -1;
+
+        // Make all components invisible initially
+        titleLabel.setVisible(false);
+        storyContentPanel.setVisible(false);
+        phaseIndicatorsPanel.setVisible(false);
+
+        // Start fade in animation
+        isFadingIn = true;
+        fadeInTimer.start();
+
+        // Set the title text for Level 2
+        titleLabel.setText("The Corruption of Toxitar");
+
+        // Show Level 2 intro dialogues after a short delay
+        Timer delayTimer = new Timer(1000, new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                // Show title
+                titleLabel.setVisible(true);
+
+                // Start Level 2 intro dialogue
+                List<NarrativeSystem.DialogueEntry> level2IntroDialogues = 
+                    narrativeSystem.getDialogueSequence("level2_intro");
+                dialogueManager.startDialogue(level2IntroDialogues);
+            }
+        });
+        delayTimer.setRepeats(false);
+        delayTimer.start();
+    }
+    
+    
+    
+    
+    /**
+    * Show transition dialogue between levels
+    */
+    public void showTransitionDialogue(List<NarrativeSystem.DialogueEntry> dialogueSequence, Runnable onCompleteAction) {
+        // Create semi-transparent overlay
+        JPanel dialogueOverlay = new JPanel() {
+            @Override
+            protected void paintComponent(Graphics g) {
+                super.paintComponent(g);
+                // Dark semi-transparent background (70% opacity)
+                g.setColor(new Color(0, 0, 0, 180));
+                g.fillRect(0, 0, getWidth(), getHeight());
+            }
+        };
+        dialogueOverlay.setLayout(null);
+        dialogueOverlay.setBounds(0, 0, GameConstants.WINDOW_WIDTH, GameConstants.WINDOW_HEIGHT);
+        dialogueOverlay.setOpaque(false);
+
+        // Add overlay
+        add(dialogueOverlay, 0);
+
+        // Create a dialogue manager specifically for this overlay
+        DialogueManager transitionDialogueManager = new DialogueManager(controller);
+        transitionDialogueManager.setBounds(0, 0, GameConstants.WINDOW_WIDTH, GameConstants.WINDOW_HEIGHT);
+        dialogueOverlay.add(transitionDialogueManager);
+
+        // Set a listener to run the callback when dialogue ends
+        transitionDialogueManager.setDialogueEndListener(new DialogueManager.DialogueEndListener() {
+            @Override
+            public void onDialogueEnd() {
+                // Remove the overlay
+                remove(dialogueOverlay);
+                repaint();
+
+                // Execute the callback action
+                if (onCompleteAction != null) {
+                    onCompleteAction.run();
+                }
+            }
+        });
+
+        // Start the dialogue sequence
+        transitionDialogueManager.startDialogue(dialogueSequence);
+    }
+    
+    
+    
+    /**
+    * Show boss battle result for Level 2 (Toxitar)
+    */
+    public void showLevel2BossBattleResult(boolean success, String selectedPotion) {
+        // Get appropriate dialogue key based on outcome
+        String dialogueKey = success ? "boss2_success" : "boss2_failure";
+
+        // Get the dialogue sequence from NarrativeSystem
+        List<NarrativeSystem.DialogueEntry> battleDialogues = narrativeSystem.getDialogueSequence(dialogueKey);
+
+        // If not found, use the dynamic method
+        if (battleDialogues == null || battleDialogues.isEmpty()) {
+            battleDialogues = narrativeSystem.getToxitarBattleOutcomeDialogue(success, selectedPotion);
+        }
+
+        // Set a special flag to indicate this is a boss battle result dialogue
+        dialogueManager.setBossBattleResultDialogue(true);
+
+        // Start the dialogue
+        dialogueManager.startDialogue(battleDialogues);
+    }
+    
+    /**
+    * Start dynamic dialogue for a specific phase in Level 2
+    */
+    public void startLevel2PhaseDialogue(int phase) {
+        currentPhase = phase;
+
+        // Get the potion types
+        String leftPotionType = "Dexterity"; // Default for Level 2
+        String rightPotionType = "Strength"; // Default for Level 2
+
+        // Update phase indicators
+        for (int i = 0; i < phaseLabels.length; i++) {
+            if (i == currentPhase) {
+                phaseLabels[i].setForeground(Color.WHITE);
+                phaseLabels[i].setBorder(BorderFactory.createCompoundBorder(
+                    BorderFactory.createMatteBorder(0, 0, 2, 0, Color.WHITE),
+                    BorderFactory.createEmptyBorder(5, 15, 5, 15)
+                ));
+            } else if (i < currentPhase) {
+                // Completed phases
+                phaseLabels[i].setForeground(new Color(200, 200, 200));
+                phaseLabels[i].setBorder(BorderFactory.createEmptyBorder(5, 15, 5, 15));
+            } else {
+                // Future phases
+                phaseLabels[i].setForeground(Color.GRAY);
+                phaseLabels[i].setBorder(BorderFactory.createEmptyBorder(5, 15, 5, 15));
+            }
+        }
+
+        // Show phase indicators
+        phaseIndicatorsPanel.setVisible(true);
+
+        // Get dynamic dialogue for Level 2 phase
+        List<NarrativeSystem.DialogueEntry> dialogueSequence = 
+            narrativeSystem.getDynamicLevel2Dialogue(phase, leftPotionType, rightPotionType);
+
+        // Start the dialogue
+        dialogueManager.startDialogue(dialogueSequence);
+    }
 }

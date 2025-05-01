@@ -19,7 +19,7 @@ import java.util.List;
  * Modified to remove timer and lives system from visualization
  */
 public class GameController {
-    private GameModel model;
+    public GameModel model;
     private ProgressTracker progressTracker;
     private ResourceManager resourceManager;
     private NarrativeSystem narrativeSystem;
@@ -228,19 +228,43 @@ public class GameController {
      */
     public void onBossBattleComplete(boolean success, int bossLevel) {
         model.setBossBattleCompleted(true);
-    
         model.setCurrentState(GameState.STORY_MODE);
-        cardLayout.show(mainPanel, "enhancedStory");
 
         // Get selected potion from the model
         String selectedPotion = model.getSelectedPotion();
 
         // Show appropriate dialogue based on outcome with dynamic content
-        enhancedStoryView.showBossBattleResult(success, bossLevel);
+        if (bossLevel == 1) {
+            // Flameclaw (Level 1)
+            enhancedStoryView.showBossBattleResult(success, bossLevel);
 
-        // Record progress if successful
-        if (success) {
-            progressTracker.completeLevel("Beginner", bossLevel, 3);
+            // Record progress if successful
+            if (success) {
+                progressTracker.completeLevel("Beginner", bossLevel, 3);
+
+                // After a successful completion of Level 1, transition to Level 2
+                Timer transitionTimer = new Timer(5000, e -> {
+                    transitionToLevel2();
+                });
+                transitionTimer.setRepeats(false);
+                transitionTimer.start();
+            }
+        } else if (bossLevel == 2) {
+            // Toxitar (Level 2)
+            enhancedStoryView.showLevel2BossBattleResult(success, selectedPotion);
+
+            // Record progress if successful
+            if (success) {
+                progressTracker.completeLevel("Intermediate", 1, 3);
+
+                // After a successful completion of Level 2, transition to Level 3 (to be implemented)
+                Timer transitionTimer = new Timer(5000, e -> {
+                    // Placeholder for Level 3 transition
+                    showLevelSelection();
+                });
+                transitionTimer.setRepeats(false);
+                transitionTimer.start();
+            }
         }
     }
     
@@ -250,7 +274,7 @@ public class GameController {
     public void startLevel(String difficulty, int level) {
         model.setCurrentLevel(level);
         model.setCurrentDifficulty(difficulty);
-        
+
         // Set game state based on level configuration
         for (LevelConfig config : allLevels) {
             if (config.getDifficulty().equals(difficulty) && config.getLevelNumber() == level) {
@@ -258,9 +282,16 @@ public class GameController {
                 break;
             }
         }
-        
+
+        // Special handling for Level 2
+        if (difficulty.equals("Intermediate") && level == 1) {
+            // This is Level 2 in the game
+            model.setGameLevel(2);
+            startLevel2FromSelection();
+        }
         // For Level 1, start the story
-        if (difficulty.equals("Beginner") && level == 1) {
+        else if (difficulty.equals("Beginner") && level == 1) {
+            model.setGameLevel(1);
             startGame();
         } else {
             // For other levels, go directly to game view
@@ -404,6 +435,101 @@ public class GameController {
         }
 
         // We can use these when returning to story mode to show dynamic dialogue
+    }
+    
+    
+    
+    
+    
+    /**
+    * Start Level 2 with Toxitar as the boss
+    */
+    private void startLevel2() {
+        // Set Level 2 in the model
+        model.setGameLevel(2);
+        model.setCurrentState(GameState.STORY_MODE);
+        model.setCurrentLevel(1); // Reset to first phase
+
+        // Reset TimSort visualization for Level 2
+        timSortVisualization.resetAllPhases();
+        timSortVisualization.setGameLevel(2);
+
+        // Show Level 2 story introduction
+        cardLayout.show(mainPanel, "enhancedStory");
+        enhancedStoryView.startLevel2Story();
+    }
+
+    
+    
+    /**
+    * Handle completion of Level 1 and transition to Level 2
+    */
+    public void onLevel1Complete() {
+        // Update game level
+        model.setGameLevel(2);
+
+        // Show transition dialogue
+        List<NarrativeSystem.DialogueEntry> transitionDialogues = 
+            narrativeSystem.getDialogueSequence("level2_transition");
+        enhancedStoryView.showTransitionDialogue(transitionDialogues, this::startLevel2);
+    }
+    
+    
+    /**
+    * Transition from Level 1 to Level 2 after defeating Flameclaw
+    */
+    private void transitionToLevel2() {
+        // Update game level in model
+        model.setGameLevel(2);
+        model.setCurrentLevel(1); // Reset to first phase
+
+        // Show transition dialogue
+        List<NarrativeSystem.DialogueEntry> transitionDialogues = 
+            narrativeSystem.getDialogueSequence("level1to2_transition");
+
+        if (transitionDialogues != null && !transitionDialogues.isEmpty()) {
+            cardLayout.show(mainPanel, "enhancedStory");
+            enhancedStoryView.showTransitionDialogue(transitionDialogues, () -> {
+                startLevel2();
+            });
+        } else {
+            // Fallback if dialogue is missing
+            startLevel2();
+        }
+    }
+    
+    
+    
+    /**
+    * Get the number of stars earned for a level
+    */
+    public int getStarsForLevel(String difficulty, int level) {
+        return progressTracker.getStarsForLevel(difficulty, level);
+    }
+    
+    
+    
+    /**
+    * Start Level 2 directly from level selection
+    */
+    public void startLevel2FromSelection() {
+        // Set Level 2 in the model
+        model.setGameLevel(2);
+        model.setCurrentState(GameState.STORY_MODE);
+        model.setCurrentLevel(1); // Start at phase 1
+
+        // Reset TimSort visualization for Level 2
+        timSortVisualization.resetAllPhases();
+        timSortVisualization.setGameLevel(2);
+
+        // Show Level 2 story introduction
+        cardLayout.show(mainPanel, "enhancedStory");
+        enhancedStoryView.startLevel2Story();
+    }
+    
+    // Add helper function to check if a level is completed
+    public boolean isLevelCompleted(String difficulty, int level) {
+        return progressTracker.isLevelCompleted(difficulty, level);
     }
     
     

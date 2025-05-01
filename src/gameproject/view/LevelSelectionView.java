@@ -192,18 +192,23 @@ public class LevelSelectionView extends JPanel {
             levelBox.addMouseListener(new MouseAdapter() {
                 @Override
                 public void mouseClicked(MouseEvent e) {
-                    controller.startLevel("Beginner", level);
-                }
-                
-                @Override
-                public void mouseEntered(MouseEvent e) {
-                    // Subtle highlight effect
-                    boxImageLabel.setBorder(BorderFactory.createLineBorder(Color.YELLOW, 1));
-                }
-                
-                @Override
-                public void mouseExited(MouseEvent e) {
-                    boxImageLabel.setBorder(null);
+                    // For Level 2, set the game level properly
+                    if (level == 2) {
+                        // Check if Level 1 is completed first
+                        if (controller.isLevelCompleted("Beginner", 1)) {
+                            controller.model.setGameLevel(2);
+                            controller.startLevel("Intermediate", 1);
+                        } else {
+                            JOptionPane.showMessageDialog(LevelSelectionView.this,
+                                "You must complete Level 1 first!",
+                                "Level Locked",
+                                JOptionPane.WARNING_MESSAGE);
+                        }
+                    } else {
+                        // For other levels, use the default behavior
+                        controller.model.setGameLevel(level);
+                        controller.startLevel("Beginner", level);
+                    }
                 }
             });
             
@@ -222,12 +227,82 @@ public class LevelSelectionView extends JPanel {
     * Update the level status based on progress
     */
     public void updateLevelStatus() {
-       // This method should update the UI elements in the LevelSelectionView
-       // based on the player's progress
+        // Get progress from tracker
+        boolean level1Completed = controller.isLevelCompleted("Beginner", 1);
+        boolean level2Completed = controller.isLevelCompleted("Intermediate", 1);
+        boolean level3Completed = controller.isLevelCompleted("Advanced", 1);
 
-       // For now, just repaint the view
-       revalidate();
-       repaint();
+        // Find components and update
+        Component[] components = getComponents();
+        for (Component component : components) {
+            if (component instanceof JPanel) {
+                JPanel mainPanel = (JPanel) component;
+
+                // Find level container panels
+                Component[] mainComponents = mainPanel.getComponents();
+                for (Component mainComponent : mainComponents) {
+                    if (mainComponent instanceof JPanel) {
+                        Component[] panelComponents = ((JPanel) mainComponent).getComponents();
+
+                        // Look for level container panels
+                        for (int i = 0; i < panelComponents.length; i++) {
+                            if (panelComponents[i] instanceof JPanel) {
+                                JPanel levelPanel = (JPanel) panelComponents[i];
+                                Component[] levelComponents = levelPanel.getComponents();
+
+                                // Find star row
+                                for (Component levelComponent : levelComponents) {
+                                    if (levelComponent instanceof JPanel) {
+                                        JPanel starPanel = (JPanel) levelComponent;
+                                        Component[] starComponents = starPanel.getComponents();
+
+                                        // Update stars based on level completion
+                                        boolean levelCompleted = false;
+                                        int stars = 0;
+
+                                        if (i == 0 && level1Completed) {
+                                            // Level 1
+                                            levelCompleted = true;
+                                            stars = controller.getStarsForLevel("Beginner", 1);
+                                        } else if (i == 1 && level2Completed) {
+                                            // Level 2
+                                            levelCompleted = true;
+                                            stars = controller.getStarsForLevel("Intermediate", 1);
+                                        } else if (i == 2 && level3Completed) {
+                                            // Level 3
+                                            levelCompleted = true;
+                                            stars = controller.getStarsForLevel("Advanced", 1);
+                                        }
+
+                                        // Update star icons
+                                        for (int j = 0; j < Math.min(starComponents.length, 3); j++) {
+                                            if (starComponents[j] instanceof JLabel) {
+                                                JLabel starLabel = (JLabel) starComponents[j];
+                                                if (levelCompleted && j < stars) {
+                                                    starLabel.setIcon(filledStarIcon);
+                                                } else {
+                                                    starLabel.setIcon(emptyStarIcon);
+                                                }
+                                            }
+                                        }
+
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+
+                        break;
+                    }
+                }
+
+                break;
+            }
+        }
+
+        // Force repaint
+        revalidate();
+        repaint();
     }
     
     

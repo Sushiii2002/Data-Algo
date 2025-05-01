@@ -176,8 +176,258 @@ public class NarrativeSystem {
         level2TransitionDialogues.add(new DialogueEntry("ScholarMerion", "This creature's toxins corrupt the body from within. Only purification can counter such effects.", "analyzing"));
         dialogueSequences.put("level2_transition", level2TransitionDialogues);
         
-        // Add more dialogue sequences for Level 2 and 3 following the same pattern
+        
+        
+        
+        
+        // Level 2 intro dialogue
+        List<DialogueEntry> level2IntroDialogues = new ArrayList<>();
+        level2IntroDialogues.add(new DialogueEntry("ElderHarmony", "The defeat of Flameclaw was only the beginning. Reports from the eastern marshes tell of Toxitar spreading deadly poison throughout the land.", "concerned"));
+        level2IntroDialogues.add(new DialogueEntry("Tima", "Toxitar? The poison beast from the ancient legends?", "questioning"));
+        level2IntroDialogues.add(new DialogueEntry("MasterOrdin", "Yes, and its poison corrupts everything it touches. We must craft a new potion to counter this threat.", "serious"));
+        level2IntroDialogues.add(new DialogueEntry("ScholarMerion", "Toxitar's poison is unlike any other - it fills the air and seeps into the ground. Even standing near it causes corruption.", "analyzing"));
+        level2IntroDialogues.add(new DialogueEntry("Runa", "I've heard only those with exceptional speed and agility can avoid Toxitar's poison clouds.", "warning"));
+        level2IntroDialogues.add(new DialogueEntry("MasterOrdin", "Then we must once again employ the three sacred principles of the Harmony of Order to craft the perfect potion.", "determined"));
+        dialogueSequences.put("level2_intro", level2IntroDialogues);
+
+        // Phase 1 - Eye of Pattern (Level 2)
+        List<DialogueEntry> level2Phase1Start = new ArrayList<>();
+        level2Phase1Start.add(new DialogueEntry("MasterOrdin", "First, we must employ the Eye of Pattern to identify ingredients with properties of agility and speed.", "instructing"));
+        level2Phase1Start.add(new DialogueEntry("MasterOrdin", "Look for ingredients that naturally enhance reflexes and movement - they often have distinctive colors and properties.", "instructing"));
+        dialogueSequences.put("level2_phase1_start", level2Phase1Start);
+
+        List<DialogueEntry> level2Phase1Middle = new ArrayList<>();
+        level2Phase1Middle.add(new DialogueEntry("Runa", "The forest spirits tell me Toxitar's poison clings to those who move slowly. Only swift movements can escape its grasp.", "warning"));
+        level2Phase1Middle.add(new DialogueEntry("Tima", "So I need ingredients that enhance speed and reflexes?", "understanding"));
+        level2Phase1Middle.add(new DialogueEntry("Runa", "Yes! Look for ingredients with light, swift qualities. They often appear in shades of green.", "helpful"));
+        dialogueSequences.put("level2_phase1_middle", level2Phase1Middle);
+
+        List<DialogueEntry> level2Phase1End = new ArrayList<>();
+        level2Phase1End.add(new DialogueEntry("MasterOrdin", "Excellent identification! These ingredients indeed have properties of swiftness and agility. Now we must arrange them with the Hand of Balance.", "praising"));
+        dialogueSequences.put("level2_phase1_end", level2Phase1End);
+
+        // Phase 2 - Hand of Balance (Level 2)
+        List<DialogueEntry> level2Phase2Start = new ArrayList<>();
+        level2Phase2Start.add(new DialogueEntry("MasterOrdin", "The Hand of Balance teaches us to sort and arrange our ingredients with precision. For agility potions, the order is especially important.", "instructing"));
+        level2Phase2Start.add(new DialogueEntry("MasterOrdin", "Arrange these ingredients from lightest to heaviest - the essence of speed requires perfect equilibrium.", "instructing"));
+        dialogueSequences.put("level2_phase2_start", level2Phase2Start);
+
+        List<DialogueEntry> level2Phase2Middle = new ArrayList<>();
+        level2Phase2Middle.add(new DialogueEntry("MerchantBalz", "I once traded with acrobats from the eastern kingdoms. They used similar ingredients to enhance their performances.", "reminiscing"));
+        level2Phase2Middle.add(new DialogueEntry("Tima", "How did they prepare them?", "curious"));
+        level2Phase2Middle.add(new DialogueEntry("MerchantBalz", "They were meticulous about the order - first the lightest essences, then gradually increasing in density. The sequence was as important as the ingredients themselves.", "explaining"));
+        dialogueSequences.put("level2_phase2_middle", level2Phase2Middle);
+
+        List<DialogueEntry> level2Phase2End = new ArrayList<>();
+        level2Phase2End.add(new DialogueEntry("ScholarMerion", "Your arrangement is perfect! These grouped ingredients could create either a Dexterity potion or a Strength potion. The final decision will determine the potion's effectiveness against Toxitar.", "analyzing"));
+        level2Phase2End.add(new DialogueEntry("MasterOrdin", "Now for the Mind of Unity - the final sacred principle that will complete our potion.", "instructing"));
+        dialogueSequences.put("level2_phase2_end", level2Phase2End);
+
+        // Phase 3 - Mind of Unity (Level 2)
+        List<DialogueEntry> level2Phase3Start = new ArrayList<>();
+        level2Phase3Start.add(new DialogueEntry("MasterOrdin", "The Mind of Unity teaches us that separate elements must be combined with intention and purpose. You must choose which potion to craft.", "instructing"));
+        level2Phase3Start.add(new DialogueEntry("Tima", "I must decide between strength and agility to counter Toxitar's poison.", "contemplative"));
+        dialogueSequences.put("level2_phase3_start", level2Phase3Start);
+
+        List<DialogueEntry> level2Phase3Decision = new ArrayList<>();
+        level2Phase3Decision.add(new DialogueEntry("Runa", "Toxitar approaches! Its poison clouds spread in every direction!", "urgent"));
+        level2Phase3Decision.add(new DialogueEntry("MerchantBalz", "Raw strength cannot defeat what it cannot touch.", "warning"));
+        level2Phase3Decision.add(new DialogueEntry("ScholarMerion", "Against poison that fills the air, one must either be immune... or never be touched by it at all.", "advising"));
+        dialogueSequences.put("level2_phase3_decision", level2Phase3Decision);
+
+        List<DialogueEntry> level2Phase3End = new ArrayList<>();
+        level2Phase3End.add(new DialogueEntry("MasterOrdin", "The potion is complete! Now you must face Toxitar!", "encouraging"));
+        dialogueSequences.put("level2_phase3_end", level2Phase3End);
+
+        // Boss battle - Toxitar success scenario
+        List<DialogueEntry> level2BossSuccessDialogues = new ArrayList<>();
+        level2BossSuccessDialogues.add(new DialogueEntry("Toxitar", "POISON... SPREADS... EVERYWHERE!", "roaring"));
+        level2BossSuccessDialogues.add(new DialogueEntry("Tima", "Your poison cannot catch what it cannot touch!", "confident"));
+        level2BossSuccessDialogues.add(new DialogueEntry("Toxitar", "IMPOSSIBLE! TOO FAST! TOO AGILE!", "confused"));
+        level2BossSuccessDialogues.add(new DialogueEntry("Tima", "The Harmony of Order grants me the speed to evade your corruption!", "triumphant"));
+        level2BossSuccessDialogues.add(new DialogueEntry("MasterOrdin", "Magnificent! Your mastery of all three principles allowed you to craft the perfect Dexterity potion!", "praising"));
+        dialogueSequences.put("boss2_success", level2BossSuccessDialogues);
+
+        // Boss battle - Toxitar failure scenario
+        List<DialogueEntry> level2BossFailureDialogues = new ArrayList<>();
+        level2BossFailureDialogues.add(new DialogueEntry("Toxitar", "POISON... SPREADS... EVERYWHERE!", "roaring"));
+        level2BossFailureDialogues.add(new DialogueEntry("Tima", "Your poison cannot catch what it cannot touch!", "confident"));
+        level2BossFailureDialogues.add(new DialogueEntry("Toxitar", "STRENGTH MEANS NOTHING IN MY POISON MIST!", "triumphant"));
+        level2BossFailureDialogues.add(new DialogueEntry("MasterOrdin", "Retreat! The potion isn't effective! We must try again with a different approach!", "protecting"));
+        dialogueSequences.put("boss2_failure", level2BossFailureDialogues);
+        
+        
+        
+        List<DialogueEntry> level1to2TransitionDialogues = new ArrayList<>();
+        level1to2TransitionDialogues.add(new DialogueEntry("ElderHarmony", "You've defeated Flameclaw! The village is safe from the fires, at least for now.", "relieved"));
+        level1to2TransitionDialogues.add(new DialogueEntry("Tima", "Elder, you don't sound entirely relieved. Is there more trouble?", "concerned"));
+        level1to2TransitionDialogues.add(new DialogueEntry("ElderHarmony", "I'm afraid so. A messenger just arrived from the eastern marshes. Toxitar has awakened.", "grave"));
+        level1to2TransitionDialogues.add(new DialogueEntry("MasterOrdin", "The poison beast. This is as the prophecy foretold - the three chaos beasts awakening one after another.", "serious"));
+        level1to2TransitionDialogues.add(new DialogueEntry("Runa", "Toxitar's poison is said to corrupt everything it touches. The lands around the eastern marshes are already beginning to wither and die.", "worried"));
+        level1to2TransitionDialogues.add(new DialogueEntry("MasterOrdin", "Tima, you must use the Harmony of Order once again, but this time to craft a potion that will help you against Toxitar's poison.", "instructing"));
+        level1to2TransitionDialogues.add(new DialogueEntry("Tima", "I'm ready, Master Ordin. What ingredients should we seek?", "determined"));
+        dialogueSequences.put("level1to2_transition", level1to2TransitionDialogues);
+        
+        // Add more dialogue sequences for Level 3 following the same pattern
     }
+    
+    
+    
+    
+    
+    /**
+    * Get dynamic dialogue for Level 2 (Toxitar) based on player choices
+    * @param phase The current phase (1, 2, or 3)
+    * @param leftPotionType The potion type identified on the left
+    * @param rightPotionType The potion type identified on the right
+    * @return List of DialogueEntry objects with dynamic content focused on Toxitar
+    */
+    public List<DialogueEntry> getDynamicLevel2Dialogue(int phase, String leftPotionType, String rightPotionType) {
+        List<DialogueEntry> dialogueSequence = new ArrayList<>();
+
+        // Phase 1 - Eye of Pattern for Level 2
+        if (phase == 1) {
+            dialogueSequence.add(new DialogueEntry("MasterOrdin", 
+                "The Eye of Pattern reveals natural sequences even in chaos. For Toxitar, we need ingredients that enhance movement and agility.", 
+                "instructing"));
+            dialogueSequence.add(new DialogueEntry("Runa", 
+                "I've watched Toxitar's movements from afar. The poison it exudes affects everything it touches - unless you're quick enough to avoid it completely.", 
+                "concerned"));
+            dialogueSequence.add(new DialogueEntry("MasterOrdin", 
+                "Select ingredients that naturally enhance reflexes and speed. The green-hued ingredients often have these properties.", 
+                "instructing"));
+        }
+        // Phase 2 - Hand of Balance for Level 2
+        else if (phase == 2) {
+            dialogueSequence.add(new DialogueEntry("MasterOrdin", 
+                "The Hand of Balance teaches us that even the swiftest ingredients must be properly arranged. Sort these carefully to maximize their potential.",
+                "instructing"));
+
+            dialogueSequence.add(new DialogueEntry("MerchantBalz", 
+                "In my travels, I've met acrobats who used similar ingredients to perform incredible feats of agility and precision.",
+                "reminiscing"));
+
+            dialogueSequence.add(new DialogueEntry("MasterOrdin", 
+                "Indeed, Balz. The potency of dexterity-enhancing ingredients depends greatly on their arrangement.",
+                "agreeing"));
+        }
+        // Phase 3 - Mind of Unity for Level 2
+        else if (phase == 3) {
+            dialogueSequence.add(new DialogueEntry("MasterOrdin", 
+                "The Mind of Unity allows you to combine separate elements into a single, powerful whole. Now you must choose which potion to craft against Toxitar.", 
+                "instructing"));
+
+            // Left potion type dialogue customized for Toxitar
+            if (leftPotionType.equals("Dexterity")) {
+                dialogueSequence.add(new DialogueEntry("ScholarMerion", 
+                    "This " + leftPotionType + " potion would greatly enhance your speed and reflexes - qualities needed to avoid Toxitar's poison clouds.", 
+                    "analyzing"));
+            } 
+            else if (leftPotionType.equals("Strength")) {
+                dialogueSequence.add(new DialogueEntry("ScholarMerion", 
+                    "This " + leftPotionType + " potion would enhance your physical power, but remember that strength alone cannot protect against poison in the air.", 
+                    "analyzing"));
+            }
+            else if (leftPotionType.equals("Fire Resistance")) {
+                dialogueSequence.add(new DialogueEntry("ScholarMerion", 
+                    "This " + leftPotionType + " potion would protect against heat and flames, but Toxitar's threat comes from poison, not fire.", 
+                    "concerned"));
+            }
+            else if (leftPotionType.equals("Cold Resistance")) {
+                dialogueSequence.add(new DialogueEntry("ScholarMerion", 
+                    "This " + leftPotionType + " potion would shield against ice and cold, but offers little protection against Toxitar's poison.", 
+                    "concerned"));
+            }
+
+            // Right potion type dialogue customized for Toxitar
+            if (rightPotionType.equals("Dexterity")) {
+                dialogueSequence.add(new DialogueEntry("Runa", 
+                    "A " + rightPotionType + " potion would allow you to move with incredible speed, potentially avoiding Toxitar's poison altogether.", 
+                    "suggesting"));
+            } 
+            else if (rightPotionType.equals("Strength")) {
+                dialogueSequence.add(new DialogueEntry("Runa", 
+                    "A " + rightPotionType + " potion gives raw power, but Toxitar's poison can affect even the strongest if they cannot avoid it.", 
+                    "cautioning"));
+            }
+            else if (rightPotionType.equals("Fire Resistance")) {
+                dialogueSequence.add(new DialogueEntry("Runa", 
+                    "A " + rightPotionType + " potion would be ineffective against Toxitar's poison, which isn't heat-based at all.", 
+                    "warning"));
+            }
+            else if (rightPotionType.equals("Cold Resistance")) {
+                dialogueSequence.add(new DialogueEntry("Runa", 
+                    "A " + rightPotionType + " potion offers no protection against the type of poison Toxitar produces.", 
+                    "warning"));
+            }
+
+            // Add a specific hint about Toxitar
+            dialogueSequence.add(new DialogueEntry("MasterOrdin", 
+                "Toxitar's poison fills the air around it. Consider which quality would best help you avoid being poisoned at all.", 
+                "guiding"));
+        }
+
+        return dialogueSequence;
+    }
+    
+    
+    
+    
+    /**
+    * Get dynamic hints for Level 2 based on the current phase
+    */
+    public String getDynamicLevel2Hint(int phase) {
+        switch(phase) {
+            case 1:
+                return "Look for green ingredients with light, airy qualities. These enhance movement and reflexes, which are key to avoiding Toxitar's poison.";
+            case 2:
+                return "Arrange the ingredients from lightest to heaviest. For dexterity potions, the proper sequence is crucial for achieving maximum agility.";
+            case 3:
+                return "Against poison that fills the air around you, the ability to avoid it completely is more valuable than trying to resist it. Which potion would give you that ability?";
+            default:
+                return "Focus on movement and agility. Toxitar's poison can only harm what it touches.";
+        }
+    }
+    
+    
+    
+    
+    /**
+    * Get dynamic boss battle outcome dialogue for Toxitar
+    */
+    public List<DialogueEntry> getToxitarBattleOutcomeDialogue(boolean success, String selectedPotion) {
+        List<DialogueEntry> battleDialogues = new ArrayList<>();
+
+        if (success) {
+            // Dexterity potion was used successfully
+            battleDialogues.add(new DialogueEntry("Toxitar", "POISON... FILLS... THE AIR!", "roaring"));
+            battleDialogues.add(new DialogueEntry("Tima", "Your poison can't touch what it can't catch!", "determined"));
+            battleDialogues.add(new DialogueEntry("Toxitar", "TOO FAST! CANNOT... POISON!", "confused"));
+            battleDialogues.add(new DialogueEntry("Tima", "The " + selectedPotion + " gives me the speed to evade your corruption!", "triumphant"));
+            battleDialogues.add(new DialogueEntry("MasterOrdin", "Excellent choice with the " + selectedPotion + "! Your enhanced agility allows you to avoid the poison completely.", "praising"));
+        } else {
+            // Wrong potion was selected
+            battleDialogues.add(new DialogueEntry("Toxitar", "POISON... FILLS... THE AIR!", "roaring"));
+            battleDialogues.add(new DialogueEntry("Tima", "Your poison can't harm me!", "determined"));
+
+            if (selectedPotion.contains("Strength")) {
+                battleDialogues.add(new DialogueEntry("Toxitar", "STRENGTH CANNOT FIGHT WHAT IT CANNOT TOUCH!", "triumphant"));
+            } else if (selectedPotion.contains("Fire")) {
+                battleDialogues.add(new DialogueEntry("Toxitar", "MY POISON IS NOT FLAME TO BE RESISTED!", "triumphant"));
+            } else if (selectedPotion.contains("Cold")) {
+                battleDialogues.add(new DialogueEntry("Toxitar", "ICE PROTECTION MEANS NOTHING AGAINST TOXIN!", "triumphant"));
+            } else {
+                battleDialogues.add(new DialogueEntry("Toxitar", "YOUR POTION IS USELESS AGAINST MY POISON!", "triumphant"));
+            }
+
+            battleDialogues.add(new DialogueEntry("MasterOrdin", "Retreat! The " + selectedPotion + " isn't effective against Toxitar's poison! We need a different approach!", "protecting"));
+        }
+
+        return battleDialogues;
+    }
+    
+
+    
     
     /**
      * Start the narrative from the beginning
