@@ -522,4 +522,32 @@ public class NarrativeSystem {
     public List<DialogueEntry> getDialogueSequence(String key) {
         return dialogueSequences.getOrDefault(key, new ArrayList<>());
     }
+    
+    
+    
+    /**
+    * Get dynamic phase 2 end dialogue with the actual potion types
+    */
+    public List<DialogueEntry> getDynamicPhase2EndDialogue(String leftPotionType, String rightPotionType) {
+        List<DialogueEntry> dialogueSequence = new ArrayList<>();
+
+        // Create dynamic dialogue that references the exact potions identified
+        dialogueSequence.add(new DialogueEntry("ScholarMerion", 
+            "Fascinating arrangement! These two bases could create either a " + 
+            leftPotionType + " potion or a " + 
+            rightPotionType + " potion. Choose wisely when the time comes.", 
+            "analyzing"));
+
+        dialogueSequence.add(new DialogueEntry("MasterOrdin", 
+            "And now for the final sacred ability: The Mind of Unity. " +
+            "This will determine which potion you ultimately craft.", 
+            "instructing"));
+
+        return dialogueSequence;
+    }
+    
+    
+    
+    
+    
 }
