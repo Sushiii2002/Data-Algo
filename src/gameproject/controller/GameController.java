@@ -35,6 +35,7 @@ public class GameController {
     private TimSortVisualization timSortVisualization;
     
     private List<LevelConfig> allLevels;
+    private boolean inLevelTransition = false;
     
     /**
      * Constructor - Initialize the game controller
@@ -127,6 +128,9 @@ public class GameController {
      * Start the story mode with enhanced narrative
      */
     public void startGame() {
+        // Reset transition flag
+        inLevelTransition = false;
+
         model.setCurrentState(GameState.STORY_MODE);
         cardLayout.show(mainPanel, "enhancedStory");
         enhancedStoryView.startStory();
@@ -143,6 +147,15 @@ public class GameController {
      * Start a specific algorithm phase gameplay
      */
     public void startPhaseGameplay(int phase) {
+        // Prevent recursive calls or multiple transitions
+        if (inLevelTransition) {
+            System.out.println("DEBUG: Already in level transition, ignoring call to startPhaseGameplay");
+            return;
+        }
+
+        inLevelTransition = true;
+        System.out.println("DEBUG: Starting Phase " + phase + " gameplay for level " + model.getGameLevel());
+
         switch (phase) {
             case 1:
                 // Eye of Pattern phase
@@ -180,13 +193,23 @@ public class GameController {
                 cardLayout.show(mainPanel, "enhancedStory");
                 break;
         }
-    }
+    
+    // Reset transition flag after a short delay
+    Timer resetTimer = new Timer(500, e -> {
+        inLevelTransition = false;
+    });
+    resetTimer.setRepeats(false);
+    resetTimer.start();
+}
 
     
     /**
      * Handle dialogue sequence completion
      */
     public void onDialogueSequenceEnded() {
+        // Reset transition flag
+        inLevelTransition = false;
+
         // Check current game state to determine action
         if (model.getCurrentState() == GameState.STORY_MODE) {
             // Get the current game level
@@ -245,8 +268,15 @@ public class GameController {
         model.setBossBattleCompleted(true);
         model.setCurrentState(GameState.STORY_MODE);
 
+        // Add debug logging
+        System.out.println("DEBUG: onBossBattleComplete called - success: " + success + ", bossLevel: " + bossLevel);
+
         // Get selected potion from the model
         String selectedPotion = model.getSelectedPotion();
+        System.out.println("DEBUG: Selected potion: " + selectedPotion);
+
+        // IMPORTANT: Show the story view FIRST before showing dialogue
+        cardLayout.show(mainPanel, "enhancedStory");
 
         // Show appropriate dialogue based on outcome with dynamic content
         if (bossLevel == 1) {
@@ -265,20 +295,26 @@ public class GameController {
                 transitionTimer.start();
             }
         } else if (bossLevel == 2) {
-            // Toxitar (Level 2)
-            enhancedStoryView.showLevel2BossBattleResult(success, selectedPotion);
+            // IMPORTANT: For Toxitar specifically, use the specialized method
+            System.out.println("DEBUG: Showing Level 2 boss battle result for Toxitar");
+
+            // Make sure enhanced story view is visible
+            enhancedStoryView.setVisible(true);
+
+            // Force repaint before showing dialogue
+            enhancedStoryView.revalidate();
+            enhancedStoryView.repaint();
+
+            // Short delay to ensure UI is updated
+            Timer dialogueTimer = new Timer(500, e -> {
+                enhancedStoryView.showLevel2BossBattleResult(success, selectedPotion);
+            });
+            dialogueTimer.setRepeats(false);
+            dialogueTimer.start();
 
             // Record progress if successful
             if (success) {
                 progressTracker.completeLevel("Intermediate", 1, 3);
-
-                // After a successful completion of Level 2, transition to Level 3 (to be implemented)
-                Timer transitionTimer = new Timer(5000, e -> {
-                    // Placeholder for Level 3 transition
-                    showLevelSelection();
-                });
-                transitionTimer.setRepeats(false);
-                transitionTimer.start();
             }
         }
     }
@@ -287,6 +323,9 @@ public class GameController {
      * Start a specific level
      */
     public void startLevel(String difficulty, int level) {
+        // Reset transition flag
+        inLevelTransition = false;
+
         model.setCurrentLevel(level);
         model.setCurrentDifficulty(difficulty);
 
@@ -302,11 +341,17 @@ public class GameController {
         if (difficulty.equals("Intermediate") && level == 1) {
             // This is Level 2 in the game
             model.setGameLevel(2);
+            // Reset TimSort visualization for Level 2
+            timSortVisualization.resetAllPhases();
+            timSortVisualization.setGameLevel(2);
             startLevel2FromSelection();
         }
         // For Level 1, start the story
         else if (difficulty.equals("Beginner") && level == 1) {
             model.setGameLevel(1);
+            // Reset TimSort visualization for Level 1
+            timSortVisualization.resetAllPhases();
+            timSortVisualization.setGameLevel(1); 
             startGame();
         } else {
             // For other levels, go directly to game view

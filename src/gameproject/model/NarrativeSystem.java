@@ -286,7 +286,8 @@ public class NarrativeSystem {
         List<DialogueEntry> dialogueSequence = new ArrayList<>();
 
         // Phase 1 - Eye of Pattern for Level 2
-        if (phase == 1) {
+         if (phase == 1) {
+            // Remove duplicate entries and make sure text is complete
             dialogueSequence.add(new DialogueEntry("MasterOrdin", 
                 "The Eye of Pattern reveals natural sequences even in chaos. For Toxitar, we need ingredients that enhance movement and agility.", 
                 "instructing"));
@@ -294,7 +295,7 @@ public class NarrativeSystem {
                 "I've watched Toxitar's movements from afar. The poison it exudes affects everything it touches - unless you're quick enough to avoid it completely.", 
                 "concerned"));
             dialogueSequence.add(new DialogueEntry("MasterOrdin", 
-                "Select ingredients that naturally enhance reflexes and speed. The green-hued ingredients often have these properties.", 
+                "Look for ingredients that naturally enhance reflexes and movement - they often have distinctive green coloring and light properties.", 
                 "instructing"));
         }
         // Phase 2 - Hand of Balance for Level 2
@@ -400,24 +401,26 @@ public class NarrativeSystem {
 
         if (success) {
             // Dexterity potion was used successfully
-            battleDialogues.add(new DialogueEntry("Toxitar", "POISON... FILLS... THE AIR!", "roaring"));
+            // Change "roaring" to "attacking" for Toxitar
+            battleDialogues.add(new DialogueEntry("Toxitar", "POISON... FILLS... THE AIR!", "attacking"));
             battleDialogues.add(new DialogueEntry("Tima", "Your poison can't touch what it can't catch!", "determined"));
-            battleDialogues.add(new DialogueEntry("Toxitar", "TOO FAST! CANNOT... POISON!", "confused"));
+            battleDialogues.add(new DialogueEntry("Toxitar", "TOO FAST! CANNOT... POISON!", "weakened"));
             battleDialogues.add(new DialogueEntry("Tima", "The " + selectedPotion + " gives me the speed to evade your corruption!", "triumphant"));
             battleDialogues.add(new DialogueEntry("MasterOrdin", "Excellent choice with the " + selectedPotion + "! Your enhanced agility allows you to avoid the poison completely.", "praising"));
         } else {
             // Wrong potion was selected
-            battleDialogues.add(new DialogueEntry("Toxitar", "POISON... FILLS... THE AIR!", "roaring"));
+            battleDialogues.add(new DialogueEntry("Toxitar", "POISON... FILLS... THE AIR!", "attacking"));
             battleDialogues.add(new DialogueEntry("Tima", "Your poison can't harm me!", "determined"));
 
             if (selectedPotion.contains("Strength")) {
-                battleDialogues.add(new DialogueEntry("Toxitar", "STRENGTH CANNOT FIGHT WHAT IT CANNOT TOUCH!", "triumphant"));
+                // Changed to "attacking" instead of "triumphant"
+                battleDialogues.add(new DialogueEntry("Toxitar", "STRENGTH CANNOT FIGHT WHAT IT CANNOT TOUCH!", "attacking"));
             } else if (selectedPotion.contains("Fire")) {
-                battleDialogues.add(new DialogueEntry("Toxitar", "MY POISON IS NOT FLAME TO BE RESISTED!", "triumphant"));
+                battleDialogues.add(new DialogueEntry("Toxitar", "MY POISON IS NOT FLAME TO BE RESISTED!", "attacking"));
             } else if (selectedPotion.contains("Cold")) {
-                battleDialogues.add(new DialogueEntry("Toxitar", "ICE PROTECTION MEANS NOTHING AGAINST TOXIN!", "triumphant"));
+                battleDialogues.add(new DialogueEntry("Toxitar", "ICE PROTECTION MEANS NOTHING AGAINST TOXIN!", "attacking"));
             } else {
-                battleDialogues.add(new DialogueEntry("Toxitar", "YOUR POTION IS USELESS AGAINST MY POISON!", "triumphant"));
+                battleDialogues.add(new DialogueEntry("Toxitar", "YOUR POTION IS USELESS AGAINST MY POISON!", "attacking"));
             }
 
             battleDialogues.add(new DialogueEntry("MasterOrdin", "Retreat! The " + selectedPotion + " isn't effective against Toxitar's poison! We need a different approach!", "protecting"));
