@@ -18,6 +18,9 @@ public class GameModel {
     private String leftPotionType = "Fire Resistance";  // Default value
     private String rightPotionType = "Strength";        // Default value
     private String selectedPotion = null;     
+    private boolean bossBattleCompleted = false;
+    
+    
     
     /**
      * Constructor - Initialize the game model
@@ -114,5 +117,11 @@ public class GameModel {
     }
     
     
-    
+    public boolean isBossBattleCompleted() {
+        return bossBattleCompleted;
+    }
+
+    public void setBossBattleCompleted(boolean completed) {
+        this.bossBattleCompleted = completed;
+    }
 }
