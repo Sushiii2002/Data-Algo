@@ -203,7 +203,7 @@ public class PotionSystem {
         bossWeaknesses.put("Flameclaw", Arrays.asList("Fire Resistance Potion"));
         
         // Toxitar (poison boss) is weak to Dexterity Potion (to avoid poison) and Strength Potion
-        bossWeaknesses.put("Toxitar", Arrays.asList("Dexterity Potion", "Strength Potion"));
+        bossWeaknesses.put("Toxitar", Arrays.asList("Dexterity Potion"));
         
         // Lord Chaosa (final boss) is weak to Cold Resistance Potion
         bossWeaknesses.put("LordChaosa", Arrays.asList("Cold Resistance Potion"));

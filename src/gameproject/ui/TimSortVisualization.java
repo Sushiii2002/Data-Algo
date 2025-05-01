@@ -83,6 +83,11 @@ public class TimSortVisualization extends JPanel {
     private String leftGroupPotionType = "Fire Resistance";  // Default value
     private String rightGroupPotionType = "Strength";    
     
+    
+    private int gameLevel = 1; // Default to Level 1
+    private String currentBossName = "Flameclaw"; // Default to Level 1 boss
+    private String[] toxitarHints = new String[3]; 
+    
     /**
      * Constructor - Initialize the TimSort visualization
      */
@@ -238,6 +243,96 @@ public class TimSortVisualization extends JPanel {
 
         add(controlPanel);
     }
+    
+    
+    
+    
+    
+    /**
+    * Set the current game level (1, 2, or 3)
+    */
+    public void setGameLevel(int level) {
+        this.gameLevel = level;
+
+        // Update boss-specific elements
+        if (level == 2) {
+            // Level 2 - Toxitar
+            currentBossName = "Toxitar";
+
+            // Update hints for Toxitar
+            toxitarHints = new String[] {
+                "Look for ingredients with green coloring and light properties - these enhance agility.",
+                "Sort each group from lightest to heaviest. The proper sequence is crucial for dexterity potions.",
+                "Against poison that fills the air, quick movement is better than raw strength."
+            };
+
+            // Update phase label with Level 2 context
+            if (currentPhase == 1) {
+                phaseLabel.setText("Phase 1: The Eye of Pattern (Level 2 - Toxitar)");
+                instructionLabel.setText("Identify agility-enhancing ingredients to evade Toxitar's poison.");
+            } else if (currentPhase == 2) {
+                phaseLabel.setText("Phase 2: The Hand of Balance (Level 2 - Toxitar)");
+                instructionLabel.setText("Sort the ingredients to craft dexterity-enhancing potions.");
+            } else if (currentPhase == 3) {
+                phaseLabel.setText("Phase 3: The Mind of Unity (Level 2 - Toxitar)");
+                instructionLabel.setText("Choose which potion will be most effective against Toxitar's poison.");
+            }
+        } else {
+            // Default to Level 1 - Flameclaw
+            currentBossName = "Flameclaw";
+
+            // Update phase label with Level 1 context
+            if (currentPhase == 1) {
+                phaseLabel.setText("Phase 1: The Eye of Pattern");
+                instructionLabel.setText("Use your 'Eye of Pattern' ability to identify ingredient sequences (runs).");
+            } else if (currentPhase == 2) {
+                phaseLabel.setText("Phase 2: The Hand of Balance");
+                instructionLabel.setText("Use your 'Hand of Balance' to sort ingredients into two groups.");
+            } else if (currentPhase == 3) {
+                phaseLabel.setText("Phase 3: The Mind of Unity");
+                instructionLabel.setText("Use your 'Mind of Unity' to choose which potion to craft.");
+            }
+        }
+    }
+    
+    
+    
+    
+    
+    
+    /**
+    * Get the appropriate hint based on game level and phase
+    */
+    private String getLevelSpecificHint(int phase) {
+        if (gameLevel == 2) {
+            // Toxitar hints
+            if (phase >= 1 && phase <= 3) {
+                return toxitarHints[phase - 1];
+            }
+        } else {
+            // Flameclaw hints (default)
+            if (phase == 1) {
+                return "Look for ingredients with similar properties. Blue ingredients enhance movement!";
+            } else if (phase == 2) {
+                return "Sort each group from lowest to highest value. The order is crucial for potion effectiveness.";
+            } else if (phase == 3) {
+                return "Against Toxitar's poison, consider how to avoid it completely rather than trying to resist it.";
+            }
+        }
+        return "Observe the natural patterns in the ingredients and follow the guidance of the characters.";
+    }
+    
+    /**
+    * Start a boss battle with the appropriate boss based on game level
+    */
+    private void startBossBattle() {
+        String bossName = (gameLevel == 2) ? "Toxitar" : "Flameclaw";
+        startBossBattle(bossName);
+    }
+    
+    
+    
+    
     
     /**
      * Create a button with normal and hover images
@@ -495,52 +590,90 @@ public class TimSortVisualization extends JPanel {
         // Clear the grid panel
         gridPanel.removeAll();
 
-        // Create sets of ingredients for each potion type with correct colors
-        // Fire Resistance Potion (values 1-5)
-        String[] fireIngredients = {"pumpkin", "apples", "peppers", "dragon_fire_glands", "fire_crystal"};
-        for (int i = 0; i < 5; i++) {
-            IngredientItem ingredient = new IngredientItem(i + 1, "red");
-            ingredient.setIngredientName(fireIngredients[i]);
-            ingredient.setPotionType("fire");
-            // Set background color will be handled in paintComponent
-            allIngredients.add(ingredient);
-        }
+        // Create sets of ingredients with correct colors
+        if (gameLevel == 2) {
+            // For Level 2 (Toxitar), prioritize Dexterity and Strength ingredients
 
-        // Cold Resistance Potion (values 6-10)
-        String[] coldIngredients = {"strawberries", "wasabi", "mint", "dragon_ice_glands", "ice_crystal"};
-        for (int i = 0; i < 5; i++) {
-            IngredientItem ingredient = new IngredientItem(i + 6, "blue");
-            ingredient.setIngredientName(coldIngredients[i]);
-            ingredient.setPotionType("cold");
-            // Set background color will be handled in paintComponent
-            allIngredients.add(ingredient);
-        }
+            // Dexterity Potion (values 16-20) with green background - most important for Toxitar
+            String[] dexterityIngredients = {"banana_leaf", "maple_sap", "powdered_jackalope_antlers", "griffon_feathers", "dragon_sinew"};
+            for (int i = 0; i < 5; i++) {
+                IngredientItem ingredient = new IngredientItem(i + 16, "green");
+                ingredient.setIngredientName(dexterityIngredients[i]);
+                ingredient.setPotionType("dexterity");
+                allIngredients.add(ingredient);
+            }
 
-        // Strength Potion (values 11-15) - now with yellow background
-        String[] strengthIngredients = {"corn", "powdered_giant_insect", "troll_sweat", "powdered_minotaur_horn", "dragon_bone"};
-        for (int i = 0; i < 5; i++) {
-            IngredientItem ingredient = new IngredientItem(i + 11, "yellow");
-            ingredient.setIngredientName(strengthIngredients[i]);
-            ingredient.setPotionType("strength");
-            // Set background color will be handled in paintComponent
-            allIngredients.add(ingredient);
-        }
+            // Strength Potion (values 11-15) with yellow background - second priority
+            String[] strengthIngredients = {"corn", "powdered_giant_insect", "troll_sweat", "powdered_minotaur_horn", "dragon_bone"};
+            for (int i = 0; i < 5; i++) {
+                IngredientItem ingredient = new IngredientItem(i + 11, "yellow");
+                ingredient.setIngredientName(strengthIngredients[i]);
+                ingredient.setPotionType("strength");
+                allIngredients.add(ingredient);
+            }
 
-        // Dexterity Potion (values 16-20) - now with green background
-        String[] dexterityIngredients = {"banana_leaf", "maple_sap", "powdered_jackalope_antlers", "griffon_feathers", "dragon_sinew"};
-        for (int i = 0; i < 5; i++) {
-            IngredientItem ingredient = new IngredientItem(i + 16, "green");
-            ingredient.setIngredientName(dexterityIngredients[i]);
-            ingredient.setPotionType("dexterity");
-            // Set background color will be handled in paintComponent
-            allIngredients.add(ingredient);
+            // Cold Resistance Potion (values 6-10) - less important for Toxitar
+            String[] coldIngredients = {"strawberries", "wasabi", "mint", "dragon_ice_glands", "ice_crystal"};
+            for (int i = 0; i < 5; i++) {
+                IngredientItem ingredient = new IngredientItem(i + 6, "blue");
+                ingredient.setIngredientName(coldIngredients[i]);
+                ingredient.setPotionType("cold");
+                allIngredients.add(ingredient);
+            }
+
+            // Fire Resistance Potion (values 1-5) - least important for Toxitar
+            String[] fireIngredients = {"pumpkin", "apples", "peppers", "dragon_fire_glands", "fire_crystal"};
+            for (int i = 0; i < 5; i++) {
+                IngredientItem ingredient = new IngredientItem(i + 1, "red");
+                ingredient.setIngredientName(fireIngredients[i]);
+                ingredient.setPotionType("fire");
+                allIngredients.add(ingredient);
+            }
+        } else {
+            // For Level 1 (Flameclaw), prioritize Fire Resistance and Cold Resistance ingredients
+
+            // Fire Resistance Potion (values 1-5) - most important for Flameclaw
+            String[] fireIngredients = {"pumpkin", "apples", "peppers", "dragon_fire_glands", "fire_crystal"};
+            for (int i = 0; i < 5; i++) {
+                IngredientItem ingredient = new IngredientItem(i + 1, "red");
+                ingredient.setIngredientName(fireIngredients[i]);
+                ingredient.setPotionType("fire");
+                allIngredients.add(ingredient);
+            }
+
+            // Cold Resistance Potion (values 6-10) - second priority
+            String[] coldIngredients = {"strawberries", "wasabi", "mint", "dragon_ice_glands", "ice_crystal"};
+            for (int i = 0; i < 5; i++) {
+                IngredientItem ingredient = new IngredientItem(i + 6, "blue");
+                ingredient.setIngredientName(coldIngredients[i]);
+                ingredient.setPotionType("cold");
+                allIngredients.add(ingredient);
+            }
+
+            // Strength Potion (values 11-15) - less important for Flameclaw
+            String[] strengthIngredients = {"corn", "powdered_giant_insect", "troll_sweat", "powdered_minotaur_horn", "dragon_bone"};
+            for (int i = 0; i < 5; i++) {
+                IngredientItem ingredient = new IngredientItem(i + 11, "yellow");
+                ingredient.setIngredientName(strengthIngredients[i]);
+                ingredient.setPotionType("strength");
+                allIngredients.add(ingredient);
+            }
+
+            // Dexterity Potion (values 16-20) - least important for Flameclaw
+            String[] dexterityIngredients = {"banana_leaf", "maple_sap", "powdered_jackalope_antlers", "griffon_feathers", "dragon_sinew"};
+            for (int i = 0; i < 5; i++) {
+                IngredientItem ingredient = new IngredientItem(i + 16, "green");
+                ingredient.setIngredientName(dexterityIngredients[i]);
+                ingredient.setPotionType("dexterity");
+                allIngredients.add(ingredient);
+            }
         }
 
         // Randomly position ingredients in the grid
         Collections.shuffle(allIngredients);
         positionIngredientsInGrid();
 
-        // IMPORTANT: Make grid boxes visible by default without waiting for the ability
+        // Make grid boxes visible by default
         for (IngredientItem ingredient : allIngredients) {
             ingredient.setBoxVisible(true);
         }
@@ -929,33 +1062,68 @@ public class TimSortVisualization extends JPanel {
     private void highlightNaturalRuns() {
         identifiedRuns.clear();
 
-        // Find runs for each potion type with corrected colors
-        List<IngredientItem> fireRun = findRunByPotionType("fire");
-        if (!fireRun.isEmpty()) {
-            identifiedRuns.add(fireRun);
-            highlightRun(fireRun, new Color(255, 50, 50, 80)); // Red highlight for fire
-        }
+        if (gameLevel == 2) {
+            // For Level 2 (Toxitar), highlight dexterity ingredients the most prominently
 
-        List<IngredientItem> coldRun = findRunByPotionType("cold");
-        if (!coldRun.isEmpty()) {
-            identifiedRuns.add(coldRun);
-            highlightRun(coldRun, new Color(50, 50, 255, 80)); // Blue highlight for cold
-        }
+            // Find runs for each potion type with adjusted colors for Level 2
+            List<IngredientItem> dexterityRun = findRunByPotionType("dexterity");
+            if (!dexterityRun.isEmpty()) {
+                identifiedRuns.add(dexterityRun);
+                highlightRun(dexterityRun, new Color(50, 200, 50, 120)); // Brighter green highlight for dexterity (most important)
+            }
 
-        List<IngredientItem> strengthRun = findRunByPotionType("strength");
-        if (!strengthRun.isEmpty()) {
-            identifiedRuns.add(strengthRun);
-            highlightRun(strengthRun, new Color(255, 200, 50, 80)); // Yellow highlight for strength
-        }
+            List<IngredientItem> strengthRun = findRunByPotionType("strength");
+            if (!strengthRun.isEmpty()) {
+                identifiedRuns.add(strengthRun);
+                highlightRun(strengthRun, new Color(255, 200, 50, 100)); // Yellow highlight for strength (secondary)
+            }
 
-        List<IngredientItem> dexterityRun = findRunByPotionType("dexterity");
-        if (!dexterityRun.isEmpty()) {
-            identifiedRuns.add(dexterityRun);
-            highlightRun(dexterityRun, new Color(50, 200, 50, 80)); // Green highlight for dexterity
+            List<IngredientItem> coldRun = findRunByPotionType("cold");
+            if (!coldRun.isEmpty()) {
+                identifiedRuns.add(coldRun);
+                highlightRun(coldRun, new Color(50, 50, 255, 60)); // Dimmer blue highlight (less important)
+            }
+
+            List<IngredientItem> fireRun = findRunByPotionType("fire");
+            if (!fireRun.isEmpty()) {
+                identifiedRuns.add(fireRun);
+                highlightRun(fireRun, new Color(255, 50, 50, 60)); // Dimmer red highlight (least important)
+            }
+        } else {
+            // For Level 1 (Flameclaw), highlight fire resistance ingredients the most prominently
+
+            // Find runs for each potion type with corrected colors
+            List<IngredientItem> fireRun = findRunByPotionType("fire");
+            if (!fireRun.isEmpty()) {
+                identifiedRuns.add(fireRun);
+                highlightRun(fireRun, new Color(255, 50, 50, 120)); // Brighter red highlight for fire (most important)
+            }
+
+            List<IngredientItem> coldRun = findRunByPotionType("cold");
+            if (!coldRun.isEmpty()) {
+                identifiedRuns.add(coldRun);
+                highlightRun(coldRun, new Color(50, 50, 255, 100)); // Blue highlight for cold (secondary)
+            }
+
+            List<IngredientItem> strengthRun = findRunByPotionType("strength");
+            if (!strengthRun.isEmpty()) {
+                identifiedRuns.add(strengthRun);
+                highlightRun(strengthRun, new Color(255, 200, 50, 60)); // Dimmer yellow highlight (less important)
+            }
+
+            List<IngredientItem> dexterityRun = findRunByPotionType("dexterity");
+            if (!dexterityRun.isEmpty()) {
+                identifiedRuns.add(dexterityRun);
+                highlightRun(dexterityRun, new Color(50, 200, 50, 60)); // Dimmer green highlight (least important)
+            }
         }
 
         // Update the instruction
-        instructionLabel.setText("Natural runs highlighted! Select exactly 10 ingredients that form sequences.");
+        if (gameLevel == 2) {
+            instructionLabel.setText("Natural runs highlighted! Select exactly 10 ingredients that form sequences. Green ingredients enhance agility!");
+        } else {
+            instructionLabel.setText("Natural runs highlighted! Select exactly 10 ingredients that form sequences. Blue ingredients resist fire!");
+        }
 
         // Enable check button if exactly 10 ingredients are selected
         checkButton.setEnabled(selectedIngredients.size() == MAX_SELECTIONS);
@@ -1468,85 +1636,55 @@ public class TimSortVisualization extends JPanel {
         gridPanel.removeAll();
 
         // Define the potion image size
-        final int POTION_IMAGE_SIZE = 220;            // Size is 220x220 pixels
-        final int LABEL_HEIGHT = 25;                  // Height for title text
-        final int DESC_HEIGHT = 60;                   // Height for description text
-        final int PADDING_BELOW_IMAGE = 20;           // Space between image and title
-        final int PADDING_BELOW_TITLE = 10;           // Space between title and description
+        final int POTION_IMAGE_SIZE = 220;
+        final int LABEL_HEIGHT = 25;
+        final int DESC_HEIGHT = 60;
+        final int PADDING_BELOW_IMAGE = 20;
+        final int PADDING_BELOW_TITLE = 10;
 
         // Calculate vertical positions with proper spacing
-        final int IMAGE_Y = 180;                      // Starting position for potion images
-        final int TITLE_Y = IMAGE_Y + POTION_IMAGE_SIZE + PADDING_BELOW_IMAGE;  // Position for titles
-        final int DESC_Y = TITLE_Y + LABEL_HEIGHT + PADDING_BELOW_TITLE;        // Position for descriptions
+        final int IMAGE_Y = 180;
+        final int TITLE_Y = IMAGE_Y + POTION_IMAGE_SIZE + PADDING_BELOW_IMAGE;
+        final int DESC_Y = TITLE_Y + LABEL_HEIGHT + PADDING_BELOW_TITLE;
 
         // DYNAMIC POTION DETERMINATION - Based on selected ingredients from Phase 1
-        // Count ingredients by type to determine which potions to show
-        Map<String, Integer> potionTypeCounts = new HashMap<>();
-        potionTypeCounts.put("fire", 0);
-        potionTypeCounts.put("cold", 0);
-        potionTypeCounts.put("strength", 0);
-        potionTypeCounts.put("dexterity", 0);
-
-        // Analyze selected ingredients from Phase 1
-        for (IngredientItem ingredient : selectedIngredients) {
-            int value = ingredient.getValue();
-            String potionType;
-
-            // Determine potion type based on ingredient value
-            if (value >= 1 && value <= 5) {
-                potionType = "fire";
-            } else if (value >= 6 && value <= 10) {
-                potionType = "cold";
-            } else if (value >= 11 && value <= 15) {
-                potionType = "strength";
-            } else if (value >= 16 && value <= 20) {
-                potionType = "dexterity";
-            } else {
-                potionType = "unknown";
-            }
-
-            // Increment count for this potion type
-            potionTypeCounts.put(potionType, potionTypeCounts.getOrDefault(potionType, 0) + 1);
-        }
-
-        // Determine the two most common potion types
-        List<Map.Entry<String, Integer>> sortedCounts = new ArrayList<>(potionTypeCounts.entrySet());
-        sortedCounts.sort((a, b) -> b.getValue() - a.getValue()); // Sort in descending order
-
-        // Default to fire and strength if no ingredients were selected
+        // Get potion types from Phase 2
         String leftPotionType = leftGroupPotionType;
         String rightPotionType = rightGroupPotionType;
 
-        // Set potion types based on most common ingredients
-        if (sortedCounts.size() >= 1 && sortedCounts.get(0).getValue() > 0) {
-            leftPotionType = sortedCounts.get(0).getKey();
-        }
-        if (sortedCounts.size() >= 2 && sortedCounts.get(1).getValue() > 0) {
-            rightPotionType = sortedCounts.get(1).getKey();
-        } else if (sortedCounts.size() >= 1 && sortedCounts.get(0).getValue() > 0) {
-            // If only one type had ingredients, use the second most common
-            for (String type : potionTypeCounts.keySet()) {
-                if (!type.equals(leftPotionType)) {
-                    rightPotionType = type;
-                    break;
-                }
+        // Modify for Level 2 - ensure Dexterity is one of the options
+        if (gameLevel == 2) {
+            // Make sure Dexterity is always one of the options for Toxitar
+            if (!leftPotionType.equals("Dexterity") && !rightPotionType.equals("Dexterity")) {
+                // If neither is Dexterity, replace the right one
+                rightPotionType = "Dexterity";
             }
         }
 
         // Define potion information lookup
         Map<String, String[]> potionInfo = new HashMap<>();
-        potionInfo.put("fire", new String[]{"Fire Resistance Potion", 
-                                           "Protects against fire attacks and extreme heat.",
-                                           "/gameproject/resources/potions/fire_resistance_potion.png"});
-        potionInfo.put("cold", new String[]{"Cold Resistance Potion", 
-                                           "Protects against ice attacks and freezing temperatures.",
-                                           "/gameproject/resources/potions/cold_resistance_potion.png"});
-        potionInfo.put("strength", new String[]{"Strength Potion", 
-                                              "Enhances physical strength and combat abilities.",
-                                              "/gameproject/resources/potions/strength_potion.png"});
-        potionInfo.put("dexterity", new String[]{"Dexterity Potion", 
-                                               "Improves agility, reflexes, and movement speed.",
-                                               "/gameproject/resources/potions/dexterity_potion.png"});
+        potionInfo.put("Fire Resistance", new String[]{"Fire Resistance Potion", 
+                                         "Protects against fire attacks and extreme heat.",
+                                         "/gameproject/resources/potions/fire_resistance_potion.png"});
+        potionInfo.put("Cold Resistance", new String[]{"Cold Resistance Potion", 
+                                         "Protects against ice attacks and freezing temperatures.",
+                                         "/gameproject/resources/potions/cold_resistance_potion.png"});
+        potionInfo.put("Strength", new String[]{"Strength Potion", 
+                                    "Enhances physical strength and combat abilities.",
+                                    "/gameproject/resources/potions/strength_potion.png"});
+        potionInfo.put("Dexterity", new String[]{"Dexterity Potion", 
+                                     "Improves agility, reflexes, and movement speed.",
+                                     "/gameproject/resources/potions/dexterity_potion.png"});
+
+        // Add boss-specific descriptions for Level 2
+        if (gameLevel == 2) {
+            potionInfo.put("Dexterity", new String[]{"Dexterity Potion", 
+                                         "Grants exceptional agility and reflexes - perfect for avoiding Toxitar's poison clouds.",
+                                         "/gameproject/resources/potions/dexterity_potion.png"});
+            potionInfo.put("Strength", new String[]{"Strength Potion", 
+                                        "Enhances physical power, but may not help avoid spreading poison.",
+                                        "/gameproject/resources/potions/strength_potion.png"});
+        }
 
         // Get position for left potion
         int leftX = GameConstants.WINDOW_WIDTH / 4 - (POTION_IMAGE_SIZE / 2);
@@ -1571,14 +1709,21 @@ public class TimSortVisualization extends JPanel {
         // 3. Create potion title label - CENTERED OVER POTION
         JLabel leftTitleLabel = new JLabel(leftPotionName, JLabel.CENTER);
         leftTitleLabel.setFont(new Font("SansSerif", Font.BOLD, 16));
-        leftTitleLabel.setForeground(Color.WHITE); // White text, no background color
+
+        // For Level 2, make the Dexterity Potion title stand out if it's this one
+        if (gameLevel == 2 && leftPotionType.equals("Dexterity")) {
+            leftTitleLabel.setForeground(new Color(50, 255, 50)); // Bright green for Dexterity in Level 2
+        } else {
+            leftTitleLabel.setForeground(Color.WHITE);
+        }
+
         // Center the title over the potion
         int leftTitleWidth = POTION_IMAGE_SIZE + 130;
         leftTitleLabel.setBounds(leftX - (leftTitleWidth - POTION_IMAGE_SIZE)/2, TITLE_Y, leftTitleWidth, LABEL_HEIGHT);
         leftTitleLabel.setVisible(false); // Initially invisible
         gridPanel.add(leftTitleLabel);
 
-        // 4. Create potion description - REPLACED JTEXTAREA WITH JLABEL FOR BETTER CENTERING
+        // 4. Create potion description
         JLabel leftDescLabel = new JLabel("<html><div style='text-align:center;'>" + leftPotionDesc + "</div></html>", JLabel.CENTER);
         leftDescLabel.setFont(new Font("SansSerif", Font.PLAIN, 14));
         leftDescLabel.setForeground(Color.WHITE);
@@ -1610,14 +1755,21 @@ public class TimSortVisualization extends JPanel {
         // 3. Create potion title label - CENTERED OVER POTION
         JLabel rightTitleLabel = new JLabel(rightPotionName, JLabel.CENTER);
         rightTitleLabel.setFont(new Font("SansSerif", Font.BOLD, 16));
-        rightTitleLabel.setForeground(Color.WHITE); // White text, no background color
+
+        // For Level 2, make the Dexterity Potion title stand out if it's this one
+        if (gameLevel == 2 && rightPotionType.equals("Dexterity")) {
+            rightTitleLabel.setForeground(new Color(50, 255, 50)); // Bright green for Dexterity in Level 2
+        } else {
+            rightTitleLabel.setForeground(Color.WHITE);
+        }
+
         // Center the title over the potion
         int rightTitleWidth = POTION_IMAGE_SIZE + 130;
         rightTitleLabel.setBounds(rightX - (rightTitleWidth - POTION_IMAGE_SIZE)/2, TITLE_Y, rightTitleWidth, LABEL_HEIGHT);
         rightTitleLabel.setVisible(false); // Initially invisible
         gridPanel.add(rightTitleLabel);
 
-        // 4. Create potion description - REPLACED JTEXTAREA WITH JLABEL FOR BETTER CENTERING
+        // 4. Create potion description
         JLabel rightDescLabel = new JLabel("<html><div style='text-align:center;'>" + rightPotionDesc + "</div></html>", JLabel.CENTER);
         rightDescLabel.setFont(new Font("SansSerif", Font.PLAIN, 14));
         rightDescLabel.setForeground(Color.WHITE);
@@ -1628,7 +1780,7 @@ public class TimSortVisualization extends JPanel {
 
         // Create potion option labels for click detection (behind the scenes)
         IngredientItem leftPotionItem = new IngredientItem(1, "blue");
-        leftPotionItem.setPotionType(leftPotionName); // This is the displayed potion name on the left
+        leftPotionItem.setPotionType(leftPotionName);
         leftPotionItem.setGroupLabel(true);
         leftPotionItem.setLocation(leftX, IMAGE_Y);
         leftPotionItem.setSize(POTION_IMAGE_SIZE, POTION_IMAGE_SIZE);
@@ -1636,15 +1788,19 @@ public class TimSortVisualization extends JPanel {
         gridPanel.add(leftPotionItem);
 
         IngredientItem rightPotionItem = new IngredientItem(2, "red");
-        rightPotionItem.setPotionType(rightPotionName); // This is the displayed potion name on the right
+        rightPotionItem.setPotionType(rightPotionName);
         rightPotionItem.setGroupLabel(true);
         rightPotionItem.setLocation(rightX, IMAGE_Y);
         rightPotionItem.setSize(POTION_IMAGE_SIZE, POTION_IMAGE_SIZE);
         rightPotionItem.setVisible(false); // Initially invisible
         gridPanel.add(rightPotionItem);
 
-        // Update instruction
-        instructionLabel.setText("Use your 'Mind of Unity' to choose which potion to craft. Click the button below.");
+        // Update instruction based on game level
+        if (gameLevel == 2) {
+            instructionLabel.setText("Use your 'Mind of Unity' to choose which potion will be most effective against Toxitar's poison clouds.");
+        } else {
+            instructionLabel.setText("Use your 'Mind of Unity' to choose which potion to craft. Click the button below.");
+        }
 
         // Enable ability button
         abilityButton.setText("Use Mind of Unity");
@@ -1658,8 +1814,8 @@ public class TimSortVisualization extends JPanel {
             @Override
             public void mouseClicked(MouseEvent e) {
                 if (leftPotionItem.isVisible()) {
-                    // IMPORTANT: Select the LEFT potion by name
-                    craftedPotion = leftPotionName; // Store the exact name shown on the left
+                    // Select the LEFT potion
+                    craftedPotion = leftPotionName;
 
                     // Show confirmation with correct potion name
                     JOptionPane.showMessageDialog(TimSortVisualization.this,
@@ -1679,8 +1835,8 @@ public class TimSortVisualization extends JPanel {
             @Override
             public void mouseClicked(MouseEvent e) {
                 if (rightPotionItem.isVisible()) {
-                    // IMPORTANT: Select the RIGHT potion by name
-                    craftedPotion = rightPotionName; // Store the exact name shown on the right
+                    // Select the RIGHT potion
+                    craftedPotion = rightPotionName;
 
                     // Show confirmation with correct potion name
                     JOptionPane.showMessageDialog(TimSortVisualization.this,
@@ -1847,7 +2003,7 @@ public class TimSortVisualization extends JPanel {
 
                 // After dialogue ends, start boss battle
                 Timer bossTimer = new Timer(500, e -> {
-                    startBossBattle("Flameclaw");
+                    startBossBattle();
                 });
                 bossTimer.setRepeats(false);
                 bossTimer.start();
@@ -1857,16 +2013,22 @@ public class TimSortVisualization extends JPanel {
 
     
     
+    /**
+    * Modified startBossBattle method to use the correct boss based on gameLevel
+    */
+   private void startBossBattle() {
+       startBossBattle(currentBossName);
+   }
+    
+    
     
     /**
-    * Display boss battle and determine the outcome after animation
-    * WITH DYNAMIC MESSAGES based on the actual selected potion
+    * Modified startBossBattle method with boss name parameter to handle different bosses
     */
     private void startBossBattle(String bossName) {
         // Add debug logging
         System.out.println("DEBUG: Starting boss battle against " + bossName);
         System.out.println("DEBUG: Selected potion: " + craftedPotion);
-        System.out.println("DEBUG: Effective potions: [" + leftGroupPotionType + " Potion, " + rightGroupPotionType + " Potion]");
 
         // Create semi-transparent overlay
         JPanel battleOverlay = new JPanel() {
@@ -1930,43 +2092,45 @@ public class TimSortVisualization extends JPanel {
             // Determine the correct potion to use against this boss
             boolean correctChoice = false;
 
-            // For Flameclaw, the correct choice is Fire Resistance
+            // Check against the current boss
             if (bossName.equals("Flameclaw")) {
                 correctChoice = selectedPotionType.equals("Fire Resistance");
                 System.out.println("DEBUG: Correct choice for Flameclaw is Fire Resistance, selected: " + selectedPotionType);
+            } else if (bossName.equals("Toxitar")) {
+                correctChoice = selectedPotionType.equals("Dexterity");
+                System.out.println("DEBUG: Correct choice for Toxitar is Dexterity, selected: " + selectedPotionType);
             }
-            // For Toxitar, the correct choice would be something else
-            else if (bossName.equals("Toxitar")) {
-                correctChoice = selectedPotionType.equals("Cold Resistance");
-                System.out.println("DEBUG: Correct choice for Toxitar is Cold Resistance, selected: " + selectedPotionType);
-            }
-            // Add more boss conditions as needed
 
             // IMPORTANT: Clear the grid panel completely before showing result
             gridPanel.removeAll();
 
             // IMPORTANT: Properly finish the phase before showing result
-            // This prevents any Phase 1 or other phase elements from appearing
             finishCurrentPhase();
+
+            // Store the selected potion in the model for use in dialogue
+            model.setSelectedPotion(craftedPotion);
+
+            // Determine boss level based on name
+            int bossLevel = bossName.equals("Flameclaw") ? 1 : 2;
 
             if (correctChoice) {
                 JOptionPane.showMessageDialog(this,
-                    "Excellent choice! The " + selectedPotionType + " Potion protected you from " + bossName + "'s attacks!",
+                    "Excellent choice! The " + selectedPotionType + " Potion was effective against " + bossName + "!",
                     "Success!",
                     JOptionPane.INFORMATION_MESSAGE
                 );
 
                 // Signal successful boss battle
-                controller.onBossBattleComplete(true, 1);
+                controller.onBossBattleComplete(true, bossLevel);
             } else {
                 JOptionPane.showMessageDialog(this,
-                    "Oh no! The " + selectedPotionType + " Potion wasn't effective against " + bossName + "'s flames!",
+                    "Oh no! The " + selectedPotionType + " Potion wasn't effective against " + bossName + "!",
                     "Failure",
                     JOptionPane.WARNING_MESSAGE
                 );
 
                 // Signal failed boss battle
-                controller.onBossBattleComplete(false, 1);
+                controller.onBossBattleComplete(false, bossLevel);
             }
         });
         battleTimer.setRepeats(false);
@@ -2006,7 +2170,7 @@ public class TimSortVisualization extends JPanel {
         // Create animated battle effects
         Random rand = new Random();
 
-        // Create flame/spark effects for a fire boss
+        // Create effects appropriate for the current boss
         Timer effectsTimer = new Timer(100, new ActionListener() {
             int count = 0;
 
@@ -2019,23 +2183,77 @@ public class TimSortVisualization extends JPanel {
 
                 // Create a new effect
                 JPanel effect = new JPanel() {
-                    Color color = new Color(
-                        rand.nextInt(100) + 155, 
-                        rand.nextInt(100), 
-                        rand.nextInt(50),
-                        rand.nextInt(100) + 155);
-                    int size = rand.nextInt(20) + 10;
+                    // Different effects for different bosses
+                    Color color;
+                    int size;
+
+                    {
+                        if (gameLevel == 2) {
+                            // Toxitar - green poison effects
+                            color = new Color(
+                                rand.nextInt(100),
+                                rand.nextInt(100) + 155,
+                                rand.nextInt(50),
+                                rand.nextInt(100) + 155);
+                            size = rand.nextInt(25) + 15; // Larger poison clouds
+                        } else {
+                            // Flameclaw - fire effects
+                            color = new Color(
+                                rand.nextInt(100) + 155,
+                                rand.nextInt(100),
+                                rand.nextInt(50),
+                                rand.nextInt(100) + 155);
+                            size = rand.nextInt(20) + 10; // Smaller fire sparks
+                        }
+                    }
 
                     @Override
                     protected void paintComponent(Graphics g) {
-                        g.setColor(color);
-                        g.fillOval(0, 0, size, size);
+                        super.paintComponent(g);
+
+                        // Draw background
+                        if (gameLevel == 2) {
+                            // Level 2 - Toxitar poison theme
+                            g.setColor(new Color(20, 40, 20)); // Dark green background
+                            g.fillRect(0, 0, getWidth(), getHeight());
+
+                            // Add some poison cloud effects
+                            Graphics2D g2d = (Graphics2D) g;
+                            g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.2f));
+
+                            // Draw some subtle green poison clouds in the background
+                            g2d.setColor(new Color(0, 180, 0));
+                            for (int i = 0; i < 8; i++) {
+                                int x = (int)(Math.random() * getWidth());
+                                int y = (int)(Math.random() * getHeight());
+                                int size = 50 + (int)(Math.random() * 100);
+                                g2d.fillOval(x, y, size, size);
+                            }
+
+                            // Reset composite
+                            g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1.0f));
+                        } else {
+                            // Level 1 - Flameclaw fire theme
+                            g.setColor(new Color(25, 25, 50)); // Dark blue/black background
+                            g.fillRect(0, 0, getWidth(), getHeight());
+
+                            // For Level 1, we could add subtle fire effects if desired
+                        }
                     }
                 };
 
                 // Set random position around boss
-                int x = (GameConstants.WINDOW_WIDTH / 2) + rand.nextInt(300) - 150;
-                int y = 250 + rand.nextInt(200) - 100;
+                int x, y;
+                if (gameLevel == 2) {
+                    // Toxitar's poison spreads more on the ground
+                    x = (GameConstants.WINDOW_WIDTH / 2) + rand.nextInt(400) - 200;
+                    y = 300 + rand.nextInt(150);
+                } else {
+                    // Flameclaw's fire comes more from the center
+                    x = (GameConstants.WINDOW_WIDTH / 2) + rand.nextInt(300) - 150;
+                    y = 250 + rand.nextInt(200) - 100;
+                }
+
                 effect.setBounds(x, y, 30, 30);
                 effect.setOpaque(false);
 
@@ -2140,16 +2358,28 @@ public class TimSortVisualization extends JPanel {
      * Show a hint for the current phase
      */
     private void showHint() {
-        String hint = "";
-        
-        if (currentPhase == 1) {
-            hint = "Look for ingredients of the same color. They often form natural sequences when arranged by value. Blue ingredients resist fire!";
-        } else if (currentPhase == 2) {
-            hint = "Sort each group from lowest to highest value. The frost ingredients (left group) will be crucial for your potion.";
-        } else if (currentPhase == 3) {
-            hint = "Consider what would counter Flameclaw's fire. Resistance is more effective than raw strength against elemental attacks.";
+        String hint;
+
+        if (gameLevel == 2) {
+            // Toxitar (Level 2) hints
+            if (currentPhase >= 1 && currentPhase <= 3) {
+                hint = toxitarHints[currentPhase - 1];
+            } else {
+                hint = "Focus on movement and agility. Toxitar's poison can only harm what it touches.";
+            }
+        } else {
+            // Flameclaw (Level 1) hints
+            if (currentPhase == 1) {
+                hint = "Look for ingredients with similar properties. Blue ingredients resist fire!";
+            } else if (currentPhase == 2) {
+                hint = "Sort each group from lowest to highest value. The frost ingredients (left group) will be crucial for your potion.";
+            } else if (currentPhase == 3) {
+                hint = "Consider what would counter Flameclaw's fire. Resistance is more effective than raw strength against elemental attacks.";
+            } else {
+                hint = "Observe the natural patterns in the ingredients and follow the guidance of the characters.";
+            }
         }
-        
+
         JOptionPane.showMessageDialog(this,
             hint,
             "Hint",
@@ -2364,13 +2594,9 @@ public class TimSortVisualization extends JPanel {
     
         
     /**
-
     * Configure visualization for a specific phase
-
     * This should be called by the controller when switching phases
-
     */
-
     public void setPhase(int phase) {
         if (phase >= 1 && phase <= 3) {
             // First reset everything
@@ -2405,36 +2631,52 @@ public class TimSortVisualization extends JPanel {
         }
     }
 
+    
+    
+    
    /**
-
-    * Update the phase label based on current phase
-
+    * Modified updatePhaseLabel method to show the correct boss context
     */
-
     private void updatePhaseLabel() {
+        String bossContext = (gameLevel == 2) ? " (Toxitar)" : " (Flameclaw)";
 
         switch (currentPhase) {
-
             case 1:
+                phaseLabel.setText("Phase 1: The Eye of Pattern" + bossContext);
+                abilityButton.setText("Use Eye of Pattern");
 
-                phaseLabel.setText("Phase 1: The Eye of Pattern");
-
+                // Update instruction based on boss
+                if (gameLevel == 2) {
+                    instructionLabel.setText("Identify ingredients that enhance agility to evade Toxitar's poison.");
+                } else {
+                    instructionLabel.setText("Use your 'Eye of Pattern' ability to identify ingredient sequences (runs).");
+                }
                 break;
 
             case 2:
+                phaseLabel.setText("Phase 2: The Hand of Balance" + bossContext);
+                abilityButton.setText("Use Hand of Balance");
 
-                phaseLabel.setText("Phase 2: The Hand of Balance");
-
+                // Update instruction based on boss
+                if (gameLevel == 2) {
+                    instructionLabel.setText("Sort the ingredients properly to craft a potion that enhances agility.");
+                } else {
+                    instructionLabel.setText("Use your 'Hand of Balance' to sort ingredients into two groups.");
+                }
                 break;
 
             case 3:
+                phaseLabel.setText("Phase 3: The Mind of Unity" + bossContext);
+                abilityButton.setText("Use Mind of Unity");
 
-                phaseLabel.setText("Phase 3: The Mind of Unity");
-
+                // Update instruction based on boss
+                if (gameLevel == 2) {
+                    instructionLabel.setText("Choose which potion will be most effective against Toxitar's poison clouds.");
+                } else {
+                    instructionLabel.setText("Use your 'Mind of Unity' to choose which potion to craft.");
+                }
                 break;
-
         }
-
     }
 
    /**
@@ -2789,7 +3031,10 @@ public class TimSortVisualization extends JPanel {
     /**
     * Add this method to TimSortVisualization class to show phase dialogues
     */
-    private void showPhaseDialogue(String dialogueKey) {
+    private void showPhaseDialogue(String baseDialogueKey) {
+        // Prefix the dialogue key with the level if it's Level 2
+        String dialogueKey = (gameLevel == 2) ? "level2_" + baseDialogueKey : baseDialogueKey;
+
         // Create semi-transparent overlay
         JPanel dialogueOverlay = new JPanel() {
             @Override
@@ -2815,13 +3060,18 @@ public class TimSortVisualization extends JPanel {
         List<NarrativeSystem.DialogueEntry> dialogueSequence;
 
         // Special handling for phase2_end to make it dynamic
-        if (dialogueKey.equals("phase2_end")) {
+        if (baseDialogueKey.equals("phase2_end")) {
             // Get dynamic dialogue using actual potion types detected in Phase 2
             dialogueSequence = narrativeSystem.getDynamicPhase2EndDialogue(
                 leftGroupPotionType, rightGroupPotionType);
         } else {
             // Get regular dialogue sequence for other dialogue keys
             dialogueSequence = narrativeSystem.getDialogueSequence(dialogueKey);
+
+            // If not found and we're in Level 2, try with the non-prefixed key
+            if ((dialogueSequence == null || dialogueSequence.isEmpty()) && gameLevel == 2) {
+                dialogueSequence = narrativeSystem.getDialogueSequence(baseDialogueKey);
+            }
         }
 
         if (dialogueSequence == null || dialogueSequence.isEmpty()) {
@@ -2848,10 +3098,10 @@ public class TimSortVisualization extends JPanel {
                 repaint();
 
                 // Special handling for Phase 3 end dialogue
-                if (currentPhase == 3 && dialogueKey.equals("phase3_end") && phaseCompleted) {
+                if (currentPhase == 3 && baseDialogueKey.equals("phase3_end") && phaseCompleted) {
                     // Start boss battle AFTER dialogue has fully completed and overlay is removed
                     Timer bossTimer = new Timer(500, e -> {
-                        startBossBattle("Flameclaw");
+                        startBossBattle();
                     });
                     bossTimer.setRepeats(false);
                     bossTimer.start();
@@ -2956,6 +3206,54 @@ public class TimSortVisualization extends JPanel {
         revalidate();
         repaint();
     }
+    
+    
+    /**
+    * Reset all phases for Level 2
+    */
+    public void resetForLevel2() {
+        // Set game level to 2
+        gameLevel = 2;
+
+        // Reset phase tracking
+        currentPhase = 1;
+        phaseCompleted = false;
+
+        // Clear all data structures
+        allIngredients.clear();
+        selectedIngredients.clear();
+        identifiedRuns.clear();
+        leftGroup.clear();
+        rightGroup.clear();
+        mergedItems.clear();
+        craftedPotion = null;
+
+        // Set Toxitar as the current boss
+        currentBossName = "Toxitar";
+
+        // Clear UI
+        gridPanel.removeAll();
+
+        // Reset UI state
+        abilityButton.setText("Use Eye of Pattern");
+        instructionLabel.setText("Identify ingredients that enhance agility to evade Toxitar's poison.");
+        checkButton.setEnabled(false);
+
+        // Update phase label
+        phaseLabel.setText("Phase 1: The Eye of Pattern (Toxitar)");
+
+        // Update the hints for Toxitar
+        toxitarHints = new String[] {
+            "Look for ingredients with green coloring and light properties - these enhance agility.",
+            "Sort each group from lightest to heaviest. The proper sequence is crucial for dexterity potions.",
+            "Against poison that fills the air, quick movement is better than raw strength."
+        };
+
+        // Force UI refresh
+        revalidate();
+        repaint();
+    }
+    
     
 //end of timsortvisualization class
 }
