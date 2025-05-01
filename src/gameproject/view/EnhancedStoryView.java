@@ -844,9 +844,30 @@ public class EnhancedStoryView extends JPanel {
             dialogueManager.setDialogueEndListener(new DialogueManager.DialogueEndListener() {
                 @Override
                 public void onDialogueEnd() {
-                    System.out.println("DEBUG: Battle success dialogue ended, showing game completion");
-                    // Show game completion dialogue
-                    showGameCompletionDialogue();
+                    System.out.println("DEBUG: Battle success dialogue ended, adding delay before showing game completion");
+
+                    // Create a fade out effect
+                    Timer fadeOutTimer = new Timer(50, new ActionListener() {
+                        float alpha = 1.0f;
+
+                        @Override
+                        public void actionPerformed(ActionEvent e) {
+                            alpha -= 0.05f;
+                            if (alpha <= 0.0f) {
+                                alpha = 0.0f;
+                                ((Timer)e.getSource()).stop();
+
+                                // After fade out, wait 1 second and then show completion dialogue
+                                Timer delayTimer = new Timer(1000, ev -> {
+                                    showGameCompletionDialogue();
+                                });
+                                delayTimer.setRepeats(false);
+                                delayTimer.start();
+                            }
+                            repaint();
+                        }
+                    });
+                    fadeOutTimer.start();
                 }
             });
         } else {
@@ -874,13 +895,24 @@ public class EnhancedStoryView extends JPanel {
         revalidate();
         repaint();
     }
-    
+
     
     
     /**
     * Show game completion dialogue after defeating Lord Chaosa
     */
     public void showGameCompletionDialogue() {
+        // Clear any existing dialogue manager or overlays first
+        for (Component comp : getComponents()) {
+            if (comp instanceof JPanel && comp != dialogueManager && 
+                (comp.getName() == null || !comp.getName().equals("backgroundPanel"))) {
+                remove(comp);
+            }
+        }
+
+        // Reset dialogueManager state
+        dialogueManager.setBossBattleResultDialogue(false);
+
         // Get the game completion dialogue
         List<NarrativeSystem.DialogueEntry> completionDialogues = 
             narrativeSystem.getDialogueSequence("game_completion");
@@ -895,17 +927,36 @@ public class EnhancedStoryView extends JPanel {
         titleLabel.setText("The Harmony of Order Restored");
         titleLabel.setVisible(true);
 
-        // Set a listener to go to main menu when completion dialogue ends
-        dialogueManager.setDialogueEndListener(new DialogueManager.DialogueEndListener() {
+        // Create a fade-in effect
+        Timer fadeInTimer = new Timer(50, new ActionListener() {
+            float alpha = 0.0f;
+
             @Override
-            public void onDialogueEnd() {
-                System.out.println("DEBUG: Game completion dialogue ended, returning to main menu");
-                controller.showMainMenu();
+            public void actionPerformed(ActionEvent e) {
+                alpha += 0.05f;
+                if (alpha >= 1.0f) {
+                    alpha = 1.0f;
+                    ((Timer)e.getSource()).stop();
+
+                    // After fade in is complete, then start the dialogue
+                    // Set a listener to go to main menu when completion dialogue ends
+                    dialogueManager.setDialogueEndListener(new DialogueManager.DialogueEndListener() {
+                        @Override
+                        public void onDialogueEnd() {
+                            System.out.println("DEBUG: Game completion dialogue ended, returning to main menu");
+                            controller.showMainMenu();
+                        }
+                    });
+
+                    // Start the dialogue
+                    dialogueManager.startDialogue(completionDialogues);
+                }
+                repaint();
             }
         });
 
-        // Start the dialogue
-        dialogueManager.startDialogue(completionDialogues);
+        // Start the fade-in effect
+        fadeInTimer.start();
     }
     
     

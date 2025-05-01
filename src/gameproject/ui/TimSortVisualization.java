@@ -2215,13 +2215,23 @@ public class TimSortVisualization extends JPanel {
         System.out.println("DEBUG: Starting boss battle against " + bossName);
         System.out.println("DEBUG: Selected potion: " + craftedPotion);
 
-        // Create semi-transparent overlay
+        // Create semi-transparent overlay with boss-specific background color
         JPanel battleOverlay = new JPanel() {
             @Override
             protected void paintComponent(Graphics g) {
                 super.paintComponent(g);
-                // Dark battle background
-                g.setColor(new Color(0, 0, 0, 200));
+
+                // Boss-specific background colors
+                if (bossName.equals("LordChaosa")) {
+                    // Dark purple background for Lord Chaosa
+                    g.setColor(new Color(40, 0, 60, 200));
+                } else if (bossName.equals("Toxitar")) {
+                    // Dark green background for Toxitar
+                    g.setColor(new Color(0, 40, 20, 200));
+                } else {
+                    // Dark red background for Flameclaw
+                    g.setColor(new Color(40, 0, 0, 200));
+                }
                 g.fillRect(0, 0, getWidth(), getHeight());
             }
         };
@@ -2233,7 +2243,7 @@ public class TimSortVisualization extends JPanel {
         // Ensure battle overlay is on top
         setComponentZOrder(battleOverlay, 0);
 
-        // Load boss image
+        // Load boss image - make sure we're using the correct boss image
         String bossImagePath = "/gameproject/resources/characters/" + bossName.toLowerCase() + ".png";
         ImageIcon bossImage = resourceManager.getImage(bossImagePath);
 
@@ -2244,86 +2254,110 @@ public class TimSortVisualization extends JPanel {
             bossLabel.setBounds((GameConstants.WINDOW_WIDTH - 300) / 2, 100, 300, 300);
             battleOverlay.add(bossLabel);
 
-            // Add boss name
+            // Add boss name with appropriate color
             JLabel bossNameLabel = new JLabel(bossName, JLabel.CENTER);
             bossNameLabel.setFont(new Font("SansSerif", Font.BOLD, 36));
-            bossNameLabel.setForeground(Color.RED);
+
+            // Set boss-specific color
+            if (bossName.equals("LordChaosa")) {
+                bossNameLabel.setForeground(new Color(200, 50, 255)); // Purple for Lord Chaosa
+            } else if (bossName.equals("Toxitar")) {
+                bossNameLabel.setForeground(new Color(50, 200, 50)); // Green for Toxitar
+            } else {
+                bossNameLabel.setForeground(new Color(255, 50, 50)); // Red for Flameclaw
+            }
+
             bossNameLabel.setBounds(0, 420, GameConstants.WINDOW_WIDTH, 40);
             battleOverlay.add(bossNameLabel);
 
-            // Add battle text
-            JLabel battleText = new JLabel("Battle in progress...", JLabel.CENTER);
+            // Add battle text - with correct boss-specific battle cry
+            String battleCry = "Battle in progress...";
+            if (bossName.equals("Flameclaw")) {
+                battleCry = "BURN! ALL WILL BURN!";
+            } else if (bossName.equals("Toxitar")) {
+                battleCry = "POISON... FILLS... THE AIR!";
+            } else if (bossName.equals("LordChaosa")) {
+                battleCry = "REALITY IS MINE TO COMMAND!";
+            }
+
+            JLabel battleText = new JLabel(battleCry, JLabel.CENTER);
             battleText.setFont(new Font("SansSerif", Font.BOLD, 24));
             battleText.setForeground(Color.WHITE);
             battleText.setBounds(0, 470, GameConstants.WINDOW_WIDTH, 30);
             battleOverlay.add(battleText);
 
-            // Add animated battle effects
-            startBattleEffects(battleOverlay);
+            // Add animated battle effects based on boss type
+            startBattleEffects(battleOverlay, bossName);
         }
 
         // After a delay, show battle outcome
         Timer battleTimer = new Timer(5000, e -> {
-        // IMPORTANT: Remove battle overlay before proceeding
-        remove(battleOverlay);
+            // IMPORTANT: Remove battle overlay before proceeding
+            remove(battleOverlay);
 
-        // Extract the actual potion type name from the craftedPotion string
-        String selectedPotionType = craftedPotion;
-        if (selectedPotionType.endsWith(" Potion")) {
-            selectedPotionType = selectedPotionType.substring(0, selectedPotionType.length() - 7);
-        }
-        System.out.println("DEBUG: Extracted potion type: " + selectedPotionType);
+            // Extract the actual potion type name from the craftedPotion string
+            String selectedPotionType = craftedPotion;
+            if (selectedPotionType.endsWith(" Potion")) {
+                selectedPotionType = selectedPotionType.substring(0, selectedPotionType.length() - 7);
+            }
+            System.out.println("DEBUG: Extracted potion type: " + selectedPotionType);
 
-        // Determine the correct potion to use against this boss
-        boolean correctChoice = false;
+            // Determine the correct potion to use against this boss
+            boolean correctChoice = false;
 
-        // Check against the current boss
-        if (bossName.equals("Flameclaw")) {
-            correctChoice = selectedPotionType.equals("Fire Resistance");
-            System.out.println("DEBUG: Correct choice for Flameclaw is Fire Resistance, selected: " + selectedPotionType);
-        } else if (bossName.equals("Toxitar")) {
-            correctChoice = selectedPotionType.equals("Dexterity");
-            System.out.println("DEBUG: Correct choice for Toxitar is Dexterity, selected: " + selectedPotionType);
-        }
+            // Check against the current boss
+            if (bossName.equals("Flameclaw")) {
+                correctChoice = selectedPotionType.equals("Fire Resistance");
+                System.out.println("DEBUG: Correct choice for Flameclaw is Fire Resistance, selected: " + selectedPotionType);
+            } else if (bossName.equals("Toxitar")) {
+                correctChoice = selectedPotionType.equals("Dexterity");
+                System.out.println("DEBUG: Correct choice for Toxitar is Dexterity, selected: " + selectedPotionType);
+            } else if (bossName.equals("LordChaosa")) {
+                correctChoice = selectedPotionType.equals("Strength");
+                System.out.println("DEBUG: Correct choice for Lord Chaosa is Strength, selected: " + selectedPotionType);
+            }
 
-        // IMPORTANT: Clear the grid panel completely before showing result
-        gridPanel.removeAll();
+            // IMPORTANT: Clear the grid panel completely before showing result
+            gridPanel.removeAll();
 
-        // IMPORTANT: Properly finish the phase before showing result
-        finishCurrentPhase();
+            // IMPORTANT: Properly finish the phase before showing result
+            finishCurrentPhase();
 
-        // Store the selected potion in the model for use in dialogue
-        controller.model.setSelectedPotion(craftedPotion);
+            // Store the selected potion in the model for use in dialogue
+            controller.model.setSelectedPotion(craftedPotion);
 
-        // Determine boss level based on name
-        int bossLevel = bossName.equals("Flameclaw") ? 1 : 2;
+            // Determine boss level based on name
+            int bossLevel = 1;
+            if (bossName.equals("Toxitar")) {
+                bossLevel = 2;
+            } else if (bossName.equals("LordChaosa")) {
+                bossLevel = 3;
+            }
 
-        // IMPORTANT: Add debug to see what's happening
-        System.out.println("DEBUG: Signaling boss battle complete to controller");
-        
-        // Don't show a popup here, let the controller handle it with proper dialogue
+            // IMPORTANT: Add debug to see what's happening
+            System.out.println("DEBUG: Signaling boss battle complete to controller with boss level: " + bossLevel);
 
-        if (correctChoice) {
-            JOptionPane.showMessageDialog(this,
-                "Excellent choice! The " + selectedPotionType + " Potion was effective against " + bossName + "!",
-                "Success!",
-                JOptionPane.INFORMATION_MESSAGE
-            );
-        } else {
-            JOptionPane.showMessageDialog(this,
-                "Oh no! The " + selectedPotionType + " Potion wasn't effective against " + bossName + "!",
-                "Failure",
-                JOptionPane.WARNING_MESSAGE
-            );
-        }
+            // Show a brief message about the battle outcome
+            if (correctChoice) {
+                JOptionPane.showMessageDialog(this,
+                    "Excellent choice! The " + selectedPotionType + " Potion was effective against " + bossName + "!",
+                    "Success!",
+                    JOptionPane.INFORMATION_MESSAGE
+                );
+            } else {
+                JOptionPane.showMessageDialog(this,
+                    "Oh no! The " + selectedPotionType + " Potion wasn't effective against " + bossName + "!",
+                    "Failure",
+                    JOptionPane.WARNING_MESSAGE
+                );
+            }
 
-        // Signal successful boss battle
-        controller.onBossBattleComplete(correctChoice, bossLevel);
-    });
+            // Signal successful boss battle
+            controller.onBossBattleComplete(correctChoice, bossLevel);
+        });
         battleTimer.setRepeats(false);
         battleTimer.start();
     }
-    
     
     /**
     * New helper method to properly finish the current phase
@@ -2353,7 +2387,7 @@ public class TimSortVisualization extends JPanel {
     
     
 
-    private void startBattleEffects(JPanel overlay) {
+    private void startBattleEffects(JPanel overlay, String bossName) {
         // Create animated battle effects
         Random rand = new Random();
 
@@ -2375,7 +2409,7 @@ public class TimSortVisualization extends JPanel {
                     int size;
 
                     {
-                        if (gameLevel == 2) {
+                        if (bossName.equals("Toxitar")) {
                             // Toxitar - green poison effects
                             color = new Color(
                                 rand.nextInt(100),
@@ -2383,6 +2417,14 @@ public class TimSortVisualization extends JPanel {
                                 rand.nextInt(50),
                                 rand.nextInt(100) + 155);
                             size = rand.nextInt(25) + 15; // Larger poison clouds
+                        } else if (bossName.equals("LordChaosa")) {
+                            // Lord Chaosa - purple/magenta reality distortion effects
+                            color = new Color(
+                                rand.nextInt(100) + 155,
+                                rand.nextInt(50),
+                                rand.nextInt(100) + 155,
+                                rand.nextInt(100) + 155);
+                            size = rand.nextInt(30) + 20; // Larger reality distortion effects
                         } else {
                             // Flameclaw - fire effects
                             color = new Color(
@@ -2398,9 +2440,9 @@ public class TimSortVisualization extends JPanel {
                     protected void paintComponent(Graphics g) {
                         super.paintComponent(g);
 
-                        // Draw background
-                        if (gameLevel == 2) {
-                            // Level 2 - Toxitar poison theme
+                        // Draw background based on boss
+                        if (bossName.equals("Toxitar")) {
+                            // Toxitar poison theme
                             g.setColor(new Color(20, 40, 20)); // Dark green background
                             g.fillRect(0, 0, getWidth(), getHeight());
 
@@ -2419,29 +2461,53 @@ public class TimSortVisualization extends JPanel {
 
                             // Reset composite
                             g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1.0f));
-                        } else {
-                            // Level 1 - Flameclaw fire theme
-                            g.setColor(new Color(25, 25, 50)); // Dark blue/black background
+                        } else if (bossName.equals("LordChaosa")) {
+                            // Lord Chaosa reality warping theme
+                            g.setColor(new Color(30, 10, 30)); // Dark purple/black background
                             g.fillRect(0, 0, getWidth(), getHeight());
 
-                            // For Level 1, we could add subtle fire effects if desired
+                            // Add reality distortion effects
+                            Graphics2D g2d = (Graphics2D) g;
+                            g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.3f));
+
+                            // Draw some reality distortion effects
+                            g2d.setColor(new Color(150, 0, 150));
+                            for (int i = 0; i < 8; i++) {
+                                int x = (int)(Math.random() * getWidth());
+                                int y = (int)(Math.random() * getHeight());
+                                int size = 70 + (int)(Math.random() * 100);
+                                g2d.fillOval(x, y, size, size);
+                            }
+
+                            // Reset composite
+                            g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1.0f));
+                        } else {
+                            // Flameclaw fire theme
+                            g.setColor(new Color(25, 25, 50)); // Dark blue/black background
+                            g.fillRect(0, 0, getWidth(), getHeight());
                         }
                     }
                 };
 
-                // Set random position around boss
+                // Set random position around boss based on boss type
                 int x, y;
-                if (gameLevel == 2) {
+                if (bossName.equals("Toxitar")) {
                     // Toxitar's poison spreads more on the ground
                     x = (GameConstants.WINDOW_WIDTH / 2) + rand.nextInt(400) - 200;
                     y = 300 + rand.nextInt(150);
+                } else if (bossName.equals("LordChaosa")) {
+                    // Lord Chaosa's reality distortions appear all around
+                    x = (GameConstants.WINDOW_WIDTH / 2) + rand.nextInt(400) - 200;
+                    y = 200 + rand.nextInt(300) - 100;
                 } else {
                     // Flameclaw's fire comes more from the center
                     x = (GameConstants.WINDOW_WIDTH / 2) + rand.nextInt(300) - 150;
                     y = 250 + rand.nextInt(200) - 100;
                 }
 
-                effect.setBounds(x, y, 30, 30);
+                // Fix: Use the size variable from the local scope, not from the inner class
+                int effectSize = 30;
+                effect.setBounds(x, y, effectSize, effectSize);
                 effect.setOpaque(false);
 
                 overlay.add(effect);
@@ -2462,7 +2528,7 @@ public class TimSortVisualization extends JPanel {
 
         effectsTimer.start();
     }
-    
+
     
     
     
@@ -3240,10 +3306,6 @@ public class TimSortVisualization extends JPanel {
     * Add this method to TimSortVisualization class to show phase dialogues
     */
     private void showPhaseDialogue(String baseDialogueKey) {
-        // Prefix the dialogue key with the level if it's Level 2
-        String dialogueKey = (gameLevel == 2) ? "level2_" + baseDialogueKey : baseDialogueKey;
-
-        
         // IMPORTANT: Remove any existing dialogue overlays first
         for (Component comp : getComponents()) {
             if (comp instanceof JPanel && comp.getName() != null && 
@@ -3251,7 +3313,7 @@ public class TimSortVisualization extends JPanel {
                 remove(comp);
             }
         }
-        
+
         // Create semi-transparent overlay
         JPanel dialogueOverlay = new JPanel() {
             @Override
@@ -3263,7 +3325,7 @@ public class TimSortVisualization extends JPanel {
             }
         };
         dialogueOverlay.setName("dialogueOverlay");
-        
+
         dialogueOverlay.setLayout(null);
         dialogueOverlay.setBounds(0, 0, GameConstants.WINDOW_WIDTH, GameConstants.WINDOW_HEIGHT);
         dialogueOverlay.setOpaque(false);
@@ -3285,12 +3347,7 @@ public class TimSortVisualization extends JPanel {
                 leftGroupPotionType, rightGroupPotionType);
         } else {
             // Get regular dialogue sequence for other dialogue keys
-            dialogueSequence = narrativeSystem.getDialogueSequence(dialogueKey);
-
-            // If not found and we're in Level 2, try with the non-prefixed key
-            if ((dialogueSequence == null || dialogueSequence.isEmpty()) && gameLevel == 2) {
-                dialogueSequence = narrativeSystem.getDialogueSequence(baseDialogueKey);
-            }
+            dialogueSequence = narrativeSystem.getDialogueSequence(baseDialogueKey);
         }
 
         if (dialogueSequence == null || dialogueSequence.isEmpty()) {
@@ -3301,7 +3358,7 @@ public class TimSortVisualization extends JPanel {
         }
 
         // Create a dialogue manager specifically for this overlay
-        phaseDialogueManager = new DialogueManager(controller);
+        DialogueManager phaseDialogueManager = new DialogueManager(controller);
         phaseDialogueManager.setBounds(0, 0, GameConstants.WINDOW_WIDTH, GameConstants.WINDOW_HEIGHT);
         dialogueOverlay.add(phaseDialogueManager);
 
@@ -3318,8 +3375,17 @@ public class TimSortVisualization extends JPanel {
 
                 // Special handling for Phase 3 end dialogue
                 if (isPhase3End && phaseCompleted) {
-                    // Start boss battle after phase 3 dialogue ends
-                    startBossBattle(currentBossName);
+                    // For Level 3 explicitly use the correct boss name
+                    if (gameLevel == 3) {
+                        // Start Lord Chaosa battle after phase 3 dialogue ends
+                        startBossBattle("LordChaosa");
+                    } else if (gameLevel == 2) {
+                        // Start Toxitar battle
+                        startBossBattle("Toxitar");
+                    } else {
+                        // Default to Flameclaw for Level 1
+                        startBossBattle("Flameclaw");
+                    }
                 } else {
                     // Resume any paused game elements if needed for other phases
                     resumeAfterDialogue();
@@ -3337,6 +3403,13 @@ public class TimSortVisualization extends JPanel {
         revalidate();
         repaint();
     }
+    
+    
+    
+    
+    
+    
+    
     
     
     /**
