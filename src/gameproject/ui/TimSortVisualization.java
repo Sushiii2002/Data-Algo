@@ -259,11 +259,13 @@ public class TimSortVisualization extends JPanel {
     */
     public void setGameLevel(int level) {
         this.gameLevel = level;
+        System.out.println("DEBUG: TimSortVisualization game level set to: " + this.gameLevel);
+    
 
         // Update boss-specific elements
         if (level == 3) {
             // Level 3 - Lord Chaosa
-            currentBossName = "LordChaosa";
+            currentBossName = "Lord_Chaosa";
 
             // Update hints for Lord Chaosa
             String[] lordChaosaHints = new String[] {
@@ -365,6 +367,7 @@ public class TimSortVisualization extends JPanel {
     */
     private void startBossBattle() {
         String bossName = "";
+        // Make sure we're using the correct boss for each level
         switch (gameLevel) {
             case 1:
                 bossName = "Flameclaw";
@@ -376,8 +379,12 @@ public class TimSortVisualization extends JPanel {
                 bossName = "LordChaosa";
                 break;
             default:
-                bossName = "Flameclaw";
+                bossName = "Flameclaw"; // Default fallback
         }
+
+        // Add debug to verify correct boss name is being used
+        System.out.println("DEBUG: Starting boss battle with boss: " + bossName + " for game level: " + gameLevel);
+
         startBossBattle(bossName);
     }
     
@@ -2213,7 +2220,6 @@ public class TimSortVisualization extends JPanel {
     private void startBossBattle(String bossName) {
         // Add debug logging
         System.out.println("DEBUG: Starting boss battle against " + bossName);
-        System.out.println("DEBUG: Selected potion: " + craftedPotion);
 
         // Create semi-transparent overlay with boss-specific background color
         JPanel battleOverlay = new JPanel() {
@@ -2243,9 +2249,22 @@ public class TimSortVisualization extends JPanel {
         // Ensure battle overlay is on top
         setComponentZOrder(battleOverlay, 0);
 
-        // Load boss image - make sure we're using the correct boss image
-        String bossImagePath = "/gameproject/resources/characters/" + bossName.toLowerCase() + ".png";
+        // Load boss image - IMPORTANT: add debug statements
+        String bossImagePath;
+            if (bossName.equals("LordChaosa")) {
+                bossImagePath = "/gameproject/resources/characters/lord_chaosa.png";
+            } else if (bossName.equals("Toxitar")) {
+                bossImagePath = "/gameproject/resources/characters/toxitar.png";
+            } else {
+                bossImagePath = "/gameproject/resources/characters/flameclaw.png";
+            }
+        System.out.println("DEBUG: Looking for boss image at path: " + bossImagePath);
+
         ImageIcon bossImage = resourceManager.getImage(bossImagePath);
+        System.out.println("DEBUG: Boss image loaded: " + (bossImage != null));
+        
+        
+        
 
         if (bossImage != null) {
             // Scale boss image
@@ -2253,6 +2272,9 @@ public class TimSortVisualization extends JPanel {
             JLabel bossLabel = new JLabel(new ImageIcon(scaledBossImage));
             bossLabel.setBounds((GameConstants.WINDOW_WIDTH - 300) / 2, 100, 300, 300);
             battleOverlay.add(bossLabel);
+
+            // Debug: Verify boss label was added
+            System.out.println("DEBUG: Boss label added to battle overlay");
 
             // Add boss name with appropriate color
             JLabel bossNameLabel = new JLabel(bossName, JLabel.CENTER);
@@ -2279,6 +2301,8 @@ public class TimSortVisualization extends JPanel {
             } else if (bossName.equals("LordChaosa")) {
                 battleCry = "REALITY IS MINE TO COMMAND!";
             }
+            
+            
 
             JLabel battleText = new JLabel(battleCry, JLabel.CENTER);
             battleText.setFont(new Font("SansSerif", Font.BOLD, 24));
@@ -2286,8 +2310,23 @@ public class TimSortVisualization extends JPanel {
             battleText.setBounds(0, 470, GameConstants.WINDOW_WIDTH, 30);
             battleOverlay.add(battleText);
 
+            // Debug: Check component count to ensure everything is added
+            System.out.println("DEBUG: Total components in battle overlay: " + battleOverlay.getComponentCount());
+
             // Add animated battle effects based on boss type
             startBattleEffects(battleOverlay, bossName);
+
+            // Force repaint to ensure all components are visible
+            battleOverlay.revalidate();
+            battleOverlay.repaint();
+        } else {
+            System.err.println("ERROR: Failed to load boss image for " + bossName);
+            // Add a fallback image or text if boss image couldn't be loaded
+            JLabel errorLabel = new JLabel("Facing " + bossName + "...", JLabel.CENTER);
+            errorLabel.setFont(new Font("SansSerif", Font.BOLD, 36));
+            errorLabel.setForeground(Color.WHITE);
+            errorLabel.setBounds(0, 100, GameConstants.WINDOW_WIDTH, 300);
+            battleOverlay.add(errorLabel);
         }
 
         // After a delay, show battle outcome
@@ -2358,6 +2397,14 @@ public class TimSortVisualization extends JPanel {
         battleTimer.setRepeats(false);
         battleTimer.start();
     }
+
+    
+    
+    
+    
+    
+    
+    
     
     /**
     * New helper method to properly finish the current phase
@@ -2388,6 +2435,9 @@ public class TimSortVisualization extends JPanel {
     
 
     private void startBattleEffects(JPanel overlay, String bossName) {
+        // Debug the boss name to ensure correct effects are applied
+        System.out.println("DEBUG: Starting battle effects for boss: " + bossName);
+
         // Create animated battle effects
         Random rand = new Random();
 
@@ -2418,13 +2468,16 @@ public class TimSortVisualization extends JPanel {
                                 rand.nextInt(100) + 155);
                             size = rand.nextInt(25) + 15; // Larger poison clouds
                         } else if (bossName.equals("LordChaosa")) {
-                            // Lord Chaosa - purple/magenta reality distortion effects
+                            // Lord Chaosa - ENHANCED purple/magenta reality distortion effects
                             color = new Color(
                                 rand.nextInt(100) + 155,
                                 rand.nextInt(50),
                                 rand.nextInt(100) + 155,
                                 rand.nextInt(100) + 155);
-                            size = rand.nextInt(30) + 20; // Larger reality distortion effects
+                            size = rand.nextInt(50) + 30; // Much larger reality distortion effects
+
+                            // Debug when Lord Chaosa effect is created
+                            System.out.println("DEBUG: Created LordChaosa effect, size: " + size);
                         } else {
                             // Flameclaw - fire effects
                             color = new Color(
@@ -2440,51 +2493,22 @@ public class TimSortVisualization extends JPanel {
                     protected void paintComponent(Graphics g) {
                         super.paintComponent(g);
 
-                        // Draw background based on boss
-                        if (bossName.equals("Toxitar")) {
-                            // Toxitar poison theme
-                            g.setColor(new Color(20, 40, 20)); // Dark green background
-                            g.fillRect(0, 0, getWidth(), getHeight());
+                        // Fill with the effect color
+                        g.setColor(color);
+                        g.fillOval(0, 0, getWidth(), getHeight());
 
-                            // Add some poison cloud effects
+                        // For Lord Chaosa, add extra "reality distortion" effect
+                        if (bossName.equals("LordChaosa")) {
                             Graphics2D g2d = (Graphics2D) g;
-                            g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.2f));
+                            g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.7f));
 
-                            // Draw some subtle green poison clouds in the background
-                            g2d.setColor(new Color(0, 180, 0));
-                            for (int i = 0; i < 8; i++) {
-                                int x = (int)(Math.random() * getWidth());
-                                int y = (int)(Math.random() * getHeight());
-                                int size = 50 + (int)(Math.random() * 100);
-                                g2d.fillOval(x, y, size, size);
-                            }
+                            // Draw distortion rings
+                            g2d.setColor(new Color(255, 50, 255, 180));
+                            g2d.drawOval(5, 5, getWidth() - 10, getHeight() - 10);
+                            g2d.drawOval(10, 10, getWidth() - 20, getHeight() - 20);
 
                             // Reset composite
                             g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1.0f));
-                        } else if (bossName.equals("LordChaosa")) {
-                            // Lord Chaosa reality warping theme
-                            g.setColor(new Color(30, 10, 30)); // Dark purple/black background
-                            g.fillRect(0, 0, getWidth(), getHeight());
-
-                            // Add reality distortion effects
-                            Graphics2D g2d = (Graphics2D) g;
-                            g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.3f));
-
-                            // Draw some reality distortion effects
-                            g2d.setColor(new Color(150, 0, 150));
-                            for (int i = 0; i < 8; i++) {
-                                int x = (int)(Math.random() * getWidth());
-                                int y = (int)(Math.random() * getHeight());
-                                int size = 70 + (int)(Math.random() * 100);
-                                g2d.fillOval(x, y, size, size);
-                            }
-
-                            // Reset composite
-                            g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1.0f));
-                        } else {
-                            // Flameclaw fire theme
-                            g.setColor(new Color(25, 25, 50)); // Dark blue/black background
-                            g.fillRect(0, 0, getWidth(), getHeight());
                         }
                     }
                 };
@@ -2497,20 +2521,36 @@ public class TimSortVisualization extends JPanel {
                     y = 300 + rand.nextInt(150);
                 } else if (bossName.equals("LordChaosa")) {
                     // Lord Chaosa's reality distortions appear all around
-                    x = (GameConstants.WINDOW_WIDTH / 2) + rand.nextInt(400) - 200;
-                    y = 200 + rand.nextInt(300) - 100;
+                    x = (GameConstants.WINDOW_WIDTH / 2) + rand.nextInt(600) - 300;
+                    y = 200 + rand.nextInt(400) - 100;
+
+                    // Debug Lord Chaosa effect positioning
+                    System.out.println("DEBUG: LordChaosa effect positioned at: " + x + "," + y);
                 } else {
                     // Flameclaw's fire comes more from the center
                     x = (GameConstants.WINDOW_WIDTH / 2) + rand.nextInt(300) - 150;
                     y = 250 + rand.nextInt(200) - 100;
                 }
 
-                // Fix: Use the size variable from the local scope, not from the inner class
-                int effectSize = 30;
+                // Instead of trying to access effect.size, calculate the size here directly
+                int effectSize;
+                if (bossName.equals("Toxitar")) {
+                    effectSize = rand.nextInt(25) + 15;
+                } else if (bossName.equals("LordChaosa")) {
+                    effectSize = rand.nextInt(50) + 30;
+                } else {
+                    effectSize = rand.nextInt(20) + 10;
+                }
+
+                // Now use effectSize
                 effect.setBounds(x, y, effectSize, effectSize);
                 effect.setOpaque(false);
 
                 overlay.add(effect);
+
+                // Ensure effect is visible by setting it to the top of the z-order
+                overlay.setComponentZOrder(effect, 0);
+
                 overlay.revalidate();
                 overlay.repaint();
 
