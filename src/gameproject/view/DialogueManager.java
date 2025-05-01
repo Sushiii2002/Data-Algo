@@ -69,6 +69,9 @@ public class DialogueManager extends JPanel {
     
     
     private DialogueEndListener dialogueEndListener;
+    private boolean isBossBattleResultDialogue = false;
+    
+    
     
     /**
      * Custom panel for drawing portraits with themed borders
@@ -530,11 +533,17 @@ public class DialogueManager extends JPanel {
         characterNameLabel.setText("");
         dialogueTextLabel.setText("");
 
-        // Signal the narrative system to advance the story
-        narrativeSystem.advanceStory();
-
-        // Notify controller that dialogue has ended
-        controller.onDialogueSequenceEnded();
+        // Check if this was a boss battle result dialogue
+        if (isBossBattleResultDialogue) {
+            isBossBattleResultDialogue = false;
+            // Transition to level selection after boss battle result dialogue
+            controller.showLevelSelection();
+        } else {
+            // Signal the narrative system to advance the story
+            narrativeSystem.advanceStory();
+            // Notify controller that dialogue has ended
+            controller.onDialogueSequenceEnded();
+        }
 
         // Notify the dialogue end listener if one is set
         if (dialogueEndListener != null) {
@@ -565,4 +574,10 @@ public class DialogueManager extends JPanel {
     public void setDialogueEndListener(DialogueEndListener listener) {
         this.dialogueEndListener = listener;
     }
+    
+    public void setBossBattleResultDialogue(boolean value) {
+        isBossBattleResultDialogue = value;
+    }
+    
+    
 }

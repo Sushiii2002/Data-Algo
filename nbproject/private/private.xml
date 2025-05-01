@@ -17,8 +17,9 @@
             <file>file:/C:/Users/Russel/Documents/NetBeansProjects/GameProject/src/gameproject/view/MainMenuView.java</file>
             <file>file:/C:/Users/Russel/Documents/NetBeansProjects/GameProject/src/gameproject/view/TransparentTextPane.java</file>
             <file>file:/C:/Users/Russel/Documents/NetBeansProjects/GameProject/src/gameproject/ui/GameGrid.java</file>
-            <file>file:/C:/Users/Russel/Documents/NetBeansProjects/GameProject/src/gameproject/main/GameLauncher.java</file>
             <file>file:/C:/Users/Russel/Documents/NetBeansProjects/GameProject/src/gameproject/model/NarrativeSystem.java</file>
+            <file>file:/C:/Users/Russel/Documents/NetBeansProjects/GameProject/src/gameproject/main/GameLauncher.java</file>
+            <file>file:/C:/Users/Russel/Documents/NetBeansProjects/GameProject/src/gameproject/model/GameState.java</file>
             <file>file:/C:/Users/Russel/Documents/NetBeansProjects/GameProject/src/gameproject/controller/GameController.java</file>
             <file>file:/C:/Users/Russel/Documents/NetBeansProjects/GameProject/src/gameproject/view/EnhancedStoryView.java</file>
         </group>

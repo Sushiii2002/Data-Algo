@@ -1177,8 +1177,8 @@ public class TimSortVisualization extends JPanel {
         abilityButton.setEnabled(true);
 
         // Make sure grid panel is on top of other components
-        if (getComponentZOrder(gridPanel) > 0) {
-            setComponentZOrder(gridPanel, 0);
+        if (getComponentZOrder(gridPanel) == 0) {
+            setComponentZOrder(gridPanel, getComponentCount() - 1);
         }
 
         // Force UI refresh
@@ -1710,6 +1710,7 @@ public class TimSortVisualization extends JPanel {
     */
     private void checkPhaseCompletion() {
         if (currentPhase == 1) {
+            // Phase 1 handling - unchanged
             if (selectedIngredients.size() == MAX_SELECTIONS) {
                 boolean hasValidRuns = checkValidRuns();
 
@@ -1737,7 +1738,7 @@ public class TimSortVisualization extends JPanel {
                 }
             }
         } else if (currentPhase == 2) {
-            // Check if both groups are properly sorted
+            // Phase 2 handling - unchanged
             boolean leftSorted = isGroupSorted(leftGroup);
             boolean rightSorted = isGroupSorted(rightGroup);
 
@@ -1772,19 +1773,19 @@ public class TimSortVisualization extends JPanel {
             }
         } else if (currentPhase == 3) {
             if (craftedPotion != null) {
+                // IMPORTANT CHANGE: For Phase 3, set a completion flag but
+                // don't start the boss battle immediately
+                phaseCompleted = true;
+
                 // Show phase completion dialogue first
                 showPhaseDialogue("phase3_end");
 
-                // After dialogue ends, start boss battle
-                Timer bossTimer = new Timer(500, e -> {
-                    startBossBattle("Flameclaw");
-                });
-                bossTimer.setRepeats(false);
-                bossTimer.start();
+                // The boss battle will now be started from the DialogueEndListener
+                // in the showPhaseDialogue method, after dialogue completes
             }
         }
     }
-    
+
     
     
     
@@ -1812,6 +1813,9 @@ public class TimSortVisualization extends JPanel {
         battleOverlay.setBounds(0, 0, GameConstants.WINDOW_WIDTH, GameConstants.WINDOW_HEIGHT);
         battleOverlay.setOpaque(false);
         add(battleOverlay, 0);
+
+        // Ensure battle overlay is on top
+        setComponentZOrder(battleOverlay, 0);
 
         // Load boss image
         String bossImagePath = "/gameproject/resources/characters/" + bossName.toLowerCase() + ".png";
@@ -1844,6 +1848,7 @@ public class TimSortVisualization extends JPanel {
 
         // After a delay, show battle outcome
         Timer battleTimer = new Timer(5000, e -> {
+            // IMPORTANT: Remove battle overlay before proceeding
             remove(battleOverlay);
 
             // Extract the actual potion type name from the craftedPotion string (remove " Potion" suffix)
@@ -1868,6 +1873,13 @@ public class TimSortVisualization extends JPanel {
             }
             // Add more boss conditions as needed
 
+            // IMPORTANT: Clear the grid panel completely before showing result
+            gridPanel.removeAll();
+
+            // IMPORTANT: Properly finish the phase before showing result
+            // This prevents any Phase 1 or other phase elements from appearing
+            finishCurrentPhase();
+
             if (correctChoice) {
                 JOptionPane.showMessageDialog(this,
                     "Excellent choice! The " + selectedPotionType + " Potion protected you from " + bossName + "'s attacks!",
@@ -1891,6 +1903,31 @@ public class TimSortVisualization extends JPanel {
         battleTimer.setRepeats(false);
         battleTimer.start();
     }
+    
+    
+    /**
+    * New helper method to properly finish the current phase
+    * This ensures a clean transition after battle
+    */
+    private void finishCurrentPhase() {
+        // Clear all UI elements that might be causing issues
+        gridPanel.removeAll();
+
+        // Reset any phase-specific state to prevent it from reappearing
+        allIngredients.clear();
+        selectedIngredients.clear();
+        leftGroup.clear();
+        rightGroup.clear();
+
+        // Mark phase as fully completed
+        phaseCompleted = true;
+
+        // Force a complete UI refresh
+        revalidate();
+        repaint();
+    }
+
+    
     
     
     
@@ -2010,7 +2047,7 @@ public class TimSortVisualization extends JPanel {
             // Update the controller about the phase change for dynamic dialogue
             controller.onPhaseAdvance(currentPhase, leftGroupPotionType, rightGroupPotionType);
 
-            // IMPORTANT: Use arrangeIngredientsForSorting instead of useAbility
+            // Immediately arrange ingredients for Phase 2
             arrangeIngredientsForSorting();
         } else if (currentPhase == 3) {
             phaseLabel.setText("Phase 3: The Mind of Unity");
@@ -2684,7 +2721,7 @@ public class TimSortVisualization extends JPanel {
     * Add this method to TimSortVisualization class to show phase dialogues
     */
     private void showPhaseDialogue(String dialogueKey) {
-        // Create semi-transparent overlay
+        // Create semi-transparent overlay - unchanged
         JPanel dialogueOverlay = new JPanel() {
             @Override
             protected void paintComponent(Graphics g) {
@@ -2697,7 +2734,12 @@ public class TimSortVisualization extends JPanel {
         dialogueOverlay.setLayout(null);
         dialogueOverlay.setBounds(0, 0, GameConstants.WINDOW_WIDTH, GameConstants.WINDOW_HEIGHT);
         dialogueOverlay.setOpaque(false);
+
+        // Add overlay to the panel - always at index 0 (top)
         add(dialogueOverlay, 0);
+
+        // IMPORTANT: Ensure the dialogue overlay is the topmost component
+        setComponentZOrder(dialogueOverlay, 0);
 
         // Get the dialogue sequence from NarrativeSystem
         NarrativeSystem narrativeSystem = NarrativeSystem.getInstance();
@@ -2727,8 +2769,18 @@ public class TimSortVisualization extends JPanel {
                 remove(dialogueOverlay);
                 repaint();
 
-                // Resume any paused game elements if needed
-                resumeAfterDialogue();
+                // Special handling for Phase 3 end dialogue
+                if (currentPhase == 3 && dialogueKey.equals("phase3_end") && phaseCompleted) {
+                    // Start boss battle AFTER dialogue has fully completed and overlay is removed
+                    Timer bossTimer = new Timer(500, e -> {
+                        startBossBattle("Flameclaw");
+                    });
+                    bossTimer.setRepeats(false);
+                    bossTimer.start();
+                } else {
+                    // Resume any paused game elements if needed for other phases
+                    resumeAfterDialogue();
+                }
             }
         });
 
@@ -2794,6 +2846,37 @@ public class TimSortVisualization extends JPanel {
      */
     public String getCraftedPotion() {
         return craftedPotion;
+    }
+    
+    
+    /**
+    * Reset all phases and state in the TimSort visualization
+    */
+    public void resetAllPhases() {
+        // Reset phase tracking
+        currentPhase = 1;
+        phaseCompleted = false;
+
+        // Clear all data structures
+        allIngredients.clear();
+        selectedIngredients.clear();
+        identifiedRuns.clear();
+        leftGroup.clear();
+        rightGroup.clear();
+        mergedItems.clear();
+        craftedPotion = null;
+
+        // Clear UI
+        gridPanel.removeAll();
+
+        // Reset UI state
+        abilityButton.setText("Use Eye of Pattern");
+        instructionLabel.setText("Use your 'Eye of Pattern' ability to identify ingredient sequences (runs).");
+        checkButton.setEnabled(false);
+
+        // Force UI refresh
+        revalidate();
+        repaint();
     }
     
 //end of timsortvisualization class

@@ -310,6 +310,9 @@ public class EnhancedStoryView extends JPanel {
         List<NarrativeSystem.DialogueEntry> battleDialogues = 
             narrativeSystem.getDialogueSequence(dialogueKey);
 
+        // Set a special flag to indicate this is a boss battle result dialogue
+        dialogueManager.setBossBattleResultDialogue(true);
+
         // Start the dialogue
         dialogueManager.startDialogue(battleDialogues);
     }

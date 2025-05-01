@@ -110,11 +110,19 @@ public class GameController {
      * Show the level selection screen
      */
     public void showLevelSelection() {
+        // Reset TimSort visualization to prevent it from showing up later
+        timSortVisualization.resetAllPhases();
+
+        // Set game state to level selection
         model.setCurrentState(GameState.LEVEL_SELECTION);
+
+        // Update level status
         levelSelectionView.updateLevelStatus();
+
+        // Show the level selection view
         cardLayout.show(mainPanel, "levelSelection");
     }
-    
+
     /**
      * Start the story mode with enhanced narrative
      */
@@ -219,6 +227,8 @@ public class GameController {
      * Handle boss battle completion
      */
     public void onBossBattleComplete(boolean success, int bossLevel) {
+        model.setBossBattleCompleted(true);
+    
         model.setCurrentState(GameState.STORY_MODE);
         cardLayout.show(mainPanel, "enhancedStory");
 
