@@ -88,6 +88,11 @@ public class TimSortVisualization extends JPanel {
     private String currentBossName = "Flameclaw"; // Default to Level 1 boss
     private String[] toxitarHints = new String[3]; 
     
+    
+    
+    
+    private DialogueManager phaseDialogueManager; // Dialogue manager for phases
+    
     /**
      * Constructor - Initialize the TimSort visualization
      */
@@ -1884,16 +1889,13 @@ public class TimSortVisualization extends JPanel {
     */
     private void checkPhaseCompletion() {
         if (currentPhase == 1) {
+            // Phase 1 logic remains unchanged
             if (selectedIngredients.size() == MAX_SELECTIONS) {
                 boolean hasValidRuns = checkValidRuns();
 
                 if (hasValidRuns) {
                     // Show phase completion dialogue first
                     showPhaseDialogue("phase1_end");
-
-                    // After dialogue ends, the DialogueEndListener will call resumeAfterDialogue
-                    // which will allow the phase to be marked as completed
-                    phaseCompleted = true;
 
                     // Phase transition will happen after dialogue ends
                     Timer transitionTimer = new Timer(500, e -> {
@@ -1911,7 +1913,7 @@ public class TimSortVisualization extends JPanel {
                 }
             }
         } else if (currentPhase == 2) {
-            // Check if both groups are properly sorted
+            // Phase 2 logic remains unchanged
             boolean leftSorted = isGroupSorted(leftGroup);
             boolean rightSorted = isGroupSorted(rightGroup);
 
@@ -1945,18 +1947,18 @@ public class TimSortVisualization extends JPanel {
                     narrativeSystem.getDynamicPhase2EndDialogue(leftGroupPotionType, rightGroupPotionType);
 
                 // Create a dialogue manager specifically for this overlay
-                DialogueManager phaseDialogueManager = new DialogueManager(controller);
-                phaseDialogueManager.setBounds(0, 0, GameConstants.WINDOW_WIDTH, GameConstants.WINDOW_HEIGHT);
-                dialogueOverlay.add(phaseDialogueManager);
+                DialogueManager tempDialogueManager = new DialogueManager(controller);
+                tempDialogueManager.setBounds(0, 0, GameConstants.WINDOW_WIDTH, GameConstants.WINDOW_HEIGHT);
+                dialogueOverlay.add(tempDialogueManager);
 
                 // Start the dialogue sequence
-                phaseDialogueManager.startDialogue(phase2EndDialogue);
+                tempDialogueManager.startDialogue(phase2EndDialogue);
 
                 // Pause any active timers or animations during dialogue
                 pauseDuringDialogue();
 
                 // Add a listener to remove the overlay when dialogue ends
-                phaseDialogueManager.setDialogueEndListener(new DialogueManager.DialogueEndListener() {
+                tempDialogueManager.setDialogueEndListener(new DialogueManager.DialogueEndListener() {
                     @Override
                     public void onDialogueEnd() {
                         // Remove the overlay when dialogue completes
@@ -1997,29 +1999,15 @@ public class TimSortVisualization extends JPanel {
                 isRightGroupSorted = false;
             }
         } else if (currentPhase == 3) {
+            // Phase 3 - MODIFIED to sequence dialogue and battle properly
             if (craftedPotion != null) {
-                // Show phase completion dialogue first
+                // Simply show the phase 3 end dialogue
+                // The boss battle will be started by the dialogue end listener
                 showPhaseDialogue("phase3_end");
-
-                // After dialogue ends, start boss battle
-                Timer bossTimer = new Timer(500, e -> {
-                    startBossBattle();
-                });
-                bossTimer.setRepeats(false);
-                bossTimer.start();
             }
         }
     }
 
-    
-    
-    /**
-    * Modified startBossBattle method to use the correct boss based on gameLevel
-    */
-   private void startBossBattle() {
-       startBossBattle(currentBossName);
-   }
-    
     
     
     /**
@@ -2108,7 +2096,7 @@ public class TimSortVisualization extends JPanel {
             finishCurrentPhase();
 
             // Store the selected potion in the model for use in dialogue
-            model.setSelectedPotion(craftedPotion);
+            controller.model.setSelectedPotion(craftedPotion);
 
             // Determine boss level based on name
             int bossLevel = bossName.equals("Flameclaw") ? 1 : 2;
@@ -2352,6 +2340,27 @@ public class TimSortVisualization extends JPanel {
         // Force complete UI refresh
         revalidate();
         repaint();
+    }
+    
+    
+    
+    /**
+    * Improved method to handle phase transitions with dynamic dialogue in TimSortVisualization
+    */
+    public void onPhaseAdvance(int phase, String leftPotionType, String rightPotionType) {
+        System.out.println("DEBUG: Phase advanced to " + phase);
+        System.out.println("DEBUG: Left potion type: " + leftPotionType);
+        System.out.println("DEBUG: Right potion type: " + rightPotionType);
+
+        // Store potion types for later use
+        this.leftGroupPotionType = leftPotionType;
+        this.rightGroupPotionType = rightPotionType;
+
+        // Store potion types in model via controller for dialogue access
+        controller.storePotionTypes(leftPotionType, rightPotionType);
+
+        // Update UI to reflect the current phase
+        updatePhaseLabel();
     }
     
     /**
@@ -3082,12 +3091,12 @@ public class TimSortVisualization extends JPanel {
         }
 
         // Create a dialogue manager specifically for this overlay
-        DialogueManager phaseDialogueManager = new DialogueManager(controller);
+        phaseDialogueManager = new DialogueManager(controller);
         phaseDialogueManager.setBounds(0, 0, GameConstants.WINDOW_WIDTH, GameConstants.WINDOW_HEIGHT);
         dialogueOverlay.add(phaseDialogueManager);
 
-        // Start the dialogue sequence
-        phaseDialogueManager.startDialogue(dialogueSequence);
+        // Special handling for phase 3 end to sequence with battle
+        final boolean isPhase3End = (currentPhase == 3 && baseDialogueKey.equals("phase3_end"));
 
         // Add a listener to remove the overlay when dialogue ends
         phaseDialogueManager.setDialogueEndListener(new DialogueManager.DialogueEndListener() {
@@ -3098,19 +3107,18 @@ public class TimSortVisualization extends JPanel {
                 repaint();
 
                 // Special handling for Phase 3 end dialogue
-                if (currentPhase == 3 && baseDialogueKey.equals("phase3_end") && phaseCompleted) {
-                    // Start boss battle AFTER dialogue has fully completed and overlay is removed
-                    Timer bossTimer = new Timer(500, e -> {
-                        startBossBattle();
-                    });
-                    bossTimer.setRepeats(false);
-                    bossTimer.start();
+                if (isPhase3End && phaseCompleted) {
+                    // Start boss battle after phase 3 dialogue ends
+                    startBossBattle(currentBossName);
                 } else {
                     // Resume any paused game elements if needed for other phases
                     resumeAfterDialogue();
                 }
             }
         });
+
+        // Start the dialogue sequence
+        phaseDialogueManager.startDialogue(dialogueSequence);
 
         // Pause any active timers or animations during dialogue
         pauseDuringDialogue();

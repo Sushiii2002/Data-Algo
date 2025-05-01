@@ -189,17 +189,32 @@ public class GameController {
     public void onDialogueSequenceEnded() {
         // Check current game state to determine action
         if (model.getCurrentState() == GameState.STORY_MODE) {
-            // Determine next action based on narrative system state
+            // Get the current game level
+            int gameLevel = model.getGameLevel();
+
+            // Get current narrative phase
             GameState nextPhase = narrativeSystem.getCurrentAlgorithmPhase();
-            
+
+            System.out.println("DEBUG: Dialogue ended. Game Level: " + gameLevel + ", Next Phase: " + nextPhase);
+
             if (nextPhase != null) {
                 model.setCurrentState(nextPhase);
-                
-                // Determine which phase to start
+
+                // Ensure we're starting with Phase 1 for the current level
                 if (nextPhase == GameState.TIMSORT_CHALLENGE) {
-                    int phaseNumber = model.getCurrentLevel();
+                    // Start with phase 1 for whichever level we're on
+                    int phaseNumber = 1;
+                    model.setCurrentLevel(phaseNumber);
+
+                    System.out.println("DEBUG: Starting gameplay for Level " + gameLevel + ", Phase " + phaseNumber);
                     startPhaseGameplay(phaseNumber);
                 }
+            } else {
+                // Fallback if no phase is determined - start with Phase 1
+                System.out.println("DEBUG: No phase determined, starting Phase 1");
+                model.setCurrentState(GameState.TIMSORT_CHALLENGE);
+                model.setCurrentLevel(1);
+                startPhaseGameplay(1);
             }
         }
     }
@@ -530,6 +545,18 @@ public class GameController {
     // Add helper function to check if a level is completed
     public boolean isLevelCompleted(String difficulty, int level) {
         return progressTracker.isLevelCompleted(difficulty, level);
+    }
+    
+    /**
+    * Store potion types from visualization in the model
+    * This ensures dialogue can access these values
+    */
+    public void storePotionTypes(String leftPotionType, String rightPotionType) {
+        if (model != null) {
+            model.setLeftPotionType(leftPotionType);
+            model.setRightPotionType(rightPotionType);
+            System.out.println("DEBUG: Stored potion types in model: " + leftPotionType + ", " + rightPotionType);
+        }
     }
     
     

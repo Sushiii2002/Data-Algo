@@ -247,19 +247,17 @@ public class EnhancedStoryView extends JPanel {
     }
     
     /**
-     * Start dynamic dialogue for a specific phase
-     * @param phase The phase number (1-3)
-     */
+    * Start dynamic dialogue for a specific phase with proper potion type retrieval
+    * @param phase The phase number (1-3)
+    */
     public void startDynamicPhaseDialogue(int phase) {
         currentPhase = phase;
 
-        // Get the potion types from TimSortVisualization
-        // This requires a reference to the TimSortVisualization instance
-        String leftPotionType = "Fire Resistance"; // Default
-        String rightPotionType = "Strength";       // Default
+        // Get the potion types from the model
+        String leftPotionType = controller.model.getLeftPotionType();
+        String rightPotionType = controller.model.getRightPotionType();
 
-        // If we have a reference to the TimSortVisualization, get the actual values
-        // timSortViz.getLeftGroupPotionType() and timSortViz.getRightGroupPotionType()
+        System.out.println("DEBUG: Retrieved potion types for dialogue: " + leftPotionType + ", " + rightPotionType);
 
         // Update phase indicators
         for (int i = 0; i < phaseLabels.length; i++) {
@@ -283,9 +281,17 @@ public class EnhancedStoryView extends JPanel {
         // Show phase indicators
         phaseIndicatorsPanel.setVisible(true);
 
-        // Get dynamic dialogue for this phase
-        List<NarrativeSystem.DialogueEntry> dialogueSequence = 
-            narrativeSystem.getDynamicDialogue(phase, leftPotionType, rightPotionType);
+        // Determine if we're in Level 2 to get the appropriate dialogue
+        boolean isLevel2 = controller.model.getGameLevel() == 2;
+        List<NarrativeSystem.DialogueEntry> dialogueSequence;
+
+        if (isLevel2) {
+            // Get Level 2 specific dialogue
+            dialogueSequence = narrativeSystem.getDynamicLevel2Dialogue(phase, leftPotionType, rightPotionType);
+        } else {
+            // Get standard dialogue
+            dialogueSequence = narrativeSystem.getDynamicDialogue(phase, leftPotionType, rightPotionType);
+        }
 
         // Start the dialogue
         dialogueManager.startDialogue(dialogueSequence);
@@ -459,9 +465,20 @@ public class EnhancedStoryView extends JPanel {
                 // Show title
                 titleLabel.setVisible(true);
 
-                // Start Level 2 intro dialogue
+                // Get the dialogue sequence
                 List<NarrativeSystem.DialogueEntry> level2IntroDialogues = 
                     narrativeSystem.getDialogueSequence("level2_intro");
+
+                // Set a completion handler for the dialogue manager
+                dialogueManager.setDialogueEndListener(new DialogueManager.DialogueEndListener() {
+                    @Override
+                    public void onDialogueEnd() {
+                        // Explicitly start Phase 1 of Level 2
+                        controller.startPhaseGameplay(1);
+                    }
+                });
+
+                // Start the dialogue
                 dialogueManager.startDialogue(level2IntroDialogues);
             }
         });
@@ -523,16 +540,15 @@ public class EnhancedStoryView extends JPanel {
     * Show boss battle result for Level 2 (Toxitar)
     */
     public void showLevel2BossBattleResult(boolean success, String selectedPotion) {
-        // Get appropriate dialogue key based on outcome
-        String dialogueKey = success ? "boss2_success" : "boss2_failure";
-
-        // Get the dialogue sequence from NarrativeSystem
-        List<NarrativeSystem.DialogueEntry> battleDialogues = narrativeSystem.getDialogueSequence(dialogueKey);
-
-        // If not found, use the dynamic method
-        if (battleDialogues == null || battleDialogues.isEmpty()) {
-            battleDialogues = narrativeSystem.getToxitarBattleOutcomeDialogue(success, selectedPotion);
+        // Get the potion from the model if not provided
+        if (selectedPotion == null || selectedPotion.isEmpty()) {
+            selectedPotion = controller.model.getSelectedPotion();
+            System.out.println("DEBUG: Retrieved selected potion from model: " + selectedPotion);
         }
+
+        // Get dynamic dialogue from NarrativeSystem
+        List<NarrativeSystem.DialogueEntry> battleDialogues = 
+            narrativeSystem.getToxitarBattleOutcomeDialogue(success, selectedPotion);
 
         // Set a special flag to indicate this is a boss battle result dialogue
         dialogueManager.setBossBattleResultDialogue(true);
