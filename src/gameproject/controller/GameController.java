@@ -20,7 +20,7 @@ import java.util.List;
  */
 public class GameController {
     public GameModel model;
-    private ProgressTracker progressTracker;
+    public ProgressTracker progressTracker;
     private ResourceManager resourceManager;
     private NarrativeSystem narrativeSystem;
     
@@ -280,51 +280,22 @@ public class GameController {
 
         // Show appropriate dialogue based on outcome with dynamic content
         if (bossLevel == 1) {
-            // Flameclaw (Level 1) - Existing code
+            // Flameclaw (Level 1) - Fixed to avoid timers
             enhancedStoryView.showBossBattleResult(success, bossLevel);
 
-            // Record progress if successful
-            if (success) {
-                progressTracker.completeLevel("Beginner", bossLevel, 3);
-
-                // After a successful completion of Level 1, transition to Level 2
-                Timer transitionTimer = new Timer(5000, e -> {
-                    transitionToLevel2();
-                });
-                transitionTimer.setRepeats(false);
-                transitionTimer.start();
-            }
+            // NO TIMER HERE! The transition happens in the EnhancedStoryView after fades
         } else if (bossLevel == 2) {
-            // Toxitar (Level 2) - existing code
+            // Toxitar (Level 2) - Fixed to avoid timers
             enhancedStoryView.showLevel2BossBattleResult(success, selectedPotion);
 
-            // Record progress if successful
-            if (success) {
-                progressTracker.completeLevel("Intermediate", 1, 3);
-
-                // After successful completion of Level 2, transition to Level 3
-                Timer transitionTimer = new Timer(5000, e -> {
-                    transitionToLevel3();
-                });
-                transitionTimer.setRepeats(false);
-                transitionTimer.start();
-            }
+            // NO TIMER HERE! The transition happens in the EnhancedStoryView after fades
         } else if (bossLevel == 3) {
-            // Lord Chaosa (Level 3) - new code
+            // Lord Chaosa (Level 3) - existing code
             enhancedStoryView.showLevel3BossBattleResult(success, selectedPotion);
 
-            // Record progress if successful
+            // After successful completion of Level 3, show game completion dialogue
             if (success) {
-                progressTracker.completeLevel("Advanced", 1, 3);
-
-                // After successful completion of Level 3, show game completion dialogue
-                if (success) {
-                    Timer completionTimer = new Timer(5000, e -> {
-                        showGameCompletion();
-                    });
-                    completionTimer.setRepeats(false);
-                    completionTimer.start();
-                }
+                // The fade effect and completion is handled within showLevel3BossBattleResult
             }
         }
     }
