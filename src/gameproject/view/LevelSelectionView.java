@@ -24,7 +24,7 @@ public class LevelSelectionView extends JPanel {
     private static final int LEVEL_BOX_SIZE = 190;
     private static final int LEVEL_SPACING = 50;
     private static final int ARROW_SIZE = 80;
-    private static final int STAR_SIZE = 32;
+    private static final int STAR_SIZE = 52;
     private static final int STAR_SPACING = 5;
     private static final int STARS_TOP_MARGIN = 15;
     
