@@ -57,6 +57,7 @@ public class ProgressTracker implements Serializable {
      */
     public boolean isLevelCompleted(String difficulty, int levelNumber) {
         String levelId = getLevelId(difficulty, levelNumber);
+        System.out.println("DEBUG: Checking if level is completed: " + levelId);
         return completedLevels.containsKey(levelId);
     }
     
@@ -74,6 +75,7 @@ public class ProgressTracker implements Serializable {
     public void completeLevel(String difficulty, int levelNumber, int stars) {
         String levelId = getLevelId(difficulty, levelNumber);
         int currentStars = completedLevels.getOrDefault(levelId, 0);
+        System.out.println("DEBUG: Completing level: " + levelId + " with stars: " + stars);
         
         // Only update if we earned more stars
         if (stars > currentStars) {

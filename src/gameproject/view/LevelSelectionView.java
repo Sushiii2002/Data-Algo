@@ -9,7 +9,7 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 
 /**
- * View for the level selection screen with improved centering and no stars
+ * View for the level selection screen with improved centering and star display
  */
 public class LevelSelectionView extends JPanel {
     private GameController controller;
@@ -17,11 +17,20 @@ public class LevelSelectionView extends JPanel {
     private ImageIcon backgroundImage;
     private ImageIcon[] levelBoxIcons = new ImageIcon[3];
     private ImageIcon backArrowIcon;
+    private ImageIcon filledStarIcon;
+    private ImageIcon emptyStarIcon;
     
-    // Constants for sizing - adjusted for better screen positioning
-    private static final int LEVEL_BOX_SIZE = 190;   // Original 150 + 40 pixels
-    private static final int LEVEL_SPACING = 50;         // Horizontal spacing between levels
-    private static final int ARROW_SIZE = 80;        // Size for back arrow
+    // Constants for sizing
+    private static final int LEVEL_BOX_SIZE = 190;
+    private static final int LEVEL_SPACING = 50;
+    private static final int ARROW_SIZE = 80;
+    private static final int STAR_SIZE = 32;
+    private static final int STAR_SPACING = 5;
+    private static final int STARS_TOP_MARGIN = 15;
+    
+    // Store star labels to update them
+    private JLabel[][] starLabels = new JLabel[3][3]; // [level][star]
+    private BackgroundPanel mainPanel;
     
     /**
      * Constructor - Initialize the level selection view with centered elements
@@ -34,7 +43,7 @@ public class LevelSelectionView extends JPanel {
         loadResources();
         
         // Create main panel with background
-        BackgroundPanel mainPanel = new BackgroundPanel();
+        mainPanel = new BackgroundPanel();
         mainPanel.setLayout(null); // Use null layout for precise positioning
         
         // Add the main panel to this view
@@ -61,6 +70,24 @@ public class LevelSelectionView extends JPanel {
             
             // Calculate position for this box
             int boxX = startX + (i * (LEVEL_BOX_SIZE + LEVEL_SPACING));
+            
+            // Add stars above the level box
+            // Calculate total width of 3 stars with spacing
+            int starsWidth = (3 * STAR_SIZE) + (2 * STAR_SPACING);
+            // Calculate starting X to center stars above the level box
+            int starStartX = boxX + (LEVEL_BOX_SIZE - starsWidth) / 2;
+            // Calculate Y position for stars (above the level box)
+            int starsY = boxesY - STAR_SIZE - STARS_TOP_MARGIN;
+            
+            // Create 3 stars for each level
+            for (int j = 0; j < 3; j++) {
+                int starX = starStartX + (j * (STAR_SIZE + STAR_SPACING));
+                
+                // Always start with empty stars
+                starLabels[i][j] = new JLabel(emptyStarIcon);
+                starLabels[i][j].setBounds(starX, starsY, STAR_SIZE, STAR_SIZE);
+                mainPanel.add(starLabels[i][j]);
+            }
             
             // Create level box panel
             JPanel levelBox = new JPanel(new BorderLayout());
@@ -124,6 +151,9 @@ public class LevelSelectionView extends JPanel {
             }
         });
         mainPanel.add(backButton);
+        
+        // Update the stars display initially
+        updateLevelStatus();
     }
     
     /**
@@ -143,6 +173,15 @@ public class LevelSelectionView extends JPanel {
             ImageIcon originalBackArrow = new ImageIcon(getClass().getResource("/gameproject/resources/arrowBack.png"));
             Image scaledBackArrow = originalBackArrow.getImage().getScaledInstance(ARROW_SIZE, ARROW_SIZE, Image.SCALE_SMOOTH);
             backArrowIcon = new ImageIcon(scaledBackArrow);
+            
+            // Load star icons
+            ImageIcon originalFilledStar = new ImageIcon(getClass().getResource("/gameproject/resources/filledStar.png"));
+            Image scaledFilledStar = originalFilledStar.getImage().getScaledInstance(STAR_SIZE, STAR_SIZE, Image.SCALE_SMOOTH);
+            filledStarIcon = new ImageIcon(scaledFilledStar);
+            
+            ImageIcon originalEmptyStar = new ImageIcon(getClass().getResource("/gameproject/resources/emptyStar.png"));
+            Image scaledEmptyStar = originalEmptyStar.getImage().getScaledInstance(STAR_SIZE, STAR_SIZE, Image.SCALE_SMOOTH);
+            emptyStarIcon = new ImageIcon(scaledEmptyStar);
             
             // Load and resize level box images
             for (int i = 0; i < 3; i++) {
@@ -168,11 +207,45 @@ public class LevelSelectionView extends JPanel {
     
     /**
      * Update the level status based on progress
-     * This method is kept for compatibility but doesn't show stars anymore
      */
     public void updateLevelStatus() {
-        // Method kept for interface compatibility, but doesn't do anything
-        // since we've removed the stars from the UI
+        // Define difficulty strings for each level
+        String[] difficulties = {"Beginner", "Intermediate", "Advanced"};
+        
+        // For each level, update the star display
+        for (int i = 0; i < 3; i++) {
+            String difficulty = difficulties[i];
+            int levelNum = 1; // Always 1 since each level is the first of its difficulty
+            
+            // Log the completion check for debugging
+            System.out.println("DEBUG: Checking completion for " + difficulty + " level " + levelNum);
+            boolean isCompleted = controller.isLevelCompleted(difficulty, levelNum);
+            System.out.println("DEBUG: Level completed: " + isCompleted);
+            
+            // Update stars based on completion
+            if (isCompleted) {
+                // Get stars earned
+                int starsEarned = controller.getStarsForLevel(difficulty, levelNum);
+                System.out.println("DEBUG: Stars earned: " + starsEarned);
+                
+                // Update star display
+                for (int j = 0; j < 3; j++) {
+                    if (j < starsEarned) {
+                        starLabels[i][j].setIcon(filledStarIcon);
+                    } else {
+                        starLabels[i][j].setIcon(emptyStarIcon);
+                    }
+                }
+            } else {
+                // Level not completed, show empty stars
+                for (int j = 0; j < 3; j++) {
+                    starLabels[i][j].setIcon(emptyStarIcon);
+                }
+            }
+        }
+        
+        // Force repaint to update UI
+        mainPanel.repaint();
     }
     
     /**
