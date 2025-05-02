@@ -339,13 +339,14 @@ public class EnhancedStoryView extends JPanel {
         String dialogueKey = success ? "boss" + bossLevel + "_success" : "boss" + bossLevel + "_failure";
         List<NarrativeSystem.DialogueEntry> battleDialogues = 
             narrativeSystem.getDialogueSequence(dialogueKey);
-
+        
         // IMPORTANT: Make sure dialogueManager is visible and on top
         dialogueManager.setVisible(true);
         if (getComponentZOrder(dialogueManager) != 0) {
             setComponentZOrder(dialogueManager, 0);
         }
-
+        
+        
         // Handle successful battle with a black screen transition
         if (success) {
             dialogueManager.setDialogueEndListener(new DialogueManager.DialogueEndListener() {
@@ -483,7 +484,7 @@ public class EnhancedStoryView extends JPanel {
         repaint();
     }
 
-
+    //endddd
     
     
     
