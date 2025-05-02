@@ -305,19 +305,18 @@ public class EnhancedStoryView extends JPanel {
         // Show phase indicators
         phaseIndicatorsPanel.setVisible(true);
 
-        // Determine if we're in Level 2 to get the appropriate dialogue
-        boolean isLevel3 = controller.model.getGameLevel() == 3;
-        boolean isLevel2 = controller.model.getGameLevel() == 2;
+        // Determine if we're in Level 2 or 3 to get the appropriate dialogue
+        int gameLevel = controller.model.getGameLevel();
         List<NarrativeSystem.DialogueEntry> dialogueSequence;
 
-        if (isLevel3) {
+        if (gameLevel == 3) {
             // Get Level 3 specific dialogue
             dialogueSequence = narrativeSystem.getDynamicLevel3Dialogue(phase, leftPotionType, rightPotionType);
-        } else if (isLevel2) {
+        } else if (gameLevel == 2) {
             // Get Level 2 specific dialogue
             dialogueSequence = narrativeSystem.getDynamicLevel2Dialogue(phase, leftPotionType, rightPotionType);
         } else {
-            // Get standard dialogue
+            // Get standard dialogue for Level 1
             dialogueSequence = narrativeSystem.getDynamicDialogue(phase, leftPotionType, rightPotionType);
         }
 
@@ -815,7 +814,7 @@ public class EnhancedStoryView extends JPanel {
     /**
     * Show boss battle result for Level 3 (Lord Chaosa)
     */
-    public void showLevel3BossBattleResult(boolean success, String selectedPotion) {
+   public void showLevel3BossBattleResult(boolean success, String selectedPotion) {
         // Get the potion from the model if not provided
         if (selectedPotion == null || selectedPotion.isEmpty()) {
             selectedPotion = controller.model.getSelectedPotion();
@@ -841,68 +840,17 @@ public class EnhancedStoryView extends JPanel {
 
         // If successful, set a listener to show game completion when dialogue ends
         if (success) {
-            // IMPORTANT FIX: Use a flag to track if the transition has already happened
-            final boolean[] transitionStarted = { false };
-
             dialogueManager.setDialogueEndListener(new DialogueManager.DialogueEndListener() {
                 @Override
                 public void onDialogueEnd() {
-                    System.out.println("DEBUG: Battle success dialogue ended, adding delay before showing game completion");
+                    System.out.println("DEBUG: Battle success dialogue ended, now showing game completion");
 
-                    // IMPORTANT FIX: Only start the transition if it hasn't started yet
-                    if (!transitionStarted[0]) {
-                        transitionStarted[0] = true;
+                    // IMPORTANT: Remove any existing dialogue manager or overlays first
+                    // Make sure dialogueManager is not visible during transition
+                    dialogueManager.setVisible(false);
 
-                        // IMPORTANT FIX: Remove any existing dialogue manager or overlays first
-                        // Make sure dialogueManager is not visible during transition
-                        dialogueManager.setVisible(false);
-
-                        // IMPORTANT FIX: Create a separate fade out panel for the transition
-                        JPanel fadePanel = new JPanel() {
-                            @Override
-                            protected void paintComponent(Graphics g) {
-                                super.paintComponent(g);
-                                Graphics2D g2d = (Graphics2D) g;
-                                g2d.setColor(new Color(0, 0, 0, 200)); // Semi-transparent black
-                                g2d.fillRect(0, 0, getWidth(), getHeight());
-                            }
-                        };
-                        fadePanel.setBounds(0, 0, GameConstants.WINDOW_WIDTH, GameConstants.WINDOW_HEIGHT);
-                        fadePanel.setOpaque(false);
-                        add(fadePanel, 0);
-
-                        System.out.println("DEBUG: Added fade panel for transition");
-
-                        // Create a fade out effect
-                        Timer fadeOutTimer = new Timer(50, new ActionListener() {
-                            float alpha = 0.0f; // Start transparent and fade to black
-
-                            @Override
-                            public void actionPerformed(ActionEvent e) {
-                                alpha += 0.05f;
-                                if (alpha >= 1.0f) {
-                                    alpha = 1.0f;
-                                    ((Timer)e.getSource()).stop();
-
-                                    System.out.println("DEBUG: Fade out complete, waiting 1 second before game completion");
-
-                                    // After fade out, wait 1 second and then show completion dialogue
-                                    Timer delayTimer = new Timer(1000, ev -> {
-                                        // Remove the fade panel
-                                        remove(fadePanel);
-                                        System.out.println("DEBUG: Showing game completion dialogue");
-                                        showGameCompletionDialogue();
-                                    });
-                                    delayTimer.setRepeats(false);
-                                    delayTimer.start();
-                                }
-
-                                // Update fade panel opacity
-                                fadePanel.repaint();
-                            }
-                        });
-                        fadeOutTimer.start();
-                    }
+                    // Immediately show game completion (no delay)
+                    showGameCompletionDialogue();
                 }
             });
         } else {
@@ -946,8 +894,7 @@ public class EnhancedStoryView extends JPanel {
         // Reset dialogueManager state
         dialogueManager.setBossBattleResultDialogue(false);
 
-        // IMPORTANT: Create a black screen that fully covers the view
-        // This ensures we start from a completely black screen
+        // Create a simple, very brief fade effect (1 second)
         final JPanel blackoutPanel = new JPanel() {
             @Override
             protected void paintComponent(Graphics g) {
@@ -959,7 +906,7 @@ public class EnhancedStoryView extends JPanel {
         blackoutPanel.setBounds(0, 0, GameConstants.WINDOW_WIDTH, GameConstants.WINDOW_HEIGHT);
         blackoutPanel.setOpaque(true);
         add(blackoutPanel, 0);
-        System.out.println("DEBUG: Added black screen before fade-in");
+        System.out.println("DEBUG: Added black screen for transition");
 
         // Get the game completion dialogue
         List<NarrativeSystem.DialogueEntry> completionDialogues = 
@@ -975,67 +922,58 @@ public class EnhancedStoryView extends JPanel {
         titleLabel.setText("The Harmony of Order Restored");
         titleLabel.setVisible(true);
 
-        // Wait 1 full second before starting fade-in
-        Timer delayBeforeFadeTimer = new Timer(1000, e -> {
-            System.out.println("DEBUG: Starting fade-in after delay");
+        // Quick 1-second fade transition
+        Timer fadeTimer = new Timer(20, new ActionListener() {
+            float alpha = 1.0f;
+            int frameCount = 0;
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                frameCount++;
+                // Complete fade in 50 frames (1 second)
+                if (frameCount >= 50) {
+                    // Remove the black panel
+                    remove(blackoutPanel);
+                    ((Timer)e.getSource()).stop();
 
-            // Create a fade-in effect from black
-            Timer fadeInTimer = new Timer(50, new ActionListener() {
-                float alpha = 1.0f; // Start fully black and fade to transparent
+                    // Make dialogue manager visible again
+                    dialogueManager.setVisible(true);
 
-                @Override
-                public void actionPerformed(ActionEvent e) {
-                    alpha -= 0.05f;
-                    if (alpha <= 0.0f) {
-                        alpha = 0.0f;
-                        ((Timer)e.getSource()).stop();
+                    // Set a listener to go to main menu when completion dialogue ends
+                    dialogueManager.setDialogueEndListener(new DialogueManager.DialogueEndListener() {
+                        @Override
+                        public void onDialogueEnd() {
+                            System.out.println("DEBUG: Game completion dialogue ended, returning to main menu");
+                            controller.showMainMenu();
+                        }
+                    });
 
-                        // Remove the black panel when fade-in is complete
-                        remove(blackoutPanel);
-                        System.out.println("DEBUG: Fade-in complete, removed black screen");
+                    // Start the dialogue
+                    System.out.println("DEBUG: Starting completion dialogue");
+                    dialogueManager.startDialogue(completionDialogues);
 
-                        // Wait another short moment before showing dialogue
-                        Timer finalDelayTimer = new Timer(500, ev -> {
-                            // Make dialogue manager visible again
-                            dialogueManager.setVisible(true);
-
-                            // Set a listener to go to main menu when completion dialogue ends
-                            dialogueManager.setDialogueEndListener(new DialogueManager.DialogueEndListener() {
-                                @Override
-                                public void onDialogueEnd() {
-                                    System.out.println("DEBUG: Game completion dialogue ended, returning to main menu");
-                                    controller.showMainMenu();
-                                }
-                            });
-
-                            // Start the dialogue
-                            System.out.println("DEBUG: Starting completion dialogue");
-                            dialogueManager.startDialogue(completionDialogues);
-                        });
-                        finalDelayTimer.setRepeats(false);
-                        finalDelayTimer.start();
-                    }
-
-                    // Update black panel opacity during fade
-                    float currentAlpha = alpha;
-                    blackoutPanel.setBackground(new Color(0, 0, 0, (int)(currentAlpha * 255)));
-                    blackoutPanel.repaint();
+                    // Force repaint
+                    revalidate();
+                    repaint();
+                } else {
+                    // Fade out black panel
+                    alpha = 1.0f - (frameCount / 50.0f);
+                    blackoutPanel.setBackground(new Color(0, 0, 0, (int)(alpha * 255)));
+                    repaint();
                 }
-            });
-
-            // Start the fade-in effect
-            fadeInTimer.start();
+            }
         });
-        delayBeforeFadeTimer.setRepeats(false);
-        delayBeforeFadeTimer.start();
+
+        // Start the fade timer immediately
+        fadeTimer.start();
 
         // Force revalidate and repaint
         revalidate();
         repaint();
     }
 
-    
-    
+
+
+
     
     
     

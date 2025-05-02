@@ -381,7 +381,7 @@ public class NarrativeSystem {
         List<DialogueEntry> dialogueSequence = new ArrayList<>();
 
         // Phase 1 - Eye of Pattern for Level 2
-         if (phase == 1) {
+        if (phase == 1) {
             // Remove duplicate entries and make sure text is complete
             dialogueSequence.add(new DialogueEntry("MasterOrdin", 
                 "The Eye of Pattern reveals natural sequences even in chaos. For Toxitar, we need ingredients that enhance movement and agility.", 
@@ -465,17 +465,20 @@ public class NarrativeSystem {
 
         return dialogueSequence;
     }
+
+    
+    
     
     
     
     
     /**
-    * Get dynamic hints for Level 2 based on the current phase
-    */
+     * Get dynamic hints for Level 2 based on the current phase
+     */
     public String getDynamicLevel2Hint(int phase) {
         switch(phase) {
             case 1:
-                return "Look for green ingredients with light, airy qualities. These enhance movement and reflexes, which are key to avoiding Toxitar's poison.";
+                return "Look for ingredients with green coloring that enhance movement and reflexes. These will be key to avoiding Toxitar's poison.";
             case 2:
                 return "Arrange the ingredients from lightest to heaviest. For dexterity potions, the proper sequence is crucial for achieving maximum agility.";
             case 3:
@@ -602,11 +605,14 @@ public class NarrativeSystem {
     /**
     * Get dynamic dialogue for a specific phase based on player choices
     * @param phase The current phase (1, 2, or 3)
-    * @param potionTypes The potion types being worked with (can be null in early phases)
+    * @param leftPotionType The left potion type
+    * @param rightPotionType The right potion type
     * @return List of DialogueEntry objects with dynamic content
     */
     public List<DialogueEntry> getDynamicDialogue(int phase, String leftPotionType, String rightPotionType) {
         List<DialogueEntry> dialogueSequence = new ArrayList<>();
+
+        // Default to Level 1 (Flameclaw) dialogue
 
         // Phase 1 - Eye of Pattern
         if (phase == 1) {
