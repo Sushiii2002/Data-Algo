@@ -794,6 +794,22 @@ public class TimSortVisualization extends JPanel {
         // Define the grid padding (space between grid edge and first ingredients)
         int GRID_PADDING = 12;
 
+        // ADDED: Check if gridPanel has correct dimensions before placing ingredients
+        if (gridPanel.getWidth() != (GRID_COLS * INGREDIENT_SIZE) + (GRID_PADDING * 2) ||
+            gridPanel.getHeight() != (GRID_ROWS * INGREDIENT_SIZE) + (GRID_PADDING * 2)) {
+
+            // Reset grid panel dimensions if they've been changed
+            int gridWidth = GRID_COLS * INGREDIENT_SIZE;
+            int gridHeight = GRID_ROWS * INGREDIENT_SIZE;
+            int totalWidth = gridWidth + (GRID_PADDING * 2);
+            int totalHeight = gridHeight + (GRID_PADDING * 2);
+            int gridX = (GameConstants.WINDOW_WIDTH - totalWidth) / 2;
+            int gridY = 135;
+
+            gridPanel.setBounds(gridX, gridY, totalWidth, totalHeight);
+            System.out.println("DEBUG: Reset gridPanel dimensions to: " + gridX + "," + gridY + "," + totalWidth + "," + totalHeight);
+        }
+
         for (int i = 0; i < allIngredients.size(); i++) {
             IngredientItem ingredient = allIngredients.get(i);
 
@@ -822,7 +838,6 @@ public class TimSortVisualization extends JPanel {
         }
     }
 
-    
   
     
     /**
@@ -3024,6 +3039,20 @@ public class TimSortVisualization extends JPanel {
             // Update phase label
             updatePhaseLabel();
 
+            // ADDED: Ensure grid panel is correctly sized for all phases
+            if (currentPhase == 1) {
+                // Reset grid panel dimensions for Phase 1
+                int cellSize = INGREDIENT_SIZE;
+                int gridWidth = GRID_COLS * cellSize;
+                int gridHeight = GRID_ROWS * cellSize;
+                int GRID_PADDING = 12;
+                int totalWidth = gridWidth + (GRID_PADDING * 2);
+                int totalHeight = gridHeight + (GRID_PADDING * 2);
+                int gridX = (GameConstants.WINDOW_WIDTH - totalWidth) / 2;
+                int gridY = 135;
+                gridPanel.setBounds(gridX, gridY, totalWidth, totalHeight);
+            }
+
             // Then initialize the proper phase UI
             initializePhaseUI();
 
@@ -3700,6 +3729,7 @@ public class TimSortVisualization extends JPanel {
         
         
         // CRITICAL FIX: Explicitly reset grid panel position to match Level 1
+        // CRITICAL FIX: Explicitly reset grid panel position to match Level 1
         int cellSize = INGREDIENT_SIZE;
         int gridWidth = GRID_COLS * cellSize;
         int gridHeight = GRID_ROWS * cellSize;
@@ -3715,7 +3745,7 @@ public class TimSortVisualization extends JPanel {
 
         // Reset the grid panel position
         gridPanel.setBounds(gridX, gridY, totalWidth, totalHeight);
-
+        
         // Ensure the grid panel is visible and has null layout
         gridPanel.setLayout(null);
         gridPanel.setOpaque(false);
@@ -3738,10 +3768,8 @@ public class TimSortVisualization extends JPanel {
             "Sort each group from lightest to heaviest. The proper sequence is crucial for dexterity potions.",
             "Against poison that fills the air, quick movement is better than raw strength."
         };
+           
         
-        
-        gridPanel.setBounds(0, 0, GameConstants.WINDOW_WIDTH, GameConstants.WINDOW_HEIGHT);
-    
         // If there's a custom background for Level 2, ensure it's using the correct dimensions
         // For now, use the same grid dimensions as Level 1
 
