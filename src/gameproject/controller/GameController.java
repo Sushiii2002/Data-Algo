@@ -326,13 +326,6 @@ public class GameController {
             // Record progress if successful
             if (success) {
                 progressTracker.completeLevel("Advanced", 1, 3);
-
-                // After successful completion of Level 3, show game completion dialogue
-                Timer completionTimer = new Timer(5000, e -> {
-                    showGameCompletion();
-                });
-                completionTimer.setRepeats(false);
-                completionTimer.start();
             }
         }
     }

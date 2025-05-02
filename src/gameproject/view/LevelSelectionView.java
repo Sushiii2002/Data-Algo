@@ -19,9 +19,9 @@ public class LevelSelectionView extends JPanel {
     private ImageIcon backArrowIcon;
     
     // Constants for sizing - adjusted for better screen positioning
-    private static final int LEVEL_BOX_SIZE = 150;   // Size for level boxes
-    private static final int LEVEL_SPACING = 50;     // Horizontal spacing between levels
-    private static final int ARROW_SIZE = 40;        // Size for back arrow
+    private static final int LEVEL_BOX_SIZE = 190;   // Original 150 + 40 pixels
+    private static final int LEVEL_SPACING = 50;         // Horizontal spacing between levels
+    private static final int ARROW_SIZE = 80;        // Size for back arrow
     
     /**
      * Constructor - Initialize the level selection view with centered elements
@@ -42,7 +42,7 @@ public class LevelSelectionView extends JPanel {
         
         // Create title label with larger font - precisely centered
         JLabel titleLabel = new JLabel("SELECT A LEVEL", JLabel.CENTER);
-        titleLabel.setFont(pixelifyFont.deriveFont(Font.BOLD, 36f));
+        titleLabel.setFont(pixelifyFont.deriveFont(Font.BOLD, 80f));
         titleLabel.setForeground(Color.WHITE);
         // Position title exactly in the center horizontally and at appropriate vertical position
         titleLabel.setBounds(0, 125, GameConstants.WINDOW_WIDTH, 50);
@@ -147,12 +147,12 @@ public class LevelSelectionView extends JPanel {
             // Load and resize level box images
             for (int i = 0; i < 3; i++) {
                 String resourcePath = "/gameproject/resources/level" + (i+1) + ".png";
-                
+
                 // Try uppercase with underscore if standard name doesn't work
                 if (getClass().getResource(resourcePath) == null) {
                     resourcePath = "/gameproject/resources/LEVEL_" + (i+1) + ".png";
                 }
-                
+
                 ImageIcon originalIcon = new ImageIcon(getClass().getResource(resourcePath));
                 Image scaledImage = originalIcon.getImage().getScaledInstance(LEVEL_BOX_SIZE, LEVEL_BOX_SIZE, Image.SCALE_SMOOTH);
                 levelBoxIcons[i] = new ImageIcon(scaledImage);
