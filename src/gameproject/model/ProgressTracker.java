@@ -76,12 +76,17 @@ public class ProgressTracker implements Serializable {
         String levelId = getLevelId(difficulty, levelNumber);
         int currentStars = completedLevels.getOrDefault(levelId, 0);
         System.out.println("DEBUG: Completing level: " + levelId + " with stars: " + stars);
-        
+
         // Only update if we earned more stars
         if (stars > currentStars) {
             totalStarsEarned += (stars - currentStars);
             completedLevels.put(levelId, stars);
+            // CRITICAL FIX: Make sure to save progress immediately
             saveProgress();
+
+            // Add extra debug output
+            System.out.println("DEBUG: Progress updated for " + levelId + ", new stars: " + stars);
+            System.out.println("DEBUG: Total stars earned: " + totalStarsEarned);
         }
     }
     

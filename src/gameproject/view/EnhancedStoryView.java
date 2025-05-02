@@ -339,14 +339,16 @@ public class EnhancedStoryView extends JPanel {
         String dialogueKey = success ? "boss" + bossLevel + "_success" : "boss" + bossLevel + "_failure";
         List<NarrativeSystem.DialogueEntry> battleDialogues = 
             narrativeSystem.getDialogueSequence(dialogueKey);
-        
+
         // IMPORTANT: Make sure dialogueManager is visible and on top
         dialogueManager.setVisible(true);
         if (getComponentZOrder(dialogueManager) != 0) {
             setComponentZOrder(dialogueManager, 0);
         }
-        
-        
+
+        // CRITICAL FIX: Set the boss battle result flag before starting dialogue
+        dialogueManager.setBossBattleResultDialogue(true);
+
         // Handle successful battle with a black screen transition
         if (success) {
             dialogueManager.setDialogueEndListener(new DialogueManager.DialogueEndListener() {
@@ -398,6 +400,11 @@ public class EnhancedStoryView extends JPanel {
                                 Timer blackScreenTimer = new Timer(1000, ev -> {
                                     // Now start fade IN for transition dialogue
 
+                                    // CRITICAL FIX: Record progress for Level 1 completion here
+                                    // This is the important line to add:
+                                    controller.progressTracker.completeLevel("Beginner", 1, 3);
+                                    System.out.println("DEBUG: Level 1 completion recorded! Stars: 3");
+
                                     // Create a fresh dialogue manager for transition dialogue
                                     remove(dialogueManager);  // Remove old dialogue manager
                                     dialogueManager = new DialogueManager(controller);
@@ -435,10 +442,19 @@ public class EnhancedStoryView extends JPanel {
                                                 List<NarrativeSystem.DialogueEntry> transitionDialogues = 
                                                     narrativeSystem.getDialogueSequence("level1to2_transition");
 
-                                                // Record completion
-                                                controller.progressTracker.completeLevel("Beginner", bossLevel, 3);
+                                                // CRITICAL FIX: Set a new listener for the transition dialogue completion
+                                                dialogueManager.setDialogueEndListener(new DialogueManager.DialogueEndListener() {
+                                                    @Override
+                                                    public void onDialogueEnd() {
+                                                        // Make sure progress is saved before returning to level selection
+                                                        controller.progressTracker.saveProgress();
 
-                                                // Start the transition dialogue directly
+                                                        // Finally navigate to level selection
+                                                        controller.showLevelSelection();
+                                                    }
+                                                });
+
+                                                // Start the transition dialogue
                                                 dialogueManager.startDialogue(transitionDialogues);
 
                                                 // Force refresh
@@ -465,18 +481,10 @@ public class EnhancedStoryView extends JPanel {
                     repaint();
                 }
             });
-        } else {
-            // For failed battles, handle as before
-            dialogueManager.setDialogueEndListener(new DialogueManager.DialogueEndListener() {
-                @Override
-                public void onDialogueEnd() {
-                    System.out.println("DEBUG: Battle failure dialogue ended, showing level selection");
-                    controller.showLevelSelection();
-                }
-            });
         }
 
-        // Start dialogue
+        // Set game state and start dialogue
+        controller.model.setCurrentState(GameState.STORY_MODE);
         dialogueManager.startDialogue(battleDialogues);
 
         // Force repaint
@@ -724,6 +732,9 @@ public class EnhancedStoryView extends JPanel {
             setComponentZOrder(dialogueManager, 0);
         }
 
+        // CRITICAL FIX: Set the boss battle result flag before starting dialogue
+        dialogueManager.setBossBattleResultDialogue(true);
+
         // Handle successful battle with a black screen transition
         if (success) {
             dialogueManager.setDialogueEndListener(new DialogueManager.DialogueEndListener() {
@@ -778,16 +789,60 @@ public class EnhancedStoryView extends JPanel {
                                         controller.progressTracker.completeLevel("Intermediate", 1, 3);
                                     }
 
-                                    // Tell the controller the battle is complete
-                                    // This triggers the Level 2 -> Level 3 transition WITHOUT using additional timers
-                                    controller.onBossBattleComplete(success, 2);
+                                    // CRITICAL FIX: Create a fresh dialogue manager for level 2 to 3 transition
+                                    remove(dialogueManager);  // Remove old dialogue manager
+                                    dialogueManager = new DialogueManager(controller);
+                                    dialogueManager.setBounds(0, 0, GameConstants.WINDOW_WIDTH, GameConstants.WINDOW_HEIGHT);
+                                    add(dialogueManager);
 
-                                    // Remove the black screen - will be handled in the next scene
-                                    remove(blackScreen);
+                                    // Start fade IN (black to transition dialogue)
+                                    final float[] fadeInAlpha = {1.0f};
 
-                                    // Force refresh
-                                    revalidate();
-                                    repaint();
+                                    Timer fadeInTimer = new Timer(FADE_DURATION/FRAMES, new ActionListener() {
+                                        int fadeInFrame = 0;
+
+                                        @Override
+                                        public void actionPerformed(ActionEvent evt) {
+                                            fadeInFrame++;
+
+                                            // Calculate alpha based on current frame (decreasing)
+                                            fadeInAlpha[0] = 1.0f - ((float)fadeInFrame / FRAMES);
+
+                                            // Update black screen opacity (getting more transparent)
+                                            blackScreen.setBackground(new Color(0, 0, 0, Math.max(0.0f, fadeInAlpha[0])));
+
+                                            // When fade in is complete
+                                            if (fadeInFrame >= FRAMES) {
+                                                ((Timer)evt.getSource()).stop();
+
+                                                // Remove black screen when completely faded in
+                                                remove(blackScreen);
+
+                                                // Get Level 2 to Level 3 transition dialogue
+                                                List<NarrativeSystem.DialogueEntry> transitionDialogues = 
+                                                    narrativeSystem.getDialogueSequence("level2to3_transition");
+
+                                                // CRITICAL FIX: Set a new listener for the transition dialogue completion
+                                                dialogueManager.setDialogueEndListener(new DialogueManager.DialogueEndListener() {
+                                                    @Override
+                                                    public void onDialogueEnd() {
+                                                        // Finally navigate to level selection
+                                                        controller.showLevelSelection();
+                                                    }
+                                                });
+
+                                                // Start the transition dialogue
+                                                dialogueManager.startDialogue(transitionDialogues);
+
+                                                // Force refresh
+                                                revalidate();
+                                                repaint();
+                                            }
+                                        }
+                                    });
+
+                                    // Start the fade in animation
+                                    fadeInTimer.start();
                                 });
                                 blackScreenTimer.setRepeats(false);
                                 blackScreenTimer.start();
@@ -1026,126 +1081,141 @@ public class EnhancedStoryView extends JPanel {
             setComponentZOrder(dialogueManager, 0);
         }
 
+        // CRITICAL FIX: Set the boss battle result flag before starting dialogue
+        dialogueManager.setBossBattleResultDialogue(true);
+
         // Handle successful battle with a black screen transition
         if (success) {
-    dialogueManager.setDialogueEndListener(new DialogueManager.DialogueEndListener() {
-        @Override
-        public void onDialogueEnd() {
-            System.out.println("DEBUG: Battle success dialogue ended, now showing game completion with fade transition");
-            
-            // Create a black screen overlay with initial transparency of 0
-            final JPanel blackScreen = new JPanel() {
+            dialogueManager.setDialogueEndListener(new DialogueManager.DialogueEndListener() {
                 @Override
-                protected void paintComponent(Graphics g) {
-                    super.paintComponent(g);
-                    g.setColor(Color.BLACK);
-                    g.fillRect(0, 0, getWidth(), getHeight());
-                }
-            };
-            blackScreen.setBounds(0, 0, GameConstants.WINDOW_WIDTH, GameConstants.WINDOW_HEIGHT);
-            blackScreen.setOpaque(true);
-            
-            // Make it initially transparent
-            blackScreen.setBackground(new Color(0, 0, 0, 0));
-            add(blackScreen, 0);
-            
-            // Create fade OUT animation (battle dialogue to black)
-            final float[] alpha = {0.0f};
-            final int FADE_DURATION = 1000; // 1 second fade
-            final int FRAMES = 20; // 20 animation frames
-            
-            Timer fadeOutTimer = new Timer(FADE_DURATION/FRAMES, new ActionListener() {
-                int frame = 0;
-                
-                @Override
-                    public void actionPerformed(ActionEvent e) {
-                        frame++;
-                        // Calculate alpha based on current frame
-                        alpha[0] = (float)frame / FRAMES;
+                public void onDialogueEnd() {
+                    System.out.println("DEBUG: Battle success dialogue ended, now showing game completion with fade transition");
 
-                        // Update black screen opacity
-                        blackScreen.setBackground(new Color(0, 0, 0, Math.min(1.0f, alpha[0])));
-
-                        // When fade out is complete
-                        if (frame >= FRAMES) {
-                            ((Timer)e.getSource()).stop();
-
-                            // Hide the dialogue manager now that screen is black
-                            dialogueManager.setVisible(false);
-
-                            // Wait for 1 second with black screen
-                            Timer blackScreenTimer = new Timer(1000, ev -> {
-                                // Now start fade IN for completion dialogue
-
-                                // Create a fresh dialogue manager for completion dialogue
-                                remove(dialogueManager);  // Remove old dialogue manager
-                                dialogueManager = new DialogueManager(controller);
-                                dialogueManager.setBounds(0, 0, GameConstants.WINDOW_WIDTH, GameConstants.WINDOW_HEIGHT);
-                                add(dialogueManager);
-
-                                // Ensure the black screen is on top
-                                setComponentZOrder(blackScreen, 0);
-
-                                // Start fade IN (black to completion dialogue)
-                                final float[] fadeInAlpha = {1.0f};
-
-                                Timer fadeInTimer = new Timer(FADE_DURATION/FRAMES, new ActionListener() {
-                                    int fadeInFrame = 0;
-
-                                    @Override
-                                    public void actionPerformed(ActionEvent evt) {
-                                        fadeInFrame++;
-
-                                        // Calculate alpha based on current frame (decreasing)
-                                        fadeInAlpha[0] = 1.0f - ((float)fadeInFrame / FRAMES);
-
-                                        // Update black screen opacity (getting more transparent)
-                                        blackScreen.setBackground(new Color(0, 0, 0, Math.max(0.0f, fadeInAlpha[0])));
-
-                                        // When fade in is complete
-                                        if (fadeInFrame >= FRAMES) {
-                                            ((Timer)evt.getSource()).stop();
-
-                                            // Remove black screen when completely faded in
-                                            remove(blackScreen);
-
-                                            // Force refresh
-                                            revalidate();
-                                            repaint();
-                                        }
-                                    }
-                                });
-
-                                // Show the completion dialogue (will be visible as black screen fades out)
-                                showGameCompletionDialogue();
-
-                                // Start the fade in animation
-                                fadeInTimer.start();
-                            });
-                            blackScreenTimer.setRepeats(false);
-                            blackScreenTimer.start();
+                    // Create a black screen overlay with initial transparency of 0
+                    final JPanel blackScreen = new JPanel() {
+                        @Override
+                        protected void paintComponent(Graphics g) {
+                            super.paintComponent(g);
+                            g.setColor(Color.BLACK);
+                            g.fillRect(0, 0, getWidth(), getHeight());
                         }
-                    }
-                });
+                    };
+                    blackScreen.setBounds(0, 0, GameConstants.WINDOW_WIDTH, GameConstants.WINDOW_HEIGHT);
+                    blackScreen.setOpaque(true);
 
-                // Start the fade out animation
-                fadeOutTimer.start();
+                    // Make it initially transparent
+                    blackScreen.setBackground(new Color(0, 0, 0, 0));
+                    add(blackScreen, 0);
 
-                // Force refresh to start fade
-                revalidate();
-                repaint();
-            }
-        });
-    } else {
-        // For failed battles, handle as before
-        dialogueManager.setDialogueEndListener(new DialogueManager.DialogueEndListener() {
-            @Override
-            public void onDialogueEnd() {
-                System.out.println("DEBUG: Battle failure dialogue ended, showing level selection");
-                controller.showLevelSelection();
-            }
-        });
-    }
+                    // Create fade OUT animation (battle dialogue to black)
+                    final float[] alpha = {0.0f};
+                    final int FADE_DURATION = 1000; // 1 second fade
+                    final int FRAMES = 20; // 20 animation frames
+
+                    Timer fadeOutTimer = new Timer(FADE_DURATION/FRAMES, new ActionListener() {
+                        int frame = 0;
+
+                        @Override
+                        public void actionPerformed(ActionEvent e) {
+                            frame++;
+                            // Calculate alpha based on current frame
+                            alpha[0] = (float)frame / FRAMES;
+
+                            // Update black screen opacity
+                            blackScreen.setBackground(new Color(0, 0, 0, Math.min(1.0f, alpha[0])));
+
+                            // When fade out is complete
+                            if (frame >= FRAMES) {
+                                ((Timer)e.getSource()).stop();
+
+                                // Hide the dialogue manager now that screen is black
+                                dialogueManager.setVisible(false);
+
+                                // Wait for 1 second with black screen
+                                Timer blackScreenTimer = new Timer(1000, ev -> {
+                                    // Now start fade IN for completion dialogue
+
+                                    // CRITICAL FIX: Create a fresh dialogue manager for completion dialogue 
+                                    remove(dialogueManager);  // Remove old dialogue manager
+                                    dialogueManager = new DialogueManager(controller);
+                                    dialogueManager.setBounds(0, 0, GameConstants.WINDOW_WIDTH, GameConstants.WINDOW_HEIGHT);
+                                    add(dialogueManager);
+
+                                    // Ensure the black screen is on top
+                                    setComponentZOrder(blackScreen, 0);
+
+                                    // Start fade IN (black to completion dialogue)
+                                    final float[] fadeInAlpha = {1.0f};
+
+                                    Timer fadeInTimer = new Timer(FADE_DURATION/FRAMES, new ActionListener() {
+                                        int fadeInFrame = 0;
+
+                                        @Override
+                                        public void actionPerformed(ActionEvent evt) {
+                                            fadeInFrame++;
+
+                                            // Calculate alpha based on current frame (decreasing)
+                                            fadeInAlpha[0] = 1.0f - ((float)fadeInFrame / FRAMES);
+
+                                            // Update black screen opacity (getting more transparent)
+                                            blackScreen.setBackground(new Color(0, 0, 0, Math.max(0.0f, fadeInAlpha[0])));
+
+                                            // When fade in is complete
+                                            if (fadeInFrame >= FRAMES) {
+                                                ((Timer)evt.getSource()).stop();
+
+                                                // Remove black screen when completely faded in
+                                                remove(blackScreen);
+
+                                                // Record completion
+                                                controller.progressTracker.completeLevel("Advanced", 1, 3);
+
+                                                // CRITICAL FIX: Set a new listener for the end game completion dialogue
+                                                dialogueManager.setDialogueEndListener(new DialogueManager.DialogueEndListener() {
+                                                    @Override
+                                                    public void onDialogueEnd() {
+                                                        // Finally navigate to level selection
+                                                        controller.showLevelSelection();
+                                                    }
+                                                });
+
+                                                // Show the completion dialogue
+                                                showGameCompletionDialogue();
+
+                                                // Force refresh
+                                                revalidate();
+                                                repaint();
+                                            }
+                                        }
+                                    });
+
+                                    // Start the fade in animation
+                                    fadeInTimer.start();
+                                });
+                                blackScreenTimer.setRepeats(false);
+                                blackScreenTimer.start();
+                            }
+                        }
+                    });
+
+                    // Start the fade out animation
+                    fadeOutTimer.start();
+
+                    // Force refresh to start fade
+                    revalidate();
+                    repaint();
+                }
+            });
+        } else {
+            // For failed battles, handle as before
+            dialogueManager.setDialogueEndListener(new DialogueManager.DialogueEndListener() {
+                @Override
+                public void onDialogueEnd() {
+                    System.out.println("DEBUG: Battle failure dialogue ended, showing level selection");
+                    controller.showLevelSelection();
+                }
+            });
+        }
 
         // Set game state and start dialogue
         controller.model.setCurrentState(GameState.STORY_MODE);
@@ -1172,7 +1242,7 @@ public class EnhancedStoryView extends JPanel {
             }
         }
 
-        // Reset dialogueManager state
+        // CRITICAL FIX: Ensure we're not reusing any old dialogue manager state
         dialogueManager.setBossBattleResultDialogue(false);
 
         // Create a simple, very brief fade effect (1 second)
@@ -1219,12 +1289,12 @@ public class EnhancedStoryView extends JPanel {
                     // Make dialogue manager visible again
                     dialogueManager.setVisible(true);
 
-                    // Set a listener to go to main menu when completion dialogue ends
+                    // CRITICAL FIX: Set a listener to go to level selection (not main menu) when completion dialogue ends
                     dialogueManager.setDialogueEndListener(new DialogueManager.DialogueEndListener() {
                         @Override
                         public void onDialogueEnd() {
-                            System.out.println("DEBUG: Game completion dialogue ended, returning to main menu");
-                            controller.showMainMenu();
+                            System.out.println("DEBUG: Game completion dialogue ended, returning to level selection");
+                            controller.showLevelSelection();
                         }
                     });
 

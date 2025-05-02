@@ -211,23 +211,26 @@ public class LevelSelectionView extends JPanel {
     public void updateLevelStatus() {
         // Define difficulty strings for each level
         String[] difficulties = {"Beginner", "Intermediate", "Advanced"};
-        
+
+        // Force the progress tracker to reload progress
+        controller.progressTracker.saveProgress();
+
         // For each level, update the star display
         for (int i = 0; i < 3; i++) {
             String difficulty = difficulties[i];
             int levelNum = 1; // Always 1 since each level is the first of its difficulty
-            
+
             // Log the completion check for debugging
             System.out.println("DEBUG: Checking completion for " + difficulty + " level " + levelNum);
             boolean isCompleted = controller.isLevelCompleted(difficulty, levelNum);
             System.out.println("DEBUG: Level completed: " + isCompleted);
-            
+
             // Update stars based on completion
             if (isCompleted) {
                 // Get stars earned
                 int starsEarned = controller.getStarsForLevel(difficulty, levelNum);
                 System.out.println("DEBUG: Stars earned: " + starsEarned);
-                
+
                 // Update star display
                 for (int j = 0; j < 3; j++) {
                     if (j < starsEarned) {
@@ -243,7 +246,7 @@ public class LevelSelectionView extends JPanel {
                 }
             }
         }
-        
+
         // Force repaint to update UI
         mainPanel.repaint();
     }

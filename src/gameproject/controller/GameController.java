@@ -117,6 +117,9 @@ public class GameController {
         // Set game state to level selection
         model.setCurrentState(GameState.LEVEL_SELECTION);
 
+        // CRITICAL FIX: Make sure progress is saved and refreshed
+        progressTracker.saveProgress();
+
         // Update level status
         levelSelectionView.updateLevelStatus();
 
@@ -282,21 +285,12 @@ public class GameController {
         if (bossLevel == 1) {
             // Flameclaw (Level 1) - Fixed to avoid timers
             enhancedStoryView.showBossBattleResult(success, bossLevel);
-
-            // NO TIMER HERE! The transition happens in the EnhancedStoryView after fades
         } else if (bossLevel == 2) {
             // Toxitar (Level 2) - Fixed to avoid timers
             enhancedStoryView.showLevel2BossBattleResult(success, selectedPotion);
-
-            // NO TIMER HERE! The transition happens in the EnhancedStoryView after fades
         } else if (bossLevel == 3) {
             // Lord Chaosa (Level 3) - existing code
             enhancedStoryView.showLevel3BossBattleResult(success, selectedPotion);
-
-            // After successful completion of Level 3, show game completion dialogue
-            if (success) {
-                // The fade effect and completion is handled within showLevel3BossBattleResult
-            }
         }
     }
     
