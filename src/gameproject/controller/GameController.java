@@ -7,12 +7,15 @@ import gameproject.model.ProgressTracker;
 import gameproject.model.NarrativeSystem;
 import gameproject.view.*;
 import gameproject.ui.TimSortVisualization; // This import is correct
+import gameproject.ui.TimSortVisualization.LevelProgressData;
 import gameproject.util.ResourceManager;
 import gameproject.util.GameConstants;
 
 import javax.swing.*;
 import java.awt.*;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Enhanced controller class that integrates the narrative system for the TimSort RPG
@@ -36,6 +39,10 @@ public class GameController {
     
     private List<LevelConfig> allLevels;
     private boolean inLevelTransition = false;
+    
+    public Map<Integer, TimSortVisualization.LevelProgressData> levelProgressMap = new HashMap<>();
+    
+    
     
     /**
      * Constructor - Initialize the game controller
@@ -333,7 +340,35 @@ public class GameController {
             // Reset TimSort visualization for Level 3
             timSortVisualization.resetAllPhases();
             timSortVisualization.setGameLevel(3);
-            startLevel3FromSelection();
+
+            // Check if we have saved progress for Level 3
+            if (levelProgressMap != null && levelProgressMap.containsKey(3)) {
+                // Resume from saved phase
+                LevelProgressData progressData = levelProgressMap.get(3);
+                int savedPhase = progressData.getPhase();
+
+                // Set saved potion types if applicable
+                if (progressData.getLeftPotionType() != null) {
+                    model.setLeftPotionType(progressData.getLeftPotionType());
+                }
+                if (progressData.getRightPotionType() != null) {
+                    model.setRightPotionType(progressData.getRightPotionType());
+                }
+
+                System.out.println("DEBUG: Resuming Level 3 at phase " + savedPhase);
+
+                // Start at the saved phase
+                if (savedPhase > 1) {
+                    // Start from the saved phase
+                    startPhaseGameplay(savedPhase);
+                } else {
+                    // Start from beginning if phase is 1 or invalid
+                    startLevel3FromSelection();
+                }
+            } else {
+                // No saved progress, start from beginning
+                startLevel3FromSelection();
+            }
         }
         // Special handling for Level 2
         else if (difficulty.equals("Intermediate") && level == 1) {
@@ -342,15 +377,71 @@ public class GameController {
             // Reset TimSort visualization for Level 2
             timSortVisualization.resetAllPhases();
             timSortVisualization.setGameLevel(2);
-            startLevel2FromSelection();
+
+            // Check if we have saved progress for Level 2
+            if (levelProgressMap != null && levelProgressMap.containsKey(2)) {
+                // Resume from saved phase
+                LevelProgressData progressData = levelProgressMap.get(2);
+                int savedPhase = progressData.getPhase();
+
+                // Set saved potion types if applicable
+                if (progressData.getLeftPotionType() != null) {
+                    model.setLeftPotionType(progressData.getLeftPotionType());
+                }
+                if (progressData.getRightPotionType() != null) {
+                    model.setRightPotionType(progressData.getRightPotionType());
+                }
+
+                System.out.println("DEBUG: Resuming Level 2 at phase " + savedPhase);
+
+                // Start at the saved phase
+                if (savedPhase > 1) {
+                    // Start from the saved phase
+                    startPhaseGameplay(savedPhase);
+                } else {
+                    // Start from beginning if phase is 1 or invalid
+                    startLevel2FromSelection();
+                }
+            } else {
+                // No saved progress, start from beginning
+                startLevel2FromSelection();
+            }
         } 
         // For Level 1, start the story
         else if (difficulty.equals("Beginner") && level == 1) {
             model.setGameLevel(1);
             // Reset TimSort visualization for Level 1
             timSortVisualization.resetAllPhases();
-            timSortVisualization.setGameLevel(1); 
-            startGame();
+            timSortVisualization.setGameLevel(1);
+
+            // Check if we have saved progress for Level 1
+            if (levelProgressMap != null && levelProgressMap.containsKey(1)) {
+                // Resume from saved phase
+                LevelProgressData progressData = levelProgressMap.get(1);
+                int savedPhase = progressData.getPhase();
+
+                // Set saved potion types if applicable
+                if (progressData.getLeftPotionType() != null) {
+                    model.setLeftPotionType(progressData.getLeftPotionType());
+                }
+                if (progressData.getRightPotionType() != null) {
+                    model.setRightPotionType(progressData.getRightPotionType());
+                }
+
+                System.out.println("DEBUG: Resuming Level 1 at phase " + savedPhase);
+
+                // Start at the saved phase
+                if (savedPhase > 1) {
+                    // Start from the saved phase
+                    startPhaseGameplay(savedPhase);
+                } else {
+                    // Start from beginning if phase is 1 or invalid
+                    startGame();
+                }
+            } else {
+                // No saved progress, start from beginning
+                startGame();
+            }
         } else {
             // For other levels, go directly to game view
             gameView.updateLevelInfo(difficulty, level);

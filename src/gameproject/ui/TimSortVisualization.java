@@ -429,8 +429,8 @@ public class TimSortVisualization extends JPanel {
     }
     
     /**
-     * Display pause menu overlay with semi-transparent dark background
-     */
+    * Display pause menu overlay with semi-transparent dark background
+    */
     private void showPauseMenu() {
         // Pause the timer
         gameTimer.stop();
@@ -484,8 +484,45 @@ public class TimSortVisualization extends JPanel {
         restartButton.setPreferredSize(new Dimension(300, 70));
         restartButton.setAlignmentX(Component.CENTER_ALIGNMENT);
         restartButton.addActionListener(e -> {
-            remove(overlay);
-            resetPhase();
+            // Show confirmation dialog before restarting
+            int response = JOptionPane.showConfirmDialog(
+                this,
+                "Are you sure you want to restart this level from the beginning?\nAny progress in this level will be lost.",
+                "Confirm Restart",
+                JOptionPane.YES_NO_OPTION,
+                JOptionPane.WARNING_MESSAGE
+            );
+
+            if (response == JOptionPane.YES_OPTION) {
+                // Remove overlay
+                remove(overlay);
+
+                // Get the current game level
+                int currentGameLevel = gameLevel;
+
+                // Reset all phases for the current level
+                resetAllPhases();
+
+                // Maintain the current game level
+                setGameLevel(currentGameLevel);
+
+                // Reset phase to 1
+                currentPhase = 1;
+
+                // Signal controller to restart the current level from the beginning
+                if (currentGameLevel == 1) {
+                    controller.startGame(); // This starts Level 1 from the prologue
+                } else if (currentGameLevel == 2) {
+                    controller.startLevel2FromSelection(); // This starts Level 2 from the beginning
+                } else if (currentGameLevel == 3) {
+                    controller.startLevel3FromSelection(); // This starts Level 3 from the beginning
+                }
+            } else {
+                // User canceled restart, remove overlay and resume game
+                remove(overlay);
+                repaint();
+                gameTimer.start();
+            }
         });
 
         AnimatedButton menuButton = new AnimatedButton("MAIN MENU", 
@@ -498,8 +535,30 @@ public class TimSortVisualization extends JPanel {
         menuButton.setPreferredSize(new Dimension(300, 70));
         menuButton.setAlignmentX(Component.CENTER_ALIGNMENT);
         menuButton.addActionListener(e -> {
-            remove(overlay);
-            controller.showMainMenu();
+            // Show confirmation dialog
+            int response = JOptionPane.showConfirmDialog(
+                this,
+                "Return to main menu? Your progress in the current level will be saved.",
+                "Main Menu",
+                JOptionPane.YES_NO_OPTION,
+                JOptionPane.QUESTION_MESSAGE
+            );
+
+            if (response == JOptionPane.YES_OPTION) {
+                // Save current progress
+                saveCurrentProgress();
+
+                // Remove overlay
+                remove(overlay);
+
+                // Return to main menu
+                controller.showMainMenu();
+            } else {
+                // User canceled, remove overlay and resume game
+                remove(overlay);
+                repaint();
+                gameTimer.start();
+            }
         });
 
         // Add buttons to menu panel with spacing
@@ -516,6 +575,40 @@ public class TimSortVisualization extends JPanel {
         repaint();
     }
     
+    
+    
+    
+    /**
+    * Save the current progress to be resumed later
+    */
+    private void saveCurrentProgress() {
+        // Create a static map in GameController to store level progress
+        if (controller.levelProgressMap == null) {
+            controller.levelProgressMap = new HashMap<>();
+        }
+
+        // Create a progress data object with current level and phase
+        LevelProgressData progressData = new LevelProgressData(gameLevel, currentPhase);
+
+        // Add any other state you need to save (like selected ingredients, etc.)
+        progressData.setLeftPotionType(leftGroupPotionType);
+        progressData.setRightPotionType(rightGroupPotionType);
+
+        // Store current progress for this level
+        controller.levelProgressMap.put(gameLevel, progressData);
+
+        System.out.println("DEBUG: Saved progress for level " + gameLevel + ", phase " + currentPhase);
+    }
+
+
+
+    
+    
+    
+    
+    
+    
+
     /**
      * Reset the current phase
      */
@@ -3830,6 +3923,52 @@ public class TimSortVisualization extends JPanel {
         revalidate();
         repaint();
     }
+    
+    
+    
+    
+    
+    
+    
+    public static class LevelProgressData {
+        private int level;
+        private int phase;
+        private String leftPotionType;
+        private String rightPotionType;
+
+        public LevelProgressData(int level, int phase) {
+            this.level = level;
+            this.phase = phase;
+        }
+
+        public int getLevel() {
+            return level;
+        }
+
+        public int getPhase() {
+            return phase;
+        }
+
+        public String getLeftPotionType() {
+            return leftPotionType;
+        }
+
+        public void setLeftPotionType(String leftPotionType) {
+            this.leftPotionType = leftPotionType;
+        }
+
+        public String getRightPotionType() {
+            return rightPotionType;
+        }
+
+        public void setRightPotionType(String rightPotionType) {
+            this.rightPotionType = rightPotionType;
+        }
+    }
+    
+    
+    
+    
 
     
 //end of timsortvisualization class
