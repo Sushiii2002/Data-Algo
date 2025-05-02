@@ -651,6 +651,7 @@ public class TimSortVisualization extends JPanel {
     private void generateIngredients() {
         allIngredients.clear();
         selectedIngredients.clear();
+        System.out.println("DEBUG: Generating ingredients for game level: " + gameLevel);
 
         // Clear the grid panel
         gridPanel.removeAll();
@@ -778,7 +779,8 @@ public class TimSortVisualization extends JPanel {
         for (IngredientItem ingredient : allIngredients) {
             ingredient.setBoxVisible(true);
         }
-
+        gridPanel.setVisible(true);
+        System.out.println("DEBUG: Grid panel visibility: " + gridPanel.isVisible());
         // Repaint
         gridPanel.revalidate();
         gridPanel.repaint();
@@ -843,9 +845,19 @@ public class TimSortVisualization extends JPanel {
             checkButton.setEnabled(selectedIngredients.size() == MAX_SELECTIONS);
             
         } else if (currentPhase == 2) {
-            // Phase 2: Drag to sort ingredients into groups
-            moveIngredientToGroup(ingredient);
+            // Phase 1: Select/deselect ingredients
+            if (ingredient.isSelected()) {
+                // Deselect
+                ingredient.setSelected(false);
+                selectedIngredients.remove(ingredient);
+            } else if (selectedIngredients.size() < MAX_SELECTIONS) {
+                // Select only if under limit
+                ingredient.setSelected(true);
+                selectedIngredients.add(ingredient);
+            }
             
+            // Update UI
+            checkButton.setEnabled(selectedIngredients.size() == MAX_SELECTIONS);            
         } else if (currentPhase == 3) {
             // Phase 3: Choose between potions
             if (phaseCompleted) {
@@ -3684,6 +3696,34 @@ public class TimSortVisualization extends JPanel {
         // Clear UI
         gridPanel.removeAll();
 
+        
+        
+        
+        // CRITICAL FIX: Explicitly reset grid panel position to match Level 1
+        int cellSize = INGREDIENT_SIZE;
+        int gridWidth = GRID_COLS * cellSize;
+        int gridHeight = GRID_ROWS * cellSize;
+        int GRID_PADDING = 12;
+
+        // Add padding for border/frame
+        int totalWidth = gridWidth + (GRID_PADDING * 2);
+        int totalHeight = gridHeight + (GRID_PADDING * 2);
+
+        // Center the grid on screen
+        int gridX = (GameConstants.WINDOW_WIDTH - totalWidth) / 2;
+        int gridY = 135;
+
+        // Reset the grid panel position
+        gridPanel.setBounds(gridX, gridY, totalWidth, totalHeight);
+
+        // Ensure the grid panel is visible and has null layout
+        gridPanel.setLayout(null);
+        gridPanel.setOpaque(false);
+        gridPanel.setVisible(true);
+
+
+        
+        
         // Reset UI state
         abilityButton.setText("Use Eye of Pattern");
         instructionLabel.setText("Identify ingredients that enhance agility to evade Toxitar's poison.");
@@ -3698,8 +3738,14 @@ public class TimSortVisualization extends JPanel {
             "Sort each group from lightest to heaviest. The proper sequence is crucial for dexterity potions.",
             "Against poison that fills the air, quick movement is better than raw strength."
         };
+        
+        
+        gridPanel.setBounds(0, 0, GameConstants.WINDOW_WIDTH, GameConstants.WINDOW_HEIGHT);
+    
+        // If there's a custom background for Level 2, ensure it's using the correct dimensions
+        // For now, use the same grid dimensions as Level 1
 
-        // Force UI refresh
+        // Force complete UI refresh before generating ingredients
         revalidate();
         repaint();
     }
