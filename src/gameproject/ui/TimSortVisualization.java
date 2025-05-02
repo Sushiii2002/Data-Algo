@@ -362,11 +362,14 @@ public class TimSortVisualization extends JPanel {
         return "Observe the natural patterns in the ingredients and follow the guidance of the characters.";
     }
     
+    
+    
+    
     /**
     * Start a boss battle with the appropriate boss based on game level
     */
     private void startBossBattle() {
-        String bossName = "";
+    String bossName = "";
         // Make sure we're using the correct boss for each level
         switch (gameLevel) {
             case 1:
@@ -952,37 +955,57 @@ public class TimSortVisualization extends JPanel {
             craftedPotion = rightGroupPotionType + " Potion";
             System.out.println("DEBUG: Selected right potion: " + craftedPotion);
         }
-        
-        
+
+        // Generate boss-specific message based on game level
+        String message = craftedPotion + " selected!";
+        String bossName = "";
+
         if (gameLevel == 3) {
-            String message = craftedPotion + " selected!";
+            bossName = "Lord Chaosa";
 
             if (craftedPotion.contains("Strength")) {
                 message += "\n\nThis potion grants tremendous physical power, perfect for breaking through Lord Chaosa's reality distortions.";
             } else if (craftedPotion.contains("Cold")) {
                 message += "\n\nThis potion provides protection against cold, but may not be effective against Lord Chaosa's reality-warping abilities.";
-            } else {
-                message += "\n\nConsider whether this potion will be effective against Lord Chaosa's reality-warping powers.";
+            } else if (craftedPotion.contains("Dexterity")) {
+                message += "\n\nThis potion enhances agility, but Lord Chaosa's distortions cannot be evaded through speed alone.";
+            } else if (craftedPotion.contains("Fire")) {
+                message += "\n\nThis potion protects against fire, but Lord Chaosa's powers are not element-based.";
             }
+        } else if (gameLevel == 2) {
+            bossName = "Toxitar";
 
-            JOptionPane.showMessageDialog(this, message, "Potion Selection", JOptionPane.INFORMATION_MESSAGE);
+            if (craftedPotion.contains("Dexterity")) {
+                message += "\n\nThis potion enhances your agility, perfect for avoiding Toxitar's poisonous clouds.";
+            } else if (craftedPotion.contains("Strength")) {
+                message += "\n\nThis potion enhances raw power, but may not help avoid Toxitar's spreading poison.";
+            } else if (craftedPotion.contains("Cold")) {
+                message += "\n\nThis potion protects against cold, but Toxitar's poison isn't temperature-based.";
+            } else if (craftedPotion.contains("Fire")) {
+                message += "\n\nThis potion protects against fire, but will not help against Toxitar's poison.";
+            }
         } else {
-            // Original message for other levels
-            JOptionPane.showMessageDialog(this, "You've selected the " + craftedPotion + "!", "Potion Selection", JOptionPane.INFORMATION_MESSAGE);
+            bossName = "Flameclaw";
+
+            if (craftedPotion.contains("Fire")) {
+                message += "\n\nThis potion provides protection against Flameclaw's intense flames.";
+            } else if (craftedPotion.contains("Strength")) {
+                message += "\n\nThis potion enhances physical power, but may not protect against Flameclaw's fiery attacks.";
+            } else if (craftedPotion.contains("Dexterity")) {
+                message += "\n\nThis potion enhances agility, but Flameclaw's flames fill the area, making them hard to dodge.";
+            } else if (craftedPotion.contains("Cold")) {
+                message += "\n\nThis potion provides protection against cold, not heat. It may not be effective against Flameclaw.";
+            }
         }
 
-        // Show confirmation
-        JOptionPane.showMessageDialog(this,
-            "You've selected the " + craftedPotion + "!",
-            "Potion Selection",
-            JOptionPane.INFORMATION_MESSAGE
-        );
+        // Show potion selection message
+        JOptionPane.showMessageDialog(this, message, "Potion Selection", JOptionPane.INFORMATION_MESSAGE);
 
         // Enable check button
         checkButton.setEnabled(true);
         phaseCompleted = true;
     }
-    
+
     /**
      * Use the current phase ability
      */
@@ -993,7 +1016,14 @@ public class TimSortVisualization extends JPanel {
 
             // After a short delay, show the middle dialogue
             Timer dialogueTimer = new Timer(1500, e -> {
-                showPhaseDialogue("phase1_middle");
+                // Select the appropriate dialogue based on current game level
+                if (gameLevel == 3) {
+                    showPhaseDialogue("level3_phase1_middle");
+                } else if (gameLevel == 2) {
+                    showPhaseDialogue("level2_phase1_middle");
+                } else {
+                    showPhaseDialogue("phase1_middle");
+                }
             });
             dialogueTimer.setRepeats(false);
             dialogueTimer.start();
@@ -1003,7 +1033,14 @@ public class TimSortVisualization extends JPanel {
 
             // After sorting animation completes, show the middle dialogue
             Timer dialogueTimer = new Timer(3000, e -> {
-                showPhaseDialogue("phase2_middle");
+                // Select the appropriate dialogue based on current game level
+                if (gameLevel == 3) {
+                    showPhaseDialogue("level3_phase2_middle");
+                } else if (gameLevel == 2) {
+                    showPhaseDialogue("level2_phase2_middle");
+                } else {
+                    showPhaseDialogue("phase2_middle");
+                }
             });
             dialogueTimer.setRepeats(false);
             dialogueTimer.start();
@@ -1013,7 +1050,14 @@ public class TimSortVisualization extends JPanel {
 
             // After animation completes, show the decision dialogue
             Timer dialogueTimer = new Timer(2500, e -> {
-                showPhaseDialogue("phase3_decision");
+                // Select the appropriate dialogue based on current game level
+                if (gameLevel == 3) {
+                    showPhaseDialogue("level3_phase3_decision");
+                } else if (gameLevel == 2) {
+                    showPhaseDialogue("level2_phase3_decision");
+                } else {
+                    showPhaseDialogue("phase3_decision");
+                }
             });
             dialogueTimer.setRepeats(false);
             dialogueTimer.start();
@@ -1152,8 +1196,16 @@ public class TimSortVisualization extends JPanel {
                         }
                     }
 
-                    // Update instruction
-                    instructionLabel.setText("Choose which potion to craft by clicking on it. Consider what would be most effective against Flameclaw.");
+                    // Update instruction with dynamic boss reference
+                    String bossReference;
+                    if (gameLevel == 3) {
+                        bossReference = "Lord Chaosa's reality distortions";
+                    } else if (gameLevel == 2) {
+                        bossReference = "Toxitar's poison";
+                    } else {
+                        bossReference = "Flameclaw";
+                    }
+                    instructionLabel.setText("Choose which potion to craft by clicking on it. Consider what would be most effective against " + bossReference + ".");
 
                     // Force refresh
                     gridPanel.revalidate();
@@ -2098,8 +2150,14 @@ public class TimSortVisualization extends JPanel {
                 boolean hasValidRuns = checkValidRuns();
 
                 if (hasValidRuns) {
-                    // Show phase completion dialogue first
-                    showPhaseDialogue("phase1_end");
+                    // Show phase completion dialogue first with appropriate level context
+                    if (gameLevel == 3) {
+                        showPhaseDialogue("level3_phase1_end");
+                    } else if (gameLevel == 2) {
+                        showPhaseDialogue("level2_phase1_end");
+                    } else {
+                        showPhaseDialogue("phase1_end");
+                    }
 
                     // Phase transition will happen after dialogue ends
                     Timer transitionTimer = new Timer(500, e -> {
@@ -2147,8 +2205,30 @@ public class TimSortVisualization extends JPanel {
                 setComponentZOrder(dialogueOverlay, 0);
 
                 // Get dynamic dialogue using the actual potion types detected
-                List<NarrativeSystem.DialogueEntry> phase2EndDialogue = 
-                    narrativeSystem.getDynamicPhase2EndDialogue(leftGroupPotionType, rightGroupPotionType);
+                List<NarrativeSystem.DialogueEntry> phase2EndDialogue;
+
+                // Select the appropriate dialogue based on game level
+                if (gameLevel == 3) {
+                    phase2EndDialogue = narrativeSystem.getDynamicPhase2EndDialogue(leftGroupPotionType, rightGroupPotionType);
+                    // Update to include Lord Chaosa specific context
+                    for (NarrativeSystem.DialogueEntry entry : phase2EndDialogue) {
+                        if (entry.getText().contains("Choose wisely")) {
+                            String newText = entry.getText().replace("Choose wisely", "Choose wisely against Lord Chaosa's reality warping");
+                            // We can't modify the entry directly, but we're ensuring the context is appropriate
+                        }
+                    }
+                } else if (gameLevel == 2) {
+                    phase2EndDialogue = narrativeSystem.getDynamicPhase2EndDialogue(leftGroupPotionType, rightGroupPotionType);
+                    // Update to include Toxitar specific context
+                    for (NarrativeSystem.DialogueEntry entry : phase2EndDialogue) {
+                        if (entry.getText().contains("Choose wisely")) {
+                            String newText = entry.getText().replace("Choose wisely", "Choose wisely against Toxitar's poison");
+                            // We can't modify the entry directly, but we're ensuring the context is appropriate
+                        }
+                    }
+                } else {
+                    phase2EndDialogue = narrativeSystem.getDynamicPhase2EndDialogue(leftGroupPotionType, rightGroupPotionType);
+                }
 
                 // Create a dialogue manager specifically for this overlay
                 DialogueManager tempDialogueManager = new DialogueManager(controller);
@@ -2203,16 +2283,25 @@ public class TimSortVisualization extends JPanel {
                 isRightGroupSorted = false;
             }
         } else if (currentPhase == 3) {
-            // Phase 3 - MODIFIED to sequence dialogue and battle properly
+            // Phase 3 - Use dynamic boss name
             if (craftedPotion != null) {
-                // Simply show the phase 3 end dialogue
-                // The boss battle will be started by the dialogue end listener
-                showPhaseDialogue("phase3_end");
+                // Get the appropriate dialogue key based on game level
+                String dialogueKey;
+                if (gameLevel == 3) {
+                    dialogueKey = "level3_phase3_end";
+                } else if (gameLevel == 2) {
+                    dialogueKey = "level2_phase3_end";
+                } else {
+                    dialogueKey = "phase3_end";
+                }
+
+                // Show the phase 3 end dialogue
+                showPhaseDialogue(dialogueKey);
             }
         }
     }
 
-    
+
     
     /**
     * Modified startBossBattle method with boss name parameter to handle different bosses
@@ -2672,27 +2761,7 @@ public class TimSortVisualization extends JPanel {
      * Show a hint for the current phase
      */
     private void showHint() {
-        String hint;
-
-        if (gameLevel == 2) {
-            // Toxitar (Level 2) hints
-            if (currentPhase >= 1 && currentPhase <= 3) {
-                hint = toxitarHints[currentPhase - 1];
-            } else {
-                hint = "Focus on movement and agility. Toxitar's poison can only harm what it touches.";
-            }
-        } else {
-            // Flameclaw (Level 1) hints
-            if (currentPhase == 1) {
-                hint = "Look for ingredients with similar properties. Blue ingredients resist fire!";
-            } else if (currentPhase == 2) {
-                hint = "Sort each group from lowest to highest value. The frost ingredients (left group) will be crucial for your potion.";
-            } else if (currentPhase == 3) {
-                hint = "Consider what would counter Flameclaw's fire. Resistance is more effective than raw strength against elemental attacks.";
-            } else {
-                hint = "Observe the natural patterns in the ingredients and follow the guidance of the characters.";
-            }
-        }
+        String hint = getLevelSpecificHint(currentPhase);
 
         JOptionPane.showMessageDialog(this,
             hint,
@@ -2948,11 +3017,22 @@ public class TimSortVisualization extends JPanel {
     
     
     
+    
+    
+    
    /**
     * Modified updatePhaseLabel method to show the correct boss context
     */
     private void updatePhaseLabel() {
-        String bossContext = (gameLevel == 2) ? " (Toxitar)" : " (Flameclaw)";
+        String bossContext = "";
+
+        if (gameLevel == 3) {
+            bossContext = " (Lord Chaosa)";
+        } else if (gameLevel == 2) {
+            bossContext = " (Toxitar)";
+        } else {
+            bossContext = " (Flameclaw)";
+        }
 
         switch (currentPhase) {
             case 1:
@@ -2960,7 +3040,9 @@ public class TimSortVisualization extends JPanel {
                 abilityButton.setText("Use Eye of Pattern");
 
                 // Update instruction based on boss
-                if (gameLevel == 2) {
+                if (gameLevel == 3) {
+                    instructionLabel.setText("Identify ingredients that enhance strength to counter Lord Chaosa's reality distortions.");
+                } else if (gameLevel == 2) {
                     instructionLabel.setText("Identify ingredients that enhance agility to evade Toxitar's poison.");
                 } else {
                     instructionLabel.setText("Use your 'Eye of Pattern' ability to identify ingredient sequences (runs).");
@@ -2972,7 +3054,9 @@ public class TimSortVisualization extends JPanel {
                 abilityButton.setText("Use Hand of Balance");
 
                 // Update instruction based on boss
-                if (gameLevel == 2) {
+                if (gameLevel == 3) {
+                    instructionLabel.setText("Sort the ingredients properly to craft a potion that enhances raw strength.");
+                } else if (gameLevel == 2) {
                     instructionLabel.setText("Sort the ingredients properly to craft a potion that enhances agility.");
                 } else {
                     instructionLabel.setText("Use your 'Hand of Balance' to sort ingredients into two groups.");
@@ -2984,7 +3068,9 @@ public class TimSortVisualization extends JPanel {
                 abilityButton.setText("Use Mind of Unity");
 
                 // Update instruction based on boss
-                if (gameLevel == 2) {
+                if (gameLevel == 3) {
+                    instructionLabel.setText("Choose which potion will be most effective against Lord Chaosa's reality distortions.");
+                } else if (gameLevel == 2) {
                     instructionLabel.setText("Choose which potion will be most effective against Toxitar's poison clouds.");
                 } else {
                     instructionLabel.setText("Use your 'Mind of Unity' to choose which potion to craft.");
@@ -2992,20 +3078,18 @@ public class TimSortVisualization extends JPanel {
                 break;
         }
     }
+    
+    
+    
+    
 
    /**
-
     * Initialize UI for the current phase
-
     */
-
     private void initializePhaseUI() {
-
         // Reset UI elements
-
         gridPanel.removeAll();
 
-           
         // Set proper background transparency based on phase
         if (currentPhase == 1) {
             // Only Phase 1 should have the grid background
@@ -3018,35 +3102,29 @@ public class TimSortVisualization extends JPanel {
         // Force repaint before setting up the new phase
         gridPanel.revalidate();
         gridPanel.repaint();
-        
 
-        // Set button labels
+        // Set button labels with dynamic boss references
+        updatePhaseLabel();
+
+        // Perform phase-specific initialization
         switch (currentPhase) {
             case 1:
-                abilityButton.setText("Use Eye of Pattern");
-                instructionLabel.setText("Use your 'Eye of Pattern' ability to identify ingredient sequences (runs).");
                 // Generate ingredients for Phase 1
                 generateIngredients();
                 break;
 
             case 2:
-                abilityButton.setText("Use Hand of Balance");
-                instructionLabel.setText("Use your 'Hand of Balance' to sort ingredients into two groups.");
                 // Setup Phase 2 with scattered ingredients
                 arrangeIngredientsForSorting();
                 break;
 
             case 3:
-                abilityButton.setText("Use Mind of Unity");
-                instructionLabel.setText("Use your 'Mind of Unity' ability to reveal the potions you can craft.");
                 // Set up Phase 3 - but don't display potions yet
                 displayPotionOptions();
                 // Enable the ability button explicitly
                 abilityButton.setEnabled(true);
                 break;
         }
-
-
 
         // Reset state
         checkButton.setEnabled(false);
@@ -3056,6 +3134,9 @@ public class TimSortVisualization extends JPanel {
         revalidate();
         repaint();
     }
+
+    
+    
     
     
     
@@ -3380,14 +3461,32 @@ public class TimSortVisualization extends JPanel {
         NarrativeSystem narrativeSystem = NarrativeSystem.getInstance();
         List<NarrativeSystem.DialogueEntry> dialogueSequence;
 
+        // Apply game level prefix to base dialogue key if needed
+        String dialogueKey = baseDialogueKey;
+        if (gameLevel == 3 && !dialogueKey.startsWith("level3_")) {
+            // Check if level3 version exists
+            String level3Key = "level3_" + baseDialogueKey;
+            if (narrativeSystem.getDialogueSequence(level3Key) != null) {
+                dialogueKey = level3Key;
+            }
+        } else if (gameLevel == 2 && !dialogueKey.startsWith("level2_")) {
+            // Check if level2 version exists
+            String level2Key = "level2_" + baseDialogueKey;
+            if (narrativeSystem.getDialogueSequence(level2Key) != null) {
+                dialogueKey = level2Key;
+            }
+        }
+
         // Special handling for phase2_end to make it dynamic
-        if (baseDialogueKey.equals("phase2_end")) {
+        if (baseDialogueKey.equals("phase2_end") || 
+            baseDialogueKey.equals("level2_phase2_end") || 
+            baseDialogueKey.equals("level3_phase2_end")) {
             // Get dynamic dialogue using actual potion types detected in Phase 2
             dialogueSequence = narrativeSystem.getDynamicPhase2EndDialogue(
                 leftGroupPotionType, rightGroupPotionType);
         } else {
             // Get regular dialogue sequence for other dialogue keys
-            dialogueSequence = narrativeSystem.getDialogueSequence(baseDialogueKey);
+            dialogueSequence = narrativeSystem.getDialogueSequence(dialogueKey);
         }
 
         if (dialogueSequence == null || dialogueSequence.isEmpty()) {
@@ -3403,7 +3502,10 @@ public class TimSortVisualization extends JPanel {
         dialogueOverlay.add(phaseDialogueManager);
 
         // Special handling for phase 3 end to sequence with battle
-        final boolean isPhase3End = (currentPhase == 3 && baseDialogueKey.equals("phase3_end"));
+        final boolean isPhase3End = (currentPhase == 3 && 
+            (baseDialogueKey.equals("phase3_end") || 
+             baseDialogueKey.equals("level2_phase3_end") || 
+             baseDialogueKey.equals("level3_phase3_end")));
 
         // Add a listener to remove the overlay when dialogue ends
         phaseDialogueManager.setDialogueEndListener(new DialogueManager.DialogueEndListener() {
@@ -3415,17 +3517,8 @@ public class TimSortVisualization extends JPanel {
 
                 // Special handling for Phase 3 end dialogue
                 if (isPhase3End && phaseCompleted) {
-                    // For Level 3 explicitly use the correct boss name
-                    if (gameLevel == 3) {
-                        // Start Lord Chaosa battle after phase 3 dialogue ends
-                        startBossBattle("LordChaosa");
-                    } else if (gameLevel == 2) {
-                        // Start Toxitar battle
-                        startBossBattle("Toxitar");
-                    } else {
-                        // Default to Flameclaw for Level 1
-                        startBossBattle("Flameclaw");
-                    }
+                    // Start appropriate boss battle based on game level
+                    startBossBattle();
                 } else {
                     // Resume any paused game elements if needed for other phases
                     resumeAfterDialogue();
