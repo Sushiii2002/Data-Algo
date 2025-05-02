@@ -369,7 +369,7 @@ public class TimSortVisualization extends JPanel {
     * Start a boss battle with the appropriate boss based on game level
     */
     private void startBossBattle() {
-    String bossName = "";
+        String bossName = "";
         // Make sure we're using the correct boss for each level
         switch (gameLevel) {
             case 1:
@@ -387,6 +387,10 @@ public class TimSortVisualization extends JPanel {
 
         // Add debug to verify correct boss name is being used
         System.out.println("DEBUG: Starting boss battle with boss: " + bossName + " for game level: " + gameLevel);
+
+        // CRITICAL FIX: Completely remove all UI elements that might persist
+        gridPanel.removeAll();
+        gridPanel.setVisible(false);
 
         startBossBattle(bossName);
     }
@@ -2310,6 +2314,11 @@ public class TimSortVisualization extends JPanel {
         // Add debug logging
         System.out.println("DEBUG: Starting boss battle against " + bossName);
 
+        
+        gridPanel.removeAll();
+        gridPanel.setVisible(false);
+    
+    
         // Create semi-transparent overlay with boss-specific background color
         JPanel battleOverlay = new JPanel() {
             @Override
@@ -2436,17 +2445,15 @@ public class TimSortVisualization extends JPanel {
             // Check against the current boss
             if (bossName.equals("Flameclaw")) {
                 correctChoice = selectedPotionType.equals("Fire Resistance");
-                System.out.println("DEBUG: Correct choice for Flameclaw is Fire Resistance, selected: " + selectedPotionType);
             } else if (bossName.equals("Toxitar")) {
                 correctChoice = selectedPotionType.equals("Dexterity");
-                System.out.println("DEBUG: Correct choice for Toxitar is Dexterity, selected: " + selectedPotionType);
             } else if (bossName.equals("LordChaosa")) {
                 correctChoice = selectedPotionType.equals("Strength");
-                System.out.println("DEBUG: Correct choice for Lord Chaosa is Strength, selected: " + selectedPotionType);
             }
 
             // IMPORTANT: Clear the grid panel completely before showing result
             gridPanel.removeAll();
+            gridPanel.setVisible(false);
 
             // IMPORTANT: Properly finish the phase before showing result
             finishCurrentPhase();
@@ -2502,12 +2509,20 @@ public class TimSortVisualization extends JPanel {
     private void finishCurrentPhase() {
         // Clear all UI elements that might be causing issues
         gridPanel.removeAll();
+        gridPanel.setVisible(false);
 
         // Reset any phase-specific state to prevent it from reappearing
         allIngredients.clear();
         selectedIngredients.clear();
+        identifiedRuns.clear();
         leftGroup.clear();
         rightGroup.clear();
+        mergedItems.clear();
+        craftedPotion = null;
+
+        // Reset phase UI elements completely
+        abilityButton.setEnabled(false);
+        checkButton.setEnabled(false);
 
         // Mark phase as fully completed
         phaseCompleted = true;
