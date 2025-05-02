@@ -8,6 +8,7 @@ import javax.swing.plaf.basic.BasicButtonUI;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.awt.image.BufferedImage;
 
 /**
  * Enhanced main menu view with custom background and animated buttons
@@ -122,7 +123,7 @@ public class MainMenuView extends JPanel {
         // Add action listeners
         startButton.addActionListener(e -> controller.startGame());
         levelsButton.addActionListener(e -> controller.showLevelSelection());
-        helpButton.addActionListener(e -> controller.showHelp());
+        helpButton.addActionListener(e -> showHowToPlayOverlay());
         exitButton.addActionListener(e -> controller.exitGame());
         
         // Add buttons to panel with spacing
@@ -290,4 +291,199 @@ public class MainMenuView extends JPanel {
             super.paintComponent(g);
         }
     }
+    
+    
+    
+    
+    
+    
+    
+    /**
+    * Shows a "How to Play" overlay using the glass pane approach
+    */
+   private void showHowToPlayOverlay() {
+       // Get the root window/frame
+       Window window = SwingUtilities.getWindowAncestor(this);
+       if (!(window instanceof JFrame)) {
+           // Fallback to standard dialog if not in a JFrame
+           controller.showHelp();
+           return;
+       }
+
+       JFrame frame = (JFrame) window;
+
+       // Create a glass pane panel
+       JPanel glassPanel = new JPanel() {
+           @Override
+           protected void paintComponent(Graphics g) {
+               super.paintComponent(g);
+               // Semi-transparent dark overlay (85% opacity black)
+               g.setColor(new Color(0, 0, 0, 217));
+               g.fillRect(0, 0, getWidth(), getHeight());
+           }
+       };
+       glassPanel.setOpaque(false);
+       glassPanel.setLayout(null);
+
+       // Create the content panel with pixelated golden border
+       JPanel contentPanel = new JPanel() {
+           @Override
+           protected void paintComponent(Graphics g) {
+               super.paintComponent(g);
+               Graphics2D g2d = (Graphics2D) g;
+
+               // Main panel background - dark navy blue
+               g2d.setColor(new Color(15, 20, 50, 230));
+               g2d.fillRect(0, 0, getWidth(), getHeight());
+
+               // Golden border
+               g2d.setColor(new Color(255, 215, 0));
+               g2d.setStroke(new BasicStroke(3f));
+               g2d.drawRect(2, 2, getWidth()-4, getHeight()-4);
+           }
+       };
+
+       // Position and size content panel
+       int panelWidth = 600;  // Fixed width
+       int panelHeight = 400; // Fixed height
+       contentPanel.setBounds(
+           (frame.getWidth() - panelWidth)/2, 
+           (frame.getHeight() - panelHeight)/2, 
+           panelWidth, 
+           panelHeight
+       );
+       contentPanel.setOpaque(false);
+       contentPanel.setLayout(null);
+       glassPanel.add(contentPanel);
+
+       // Add title
+       JLabel titleLabel = new JLabel("HOW TO PLAY", JLabel.CENTER);
+       // Use the pixelifySansFont if available
+       if (buttonFont != null) {
+           titleLabel.setFont(buttonFont.deriveFont(36f));
+       } else {
+           titleLabel.setFont(new Font("Arial", Font.BOLD, 36));
+       }
+       titleLabel.setForeground(new Color(255, 215, 0));
+       titleLabel.setBounds(0, 20, panelWidth, 50);
+       contentPanel.add(titleLabel);
+
+       // Add decorative divider
+       JPanel divider = new JPanel() {
+           @Override
+           protected void paintComponent(Graphics g) {
+               super.paintComponent(g);
+               Graphics2D g2d = (Graphics2D) g;
+               g2d.setColor(new Color(255, 215, 0));
+               g2d.setStroke(new BasicStroke(2f));
+               g2d.drawLine(panelWidth/6, 1, panelWidth*5/6, 1);
+           }
+       };
+       divider.setOpaque(false);
+       divider.setBounds(0, 75, panelWidth, 4);
+       contentPanel.add(divider);
+
+       // Create text content with proper colored text for each section
+       String htmlContent = 
+           "<html><body style='width: " + (panelWidth - 80) + "px'>" +
+           "<div style='font-size: 14px; color: white; font-family: Arial, sans-serif;'>" +
+           "<p>The Alchemist's Path is an interactive RPG that teaches the TimSort algorithm through potion crafting.</p>" +
+           "<p><b>Three essential abilities you'll master:</b></p>" +
+           "<p style='margin-left: 20px;'>- <span style='color: #80C8FF;'>The Eye of Pattern:</span> Identify natural sequences in ingredients</p>" +
+           "<p style='margin-left: 20px;'>- <span style='color: #FFB280;'>The Hand of Balance:</span> Sort small groups of ingredients</p>" +
+           "<p style='margin-left: 20px;'>- <span style='color: #80FF9E;'>The Mind of Unity:</span> Merge ordered ingredients to craft potions</p>" +
+           "<p><b>Create the right potions to defeat three powerful bosses:</b></p>" +
+           "<p style='margin-left: 20px;'>- <span style='color: #FF8080;'>Flameclaw:</span> A fire elemental that burns everything</p>" +
+           "<p style='margin-left: 20px;'>- <span style='color: #A0FF80;'>Toxitar:</span> A poison beast that spreads corruption</p>" +
+           "<p style='margin-left: 20px;'>- <span style='color: #C080FF;'>Lord Chaosa:</span> A reality-warping final boss</p>" +
+           "<p>Follow the story and character hints to choose the correct potions!</p>" +
+           "</div></body></html>";
+
+       JLabel textLabel = new JLabel(htmlContent);
+       textLabel.setVerticalAlignment(JLabel.TOP);
+       textLabel.setBounds(40, 100, panelWidth - 80, panelHeight - 180);
+       contentPanel.add(textLabel);
+
+       // Create an OK button using the animated button class - THIS IS THE KEY FIX
+       AnimatedButton okButton = createAnimatedButton("OK");
+       okButton.setMaximumSize(new Dimension(150, 50));
+       okButton.setPreferredSize(new Dimension(150, 50));
+       okButton.setBounds((panelWidth - 150)/2, panelHeight - 70, 150, 50);
+       okButton.addActionListener(e -> {
+           // Restore original glass pane
+           frame.setGlassPane(frame.getGlassPane());
+           frame.getGlassPane().setVisible(false);
+       });
+       contentPanel.add(okButton);
+
+       // Make sure clicks on glass pane outside content panel close the overlay
+       glassPanel.addMouseListener(new MouseAdapter() {
+           @Override
+           public void mouseClicked(MouseEvent e) {
+               Point p = SwingUtilities.convertPoint(glassPanel, e.getPoint(), contentPanel);
+               if (p.x < 0 || p.y < 0 || p.x > contentPanel.getWidth() || p.y > contentPanel.getHeight()) {
+                   // Restore original glass pane
+                   frame.setGlassPane(frame.getGlassPane());
+                   frame.getGlassPane().setVisible(false);
+               }
+               e.consume(); // Critical: consume event to prevent it from reaching components beneath
+           }
+
+           @Override
+           public void mousePressed(MouseEvent e) {
+               e.consume(); // Consume all mouse events that hit the glass pane
+           }
+
+           @Override
+           public void mouseReleased(MouseEvent e) {
+               e.consume();
+           }
+       });
+
+       // Store the original glass pane
+       Component originalGlassPane = frame.getGlassPane();
+
+       // Set and show our glass pane
+       frame.setGlassPane(glassPanel);
+       glassPanel.setVisible(true);
+   }
+
+
+
+
+
+
+    // Helper method to create a potion icon as fallback
+    private ImageIcon createPotionIcon(int width, int height) {
+        BufferedImage img = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g2d = img.createGraphics();
+
+        // Enable anti-aliasing
+        g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+        // Draw flask
+        g2d.setColor(new Color(50, 200, 255, 200));
+        int neckWidth = width/3;
+        int bottleHeight = (int)(height * 0.7);
+
+        // Draw neck
+        g2d.fillRect((width - neckWidth)/2, 5, neckWidth, height/4);
+
+        // Draw bottle
+        g2d.fillRoundRect(10, height/4, width - 20, bottleHeight, 20, 20);
+
+        // Draw liquid
+        g2d.setColor(new Color(100, 50, 200, 180));
+        g2d.fillRoundRect(13, height/2, width - 26, bottleHeight/2, 18, 18);
+
+        // Draw bubbles
+        g2d.setColor(new Color(255, 255, 255, 150));
+        g2d.fillOval(width/2 - 5, height/2 + 10, 10, 10);
+        g2d.fillOval(width/3, height/2 + 20, 6, 6);
+        g2d.fillOval(2*width/3, height/2 + 15, 8, 8);
+
+        g2d.dispose();
+        return new ImageIcon(img);
+    }
+    
 }
