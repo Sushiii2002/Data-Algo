@@ -504,14 +504,14 @@ public class GameController {
     * Start Level 2 with Toxitar as the boss
     */
     private void startLevel2() {
+        // First, reset the TimSort visualization for Level 2
+        timSortVisualization.resetAllPhases();  // General reset
+        timSortVisualization.resetForLevel2();  // Level 2 specific reset
+
         // Set Level 2 in the model
         model.setGameLevel(2);
         model.setCurrentState(GameState.STORY_MODE);
         model.setCurrentLevel(1); // Reset to first phase
-
-        // Reset TimSort visualization for Level 2
-        timSortVisualization.resetAllPhases();
-        timSortVisualization.setGameLevel(2);
 
         // Show Level 2 story introduction
         cardLayout.show(mainPanel, "enhancedStory");
