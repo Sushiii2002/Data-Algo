@@ -159,6 +159,20 @@ public class GameController {
         inLevelTransition = true;
         System.out.println("DEBUG: Starting Phase " + phase + " gameplay for level " + model.getGameLevel());
 
+        
+        
+         // IMPORTANT: Ensure the visualization is properly reset and reinitialized for the current game level
+        timSortVisualization.resetAllPhases();
+        timSortVisualization.setGameLevel(model.getGameLevel());
+        timSortVisualization.setPhase(phase);
+
+        // Show the visualization panel
+        cardLayout.show(mainPanel, "timSortVisualization");
+
+        // Additional debugging
+        System.out.println("DEBUG: Switched to timSortVisualization panel");
+
+    
         switch (phase) {
             case 1:
                 // Eye of Pattern phase

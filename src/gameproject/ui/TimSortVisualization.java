@@ -2792,7 +2792,7 @@ public class TimSortVisualization extends JPanel {
         if (timeRemaining > 0) {
             timeRemaining--;
             updateTimerDisplay();
-            
+
             // Check if time is up
             if (timeRemaining <= 0) {
                 gameTimer.stop();
@@ -2805,9 +2805,15 @@ public class TimSortVisualization extends JPanel {
      * Update the timer display
      */
     private void updateTimerDisplay() {
-       int minutes = timeRemaining / 60;
-       int seconds = timeRemaining % 60;
-       timerLabel.setText(String.format("%02d:%02d", minutes, seconds));
+        // IMPORTANT: Add null check to prevent NPE
+        if (timerLabel == null) {
+            System.out.println("WARNING: timerLabel is null, cannot update timer display");
+            return;
+        }
+
+        int minutes = timeRemaining / 60;
+        int seconds = timeRemaining % 60;
+        timerLabel.setText(String.format("%02d:%02d", minutes, seconds));
     }
     
     /**
@@ -3640,6 +3646,11 @@ public class TimSortVisualization extends JPanel {
         abilityButton.setText("Use Eye of Pattern");
         instructionLabel.setText("Use your 'Eye of Pattern' ability to identify ingredient sequences (runs).");
         checkButton.setEnabled(false);
+
+        // IMPORTANT: Make sure timer is stopped to prevent NPE
+        if (gameTimer != null && gameTimer.isRunning()) {
+            gameTimer.stop();
+        }
 
         // Force UI refresh
         revalidate();
