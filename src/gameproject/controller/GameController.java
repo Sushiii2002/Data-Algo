@@ -156,9 +156,6 @@ public class GameController {
         inLevelTransition = true;
         System.out.println("DEBUG: Starting Phase " + phase + " gameplay for level " + model.getGameLevel());
 
-        // Get the current game level
-        int gameLevel = model.getGameLevel();
-
         switch (phase) {
             case 1:
                 // Eye of Pattern phase
@@ -167,7 +164,6 @@ public class GameController {
 
                 // Show TimSort visualization for phase 1
                 timSortVisualization.setPhase(1); // Explicitly set phase
-                timSortVisualization.setGameLevel(gameLevel); // Set the correct game level
                 cardLayout.show(mainPanel, "timSortVisualization");
                 break;
 
@@ -178,7 +174,6 @@ public class GameController {
 
                 // Show TimSort visualization for phase 2
                 timSortVisualization.setPhase(2); // Explicitly set phase
-                timSortVisualization.setGameLevel(gameLevel); // Set the correct game level
                 cardLayout.show(mainPanel, "timSortVisualization");
                 break;
 
@@ -189,7 +184,6 @@ public class GameController {
 
                 // Show TimSort visualization for phase 3
                 timSortVisualization.setPhase(3); // Explicitly set phase
-                timSortVisualization.setGameLevel(gameLevel); // Set the correct game level
                 cardLayout.show(mainPanel, "timSortVisualization");
                 break;
 
@@ -199,14 +193,14 @@ public class GameController {
                 cardLayout.show(mainPanel, "enhancedStory");
                 break;
         }
-
-        // Reset transition flag after a short delay
-        Timer resetTimer = new Timer(500, e -> {
-            inLevelTransition = false;
-        });
-        resetTimer.setRepeats(false);
-        resetTimer.start();
-    }
+    
+    // Reset transition flag after a short delay
+    Timer resetTimer = new Timer(500, e -> {
+        inLevelTransition = false;
+    });
+    resetTimer.setRepeats(false);
+    resetTimer.start();
+}
 
     
     /**
@@ -267,10 +261,6 @@ public class GameController {
         model.setCurrentLevel(currentPhase + 1);
     }
     
-    
-    
-    
-    
     /**
      * Handle boss battle completion
      */
@@ -290,7 +280,7 @@ public class GameController {
 
         // Show appropriate dialogue based on outcome with dynamic content
         if (bossLevel == 1) {
-            // Flameclaw (Level 1)
+            // Flameclaw (Level 1) - Existing code
             enhancedStoryView.showBossBattleResult(success, bossLevel);
 
             // Record progress if successful
@@ -305,7 +295,7 @@ public class GameController {
                 transitionTimer.start();
             }
         } else if (bossLevel == 2) {
-            // Toxitar (Level 2)
+            // Toxitar (Level 2) - existing code
             enhancedStoryView.showLevel2BossBattleResult(success, selectedPotion);
 
             // Record progress if successful
@@ -320,21 +310,24 @@ public class GameController {
                 transitionTimer.start();
             }
         } else if (bossLevel == 3) {
-            // Lord Chaosa (Level 3)
+            // Lord Chaosa (Level 3) - new code
             enhancedStoryView.showLevel3BossBattleResult(success, selectedPotion);
 
             // Record progress if successful
             if (success) {
                 progressTracker.completeLevel("Advanced", 1, 3);
+
+                // After successful completion of Level 3, show game completion dialogue
+                if (success) {
+                    Timer completionTimer = new Timer(5000, e -> {
+                        showGameCompletion();
+                    });
+                    completionTimer.setRepeats(false);
+                    completionTimer.start();
+                }
             }
         }
     }
-
-    
-    
-    
-    
-    
     
     /**
      * Start a specific level
