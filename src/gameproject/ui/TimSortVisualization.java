@@ -12,6 +12,7 @@ import javax.swing.*;
 import javax.swing.plaf.basic.BasicButtonUI;
 import java.awt.*;
 import java.awt.event.*;
+import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -93,6 +94,20 @@ public class TimSortVisualization extends JPanel {
    // Add a list to track all active timers
     private List<Timer> activeTimers = new ArrayList<>();
     
+    
+    
+    
+    // Stores the custom button images
+    private ImageIcon eyeActiveIcon;
+    private ImageIcon eyeDisabledIcon;
+    private JPanel customAbilityButtonPanel;
+    private JLabel abilityIconLabel;
+    private JLabel abilityNameLabel;
+    private boolean abilityButtonEnabled = true;
+
+    
+    
+    
     /**
      * Constructor - Initialize the TimSort visualization
      */
@@ -126,13 +141,13 @@ public class TimSortVisualization extends JPanel {
             // Fallback if custom font can't be loaded
             pixelifySansFont = new Font("Arial", Font.BOLD, 25);
         }
-
         // Load button images
         pauseNormalIcon = resourceManager.getImage("/gameproject/resources/pause_normal.png");
         pauseHoverIcon = resourceManager.getImage("/gameproject/resources/pause_hover.png");
         hintNormalIcon = resourceManager.getImage("/gameproject/resources/hint_normal.png");
         hintHoverIcon = resourceManager.getImage("/gameproject/resources/hint_hover.png");
 
+        
         // Scale button icons to 70x70 pixels
         if (pauseNormalIcon != null) {
             Image img = pauseNormalIcon.getImage().getScaledInstance(70, 70, Image.SCALE_SMOOTH);
@@ -153,6 +168,50 @@ public class TimSortVisualization extends JPanel {
             Image img = hintHoverIcon.getImage().getScaledInstance(70, 70, Image.SCALE_SMOOTH);
             hintHoverIcon = new ImageIcon(img);
         }
+        
+        
+        
+        // Load eye of pattern icons
+        System.out.println("DEBUG: Attempting to load eye_of_pattern_active.png");
+        eyeActiveIcon = resourceManager.getImage("/gameproject/resources/eye_of_pattern_active.png");
+        System.out.println("DEBUG: Attempting to load eye_of_pattern_disabled.png");
+        eyeDisabledIcon = resourceManager.getImage("/gameproject/resources/eye_of_pattern_disabled.png");
+  
+        // Create scaled versions if needed
+        if (eyeActiveIcon != null) {
+            System.out.println("DEBUG: Successfully loaded eye_of_pattern_active.png");
+            Image img = eyeActiveIcon.getImage().getScaledInstance(80, 80, Image.SCALE_SMOOTH);
+            eyeActiveIcon = new ImageIcon(img);
+        } else {
+            System.out.println("WARNING: Could not load eye_of_pattern_active.png");
+            // Create a fallback icon so we can still see something
+            BufferedImage fallbackImg = new BufferedImage(80, 80, BufferedImage.TYPE_INT_ARGB);
+            Graphics2D g2d = fallbackImg.createGraphics();
+            g2d.setColor(Color.GREEN);
+            g2d.fillOval(10, 10, 60, 60);
+            g2d.setColor(Color.WHITE);
+            g2d.drawString("Eye", 30, 40);
+            g2d.dispose();
+            eyeActiveIcon = new ImageIcon(fallbackImg);
+        }
+        
+        if (eyeDisabledIcon != null) {
+            System.out.println("DEBUG: Successfully loaded eye_of_pattern_disabled.png");
+            Image img = eyeDisabledIcon.getImage().getScaledInstance(80, 80, Image.SCALE_SMOOTH);
+            eyeDisabledIcon = new ImageIcon(img);
+        } else {
+            System.out.println("WARNING: Could not load eye_of_pattern_disabled.png");
+            // Create a fallback icon
+            BufferedImage fallbackImg = new BufferedImage(80, 80, BufferedImage.TYPE_INT_ARGB);
+            Graphics2D g2d = fallbackImg.createGraphics();
+            g2d.setColor(Color.GRAY);
+            g2d.fillOval(10, 10, 60, 60);
+            g2d.setColor(Color.WHITE);
+            g2d.drawString("Eye", 30, 40);
+            g2d.dispose();
+            eyeDisabledIcon = new ImageIcon(fallbackImg);
+        }
+        
     }
     
     /**
@@ -233,13 +292,13 @@ public class TimSortVisualization extends JPanel {
         // Control panel - keep position at bottom
         controlPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 20, 10));
         controlPanel.setBounds(0, GameConstants.WINDOW_HEIGHT - 100, GameConstants.WINDOW_WIDTH, 80);
-        controlPanel.setOpaque(false);
-
-        // Ability button
+        controlPanel.setOpaque(false);   
+        
+         // Ability button - KEEP IT but make it invisible
         abilityButton = createStyledButton("Use Eye of Pattern");
         abilityButton.addActionListener(e -> useAbility());
-        controlPanel.add(abilityButton);
 
+        
         // Check button
         checkButton = createStyledButton("Check Selection");
         checkButton.addActionListener(e -> checkPhaseCompletion());
@@ -247,9 +306,127 @@ public class TimSortVisualization extends JPanel {
         controlPanel.add(checkButton);
 
         add(controlPanel);
+        
+        
+        // Create custom ability button panel in the lower left with a border for debugging
+        customAbilityButtonPanel = new JPanel(null) {
+            @Override
+            protected void paintComponent(Graphics g) {
+                super.paintComponent(g);
+                // Optional: draw a border to see the panel area
+                g.setColor(new Color(255, 255, 255, 50)); // Semi-transparent white
+                g.drawRect(0, 0, getWidth()-1, getHeight()-1);
+            }
+        };
+        customAbilityButtonPanel.setOpaque(false);
+
+        // Position it in the bottom left with enough space
+        customAbilityButtonPanel.setBounds(20, GameConstants.WINDOW_HEIGHT - 150, 120, 120);
+
+        // Create icon label for the button with a border
+        abilityIconLabel = new JLabel(eyeActiveIcon);
+        abilityIconLabel.setBounds(20, 0, 80, 80);
+        abilityIconLabel.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        abilityIconLabel.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                System.out.println("DEBUG: Ability icon clicked");
+                if (abilityButtonEnabled) {
+                    useAbility();
+                }
+            }
+
+            @Override
+            public void mouseEntered(MouseEvent e) {
+                // Optional: Add a hover effect
+                abilityIconLabel.setBorder(BorderFactory.createLineBorder(Color.WHITE, 2));
+            }
+
+            @Override
+            public void mouseExited(MouseEvent e) {
+                abilityIconLabel.setBorder(BorderFactory.createLineBorder(Color.GREEN, 1));
+            }
+        });
+
+        customAbilityButtonPanel.add(abilityIconLabel);
+
+        // Create label for the ability name
+        abilityNameLabel = new JLabel("Eye of Pattern", JLabel.CENTER);
+        // Load the custom font
+        Font abilityFont = resourceManager.getFont("/gameproject/resources/PixelifySans.ttf", 16f);
+        if (abilityFont != null) {
+            abilityNameLabel.setFont(abilityFont);
+        } else {
+            abilityNameLabel.setFont(new Font("Arial", Font.BOLD, 14));
+        }
+        abilityNameLabel.setForeground(Color.WHITE);
+        abilityNameLabel.setBounds(0, 85, 120, 25);
+        abilityNameLabel.setBorder(BorderFactory.createLineBorder(Color.WHITE, 1)); // For debugging
+        customAbilityButtonPanel.add(abilityNameLabel);
+
+        // Important: Add the custom panel LAST to ensure it appears on top
+        add(customAbilityButtonPanel);
+
+        // Debug text to verify panel was added
+        System.out.println("DEBUG: Custom ability button panel added at " + 
+                           customAbilityButtonPanel.getBounds().toString());
     }
     
+    // Override the setEnabled method for abilityButton to also update our custom button
+    @Override
+    public void setEnabled(boolean enabled) {
+        super.setEnabled(enabled);
+
+        // Update our custom button state
+        setAbilityButtonEnabled(enabled);
+    }
+
     
+    
+    
+    
+    // Add a method to enable/disable the ability button
+    public void setAbilityButtonEnabled(boolean enabled) {
+        this.abilityButtonEnabled = enabled;
+
+        // Keep the original button's enabled state in sync
+        if (abilityButton != null) {
+            abilityButton.setEnabled(enabled);
+        }
+
+        if (abilityIconLabel != null) {
+            System.out.println("DEBUG: Setting ability icon enabled: " + enabled);
+            if (enabled) {
+                abilityIconLabel.setIcon(eyeActiveIcon);
+                abilityIconLabel.setCursor(new Cursor(Cursor.HAND_CURSOR));
+            } else {
+                abilityIconLabel.setIcon(eyeDisabledIcon);
+                abilityIconLabel.setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
+            }
+        }
+    }
+
+    
+    
+    
+    
+    // Add a method to update the ability name text for different phases
+    public void updateAbilityButtonText(String text) {
+        // Update the original button text
+        if (abilityButton != null) {
+            abilityButton.setText(text);
+        }
+
+        // Extract just the ability name (without "Use")
+        String abilityName = text.replace("Use ", "");
+
+        // Update our custom button text
+        if (abilityNameLabel != null) {
+            abilityNameLabel.setText(abilityName);
+            System.out.println("DEBUG: Updated ability name label to: " + abilityName);
+        }
+    }
+
     
     
     
@@ -1133,6 +1310,12 @@ public class TimSortVisualization extends JPanel {
      * Use the current phase ability
      */
     private void useAbility() {
+        // Check if button is enabled
+        if (!abilityButtonEnabled) return;
+
+        // Temporarily disable the button during animation
+        setAbilityButtonEnabled(false);
+
         if (currentPhase == 1) {
             // Eye of Pattern - Highlight runs
             highlightNaturalRuns();
@@ -1185,8 +1368,17 @@ public class TimSortVisualization extends JPanel {
             dialogueTimer.setRepeats(false);
             dialogueTimer.start();
         }
-    }
-    
+
+        // Re-enable the button after a delay to prevent multiple clicks
+        Timer enableTimer = new Timer(3000, e -> {
+            setAbilityButtonEnabled(true);
+        });
+        enableTimer.setRepeats(false);
+        enableTimer.start();
+
+        // Add this timer to active timers list to manage it
+        activeTimers.add(enableTimer);
+    }    
     
     /**
     * Animate the potion options appearing without any backgrounds or overlays
@@ -3280,7 +3472,8 @@ public class TimSortVisualization extends JPanel {
         switch (currentPhase) {
             case 1:
                 phaseLabel.setText("Phase 1: The Eye of Pattern" + bossContext);
-                abilityButton.setText("Use Eye of Pattern");
+                updateAbilityButtonText("Use Eye of Pattern");
+                abilityNameLabel.setText("Eye of Pattern");
 
                 // Update instruction based on boss
                 if (gameLevel == 3) {
@@ -3294,7 +3487,7 @@ public class TimSortVisualization extends JPanel {
 
             case 2:
                 phaseLabel.setText("Phase 2: The Hand of Balance" + bossContext);
-                abilityButton.setText("Use Hand of Balance");
+                updateAbilityButtonText("Use Hand of Balance");
 
                 // Update instruction based on boss
                 if (gameLevel == 3) {
@@ -3308,7 +3501,7 @@ public class TimSortVisualization extends JPanel {
 
             case 3:
                 phaseLabel.setText("Phase 3: The Mind of Unity" + bossContext);
-                abilityButton.setText("Use Mind of Unity");
+                updateAbilityButtonText("Use Mind of Unity");
 
                 // Update instruction based on boss
                 if (gameLevel == 3) {
