@@ -363,11 +363,15 @@ public class DialogueManager extends JPanel {
      * Start displaying a dialogue sequence
      */
     public void startDialogue(List<NarrativeSystem.DialogueEntry> dialogueSequence) {
-            if (dialogueSequence == null || dialogueSequence.isEmpty()) {
+        // Reset typewriter speed at the beginning of each dialogue
+        resetTypewriterSpeed();  
+        
+        
+        if (dialogueSequence == null || dialogueSequence.isEmpty()) {
             System.out.println("DEBUG: Empty dialogue sequence received!");
             return;
         }
-
+                   
         System.out.println("DEBUG: Starting dialogue sequence with " + dialogueSequence.size() + " entries");
 
         this.currentDialogueSequence = dialogueSequence;
@@ -627,6 +631,32 @@ public class DialogueManager extends JPanel {
     public void setBossBattleResultDialogue(boolean value) {
         isBossBattleResultDialogue = value;
     }
+    
+    
+    
+    
+    
+    
+    
+    // CRITICAL: Add a method to reset the typewriter effect
+    public void resetTypewriterSpeed() {
+        if (typewriterTimer != null && typewriterTimer.isRunning()) {
+            typewriterTimer.stop();
+        }
+
+        // Recreate the timer with the original speed
+        typewriterTimer = new Timer(TYPING_SPEED, e -> {
+            if (currentCharIndex < fullDialogueText.length()) {
+                // Display text up to current character
+                updateDialogueText(fullDialogueText.substring(0, currentCharIndex + 1));
+                currentCharIndex++;
+            } else {
+                typewriterTimer.stop();
+            }
+        });
+    }
+    
+    
     
     
 }
