@@ -1,8 +1,6 @@
 package gameproject.ui;
 
 import gameproject.controller.GameController;
-import gameproject.model.GameModel;
-import gameproject.model.GameState;
 import gameproject.model.NarrativeSystem;
 import gameproject.util.ResourceManager;
 import gameproject.util.GameConstants;
@@ -445,7 +443,22 @@ public class TimSortVisualization extends JPanel {
 
 
         // Check button
-        checkButton = createStyledButton("Check Selection");
+        checkButton = new AnimatedButton("Check Selection", 
+            resourceManager.getImage("/gameproject/resources/NormalButton.png"),
+            resourceManager.getImage("/gameproject/resources/HoverButton.png"),
+            resourceManager.getImage("/gameproject/resources/ClickedButton.png"));
+        Font buttonFont = resourceManager.getFont("/gameproject/resources/PixelifySans.ttf", 18f);
+            if (buttonFont != null) {
+                checkButton.setFont(buttonFont);
+            } else {
+                checkButton.setFont(new Font("Arial", Font.BOLD, 12));
+            }
+            checkButton.setForeground(Color.WHITE);
+            checkButton.setMaximumSize(new Dimension(180, 40));
+            checkButton.setPreferredSize(new Dimension(180, 40));
+            checkButton.setAlignmentX(Component.CENTER_ALIGNMENT);
+        
+        
         checkButton.addActionListener(e -> checkPhaseCompletion());
         checkButton.setEnabled(false);
         controlPanel.add(checkButton);
@@ -462,8 +475,6 @@ public class TimSortVisualization extends JPanel {
         };
         customAbilityButtonPanel.setOpaque(false);
 
-        // Position it in the bottom left with INCREASED SIZE BY 50 PIXELS
-        // Original: 150x150, now 200x200
         customAbilityButtonPanel.setBounds(20, GameConstants.WINDOW_HEIGHT - 240, 200, 200);
 
         // Create icon label for the button with INCREASED SIZE
@@ -1984,6 +1995,7 @@ public class TimSortVisualization extends JPanel {
 
         // Enable the ability button
         abilityButton.setEnabled(true);
+        setAbilityButtonEnabled(true);
 
         // Make sure grid panel is on top of other components
         if (getComponentZOrder(gridPanel) == 0) {
