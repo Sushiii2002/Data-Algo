@@ -94,6 +94,12 @@ public class TimSortVisualization extends JPanel {
     
     
     
+    private ImageIcon backgroundImage = null;
+    private Map<String, ImageIcon> backgroundCache = new HashMap<>();
+
+    
+    
+    
     
     // Stores the custom button images
     private ImageIcon eyeActiveIcon;
@@ -582,6 +588,9 @@ public class TimSortVisualization extends JPanel {
         System.out.println("DEBUG: TimSortVisualization game level set to: " + this.gameLevel);
     
 
+        // Load the appropriate background
+        loadBackground(currentPhase);
+        
         // Update boss-specific elements
         if (level == 3) {
             // Level 3 - Lord Chaosa
@@ -3264,6 +3273,10 @@ public class TimSortVisualization extends JPanel {
 
         // Reset everything - crucial for clean transition
         gridPanel.removeAll();
+        
+        System.out.println("DEBUG: Advancing to phase " + currentPhase);
+        loadBackground(currentPhase);
+        
 
         // Update phase label
         if (currentPhase == 2) {
@@ -3405,15 +3418,23 @@ public class TimSortVisualization extends JPanel {
         return button;
     }
     
+    // Make sure the paintComponent method is properly drawing the background
     @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
 
-        // Draw background
-        g.setColor(new Color(25, 25, 50));
-        g.fillRect(0, 0, getWidth(), getHeight());
+        // Draw the background image to fill the entire panel
+        if (backgroundImage != null) {
+            System.out.println("DEBUG: Drawing background for phase " + currentPhase);
+            g.drawImage(backgroundImage.getImage(), 0, 0, getWidth(), getHeight(), this);
+        } else {
+            // Fallback to solid color if image is not available
+            System.out.println("DEBUG: No background available, using solid color");
+            g.setColor(new Color(25, 25, 50));
+            g.fillRect(0, 0, getWidth(), getHeight());
+        }
 
-        // No phase-specific decorative elements - removed
+        // Any additional decoration or UI elements would go here
     }
     
     /**
@@ -3555,11 +3576,16 @@ public class TimSortVisualization extends JPanel {
     */
     public void setPhase(int phase) {
         if (phase >= 1 && phase <= 3) {
+            System.out.println("DEBUG: Setting phase to " + phase);
+            
             // First reset everything
             gridPanel.removeAll();
 
             // Set the new phase
             currentPhase = phase;
+            
+            // Load the appropriate background for this phase
+            loadBackground(phase);
 
             // Load the appropriate ability icons for this phase
             loadPhaseAbilityIcons(phase);
@@ -4473,7 +4499,66 @@ public class TimSortVisualization extends JPanel {
     
     
     
-    
+    // Add this method to load the appropriate background based on game level and phase
+    private void loadBackground(int phase) {
+        String backgroundPath;
+
+        // Select background based on phase
+        switch(phase) {
+            case 1:
+                backgroundPath = "/gameproject/resources/backgrounds/forest_bg.png";
+                System.out.println("DEBUG: Loading Phase 1 background (forest)");
+                break;
+            case 2:
+                backgroundPath = "/gameproject/resources/backgrounds/scholars_library_bg.png";
+                System.out.println("DEBUG: Loading Phase 2 background (scholar's library)");
+                break;
+            case 3:
+                backgroundPath = "/gameproject/resources/backgrounds/alchemy_laboratory_bg.png";
+                System.out.println("DEBUG: Loading Phase 3 background (alchemy lab)");
+                break;
+            default:
+                backgroundPath = "/gameproject/resources/backgrounds/forest_bg.png";
+                System.out.println("DEBUG: Loading default background (forest)");
+                break;
+        }
+
+
+        // Force reload by not using cache (for debugging)
+        backgroundCache.remove(backgroundPath); // Remove from cache to force reload
+
+        // Load the background image
+        backgroundImage = resourceManager.getImage(backgroundPath);
+
+        // Cache the background if it loaded successfully
+        if (backgroundImage != null) {
+            System.out.println("DEBUG: Successfully loaded background: " + backgroundPath);
+            backgroundCache.put(backgroundPath, backgroundImage);
+        } else {
+            // If loading failed, create a fallback gradient
+            System.out.println("WARNING: Failed to load background image: " + backgroundPath);
+
+            // Create fallback gradient background
+            int width = GameConstants.WINDOW_WIDTH;
+            int height = GameConstants.WINDOW_HEIGHT;
+
+            BufferedImage fallbackImage = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
+            Graphics2D g2d = fallbackImage.createGraphics();
+
+            // Create gradient from dark blue to lighter blue
+            GradientPaint gradient = new GradientPaint(
+                0, 0, new Color(20, 30, 60),
+                0, height, new Color(50, 70, 120)
+            );
+
+            g2d.setPaint(gradient);
+            g2d.fillRect(0, 0, width, height);
+            g2d.dispose();
+
+            backgroundImage = new ImageIcon(fallbackImage);
+            backgroundCache.put(backgroundPath, backgroundImage);
+        }
+    }
     
 //end of timsortvisualization class
 }

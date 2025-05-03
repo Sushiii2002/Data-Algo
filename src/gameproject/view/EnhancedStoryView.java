@@ -43,7 +43,7 @@ public class EnhancedStoryView extends JPanel {
         level1Backgrounds.put("phase3", "/gameproject/resources/backgrounds/alchemy_laboratory_bg.png");
         level1Backgrounds.put("boss", "/gameproject/resources/backgrounds/village_destroyed_bg.png");
         BACKGROUND_PATHS.put(1, level1Backgrounds);
-        
+
         // Level 2 backgrounds (placeholders for now)
         Map<String, String> level2Backgrounds = new HashMap<>();
         level2Backgrounds.put("prologue", "/gameproject/resources/story_bg.png");
@@ -52,7 +52,7 @@ public class EnhancedStoryView extends JPanel {
         level2Backgrounds.put("phase3", "/gameproject/resources/story_bg.png");
         level2Backgrounds.put("boss", "/gameproject/resources/story_bg.png");
         BACKGROUND_PATHS.put(2, level2Backgrounds);
-        
+
         // Level 3 backgrounds (placeholders for now)
         Map<String, String> level3Backgrounds = new HashMap<>();
         level3Backgrounds.put("prologue", "/gameproject/resources/story_bg.png");
@@ -242,54 +242,54 @@ public class EnhancedStoryView extends JPanel {
         if (currentLevel < 1 || currentLevel > 3) {
             currentLevel = 1; // Default to Level 1 if invalid
         }
-        
+
         // Get the background path for this level and phase
         Map<String, String> levelBackgrounds = BACKGROUND_PATHS.get(currentLevel);
         if (levelBackgrounds == null) {
             System.err.println("No backgrounds defined for level " + currentLevel);
             return;
         }
-        
+
         String backgroundPath = levelBackgrounds.get(phase);
         if (backgroundPath == null) {
             System.err.println("No background defined for phase " + phase + " in level " + currentLevel);
             return;
         }
-        
+
         // Check if we've already loaded this background
         if (backgroundCache.containsKey(backgroundPath)) {
             currentBackground = backgroundCache.get(backgroundPath);
             return;
         }
-        
+
         // Load the background image
         ImageIcon background = resourceManager.getImage(backgroundPath);
-        
+
         // If background image is not found, create a fallback gradient
         if (background == null) {
             System.err.println("Failed to load background: " + backgroundPath);
-            
+
             // Create a fallback gradient background
             int width = GameConstants.WINDOW_WIDTH;
             int height = GameConstants.WINDOW_HEIGHT;
-            
-            java.awt.image.BufferedImage fallbackImage = new java.awt.image.BufferedImage(
-                width, height, java.awt.image.BufferedImage.TYPE_INT_RGB);
+
+            BufferedImage fallbackImage = new BufferedImage(
+                width, height, BufferedImage.TYPE_INT_RGB);
             Graphics2D g2d = fallbackImage.createGraphics();
-            
+
             // Create gradient from dark blue to lighter blue
             GradientPaint gradient = new GradientPaint(
                 0, 0, new Color(20, 30, 60),
                 0, height, new Color(50, 70, 120)
             );
-            
+
             g2d.setPaint(gradient);
             g2d.fillRect(0, 0, width, height);
             g2d.dispose();
-            
+
             background = new ImageIcon(fallbackImage);
         }
-        
+
         // Cache and set the background
         backgroundCache.put(backgroundPath, background);
         currentBackground = background;
@@ -721,28 +721,28 @@ public class EnhancedStoryView extends JPanel {
     @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
-        
+
         Graphics2D g2d = (Graphics2D) g;
-        
+
         // Enable anti-aliasing for smoother rendering
         g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
         g2d.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
-        
+
         // Set composite for fade effects
         Composite originalComposite = g2d.getComposite();
         if (isFadingIn || isFadingOut) {
             g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, alphaLevel));
         }
-        
+
         // Draw current background image
         if (currentBackground != null) {
             g2d.drawImage(currentBackground.getImage(), 0, 0, getWidth(), getHeight(), this);
         }
-        
+
         // Restore original composite
         g2d.setComposite(originalComposite);
     }
-    
+
     
     
     
@@ -1213,6 +1213,7 @@ public class EnhancedStoryView extends JPanel {
         // Get dynamic dialogue from NarrativeSystem
         List<NarrativeSystem.DialogueEntry> battleDialogues = 
             narrativeSystem.getLordChaosaBattleOutcomeDialogue(success, selectedPotion);
+
 
         // IMPORTANT: Make sure dialogueManager is visible and on top
         dialogueManager.setVisible(true);
