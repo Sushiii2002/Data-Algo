@@ -37,15 +37,7 @@ public class TimSortVisualization extends JPanel {
     private JButton hintButton;
     
     // Timer and UI controls from original game
-    private JLabel timerLabel;
     private JButton pauseButton;
-    private JPanel heartsPanel;
-    private JLabel[] heartLabels;
-    private Timer gameTimer;
-    private int timeRemaining = 300; // 5 minutes in seconds
-    private int livesRemaining = 3;
-    private ImageIcon heartFilledIcon;
-    private ImageIcon heartEmptyIcon;
     private ImageIcon pauseNormalIcon;
     private ImageIcon pauseHoverIcon;
     private ImageIcon hintNormalIcon;
@@ -137,8 +129,7 @@ public class TimSortVisualization extends JPanel {
         // Generate initial ingredients
         generateIngredients();
         
-        // Initialize timer to count down from 5 minutes
-        gameTimer = new Timer(1000, e -> updateTimer());
+      
     }
     
     /**
@@ -351,17 +342,7 @@ public class TimSortVisualization extends JPanel {
     }
     
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+
     
     /**
      * Initialize all UI components
@@ -762,7 +743,6 @@ public class TimSortVisualization extends JPanel {
     */
     private void showPauseMenu() {
         // Pause the timer
-        gameTimer.stop();
 
         // Create semi-transparent dark overlay panel
         JPanel overlay = new JPanel() {
@@ -799,8 +779,7 @@ public class TimSortVisualization extends JPanel {
         resumeButton.addActionListener(e -> {
             remove(overlay);
             repaint();
-            // Resume the timer when Resume button is pressed
-            gameTimer.start();
+
         });
 
         AnimatedButton restartButton = new AnimatedButton("RESTART", 
@@ -850,7 +829,6 @@ public class TimSortVisualization extends JPanel {
                 // User canceled restart, remove overlay and resume game
                 remove(overlay);
                 repaint();
-                gameTimer.start();
             }
         });
 
@@ -886,7 +864,6 @@ public class TimSortVisualization extends JPanel {
                 // User canceled, remove overlay and resume game
                 remove(overlay);
                 repaint();
-                gameTimer.start();
             }
         });
 
@@ -929,144 +906,9 @@ public class TimSortVisualization extends JPanel {
         System.out.println("DEBUG: Saved progress for level " + gameLevel + ", phase " + currentPhase);
     }
 
-
-
-    
-    
-    
-    
-    
     
 
-    /**
-     * Reset the current phase
-     */
-    private void resetPhase() {
-        // Reset timer
-        timeRemaining = 300;
-        updateTimerDisplay();
-        
-        // Reset lives
-        resetLives();
-        
-        // Reset phase-specific state
-        if (currentPhase == 1) {
-            // Reset Eye of Pattern phase
-            selectedIngredients.clear();
-            identifiedRuns.clear();
-            generateIngredients();
-        } else if (currentPhase == 2) {
-            // Reset Hand of Balance phase
-            leftGroup.clear();
-            rightGroup.clear();
-            arrangeIngredientsForSorting();
-        } else if (currentPhase == 3) {
-            // Reset Mind of Unity phase
-            craftedPotion = null;
-            displayPotionOptions();
-        }
-        
-        // Reset completion state
-        phaseCompleted = false;
-        checkButton.setEnabled(false);
-        
-        // Update UI
-        revalidate();
-        repaint();
-    }
-    
-    /**
-     * Reset lives to full
-     */
-    private void resetLives() {
-        livesRemaining = 3;
-        for (int i = 0; i < 3; i++) {
-            heartLabels[i].setIcon(heartFilledIcon);
-        }
-    }
-    
-    /**
-     * Lose a life and check if all hearts are gone
-     */
-    private void loseLife() {
-        if (livesRemaining > 0) {
-            livesRemaining--;
-            heartLabels[livesRemaining].setIcon(heartEmptyIcon);
 
-            // Check if all hearts are depleted
-            if (livesRemaining == 0) {
-                // Show level failed screen when all hearts are gone
-                showLevelFailedScreen();
-            }
-        }
-    }
-    
-    /**
-     * Show level failed screen with semi-transparent dark overlay
-     */
-    private void showLevelFailedScreen() {
-        // Stop the timer
-        gameTimer.stop();
-
-        // Create semi-transparent dark overlay panel
-        JPanel overlay = new JPanel() {
-            @Override
-            protected void paintComponent(Graphics g) {
-                super.paintComponent(g);
-                // Semi-transparent dark overlay (60% opacity black)
-                g.setColor(new Color(0, 0, 0, 153));
-                g.fillRect(0, 0, getWidth(), getHeight());
-            }
-        };
-        overlay.setLayout(null);
-        overlay.setBounds(0, 0, GameConstants.WINDOW_WIDTH, GameConstants.WINDOW_HEIGHT);
-        overlay.setOpaque(false);
-        add(overlay, 0);
-
-        // Create "Level Failed" text
-        JLabel failedLabel = new JLabel("Level", JLabel.CENTER);
-        failedLabel.setFont(pixelifySansFont.deriveFont(50f));
-        failedLabel.setForeground(Color.WHITE);
-        failedLabel.setBounds(0, (GameConstants.WINDOW_HEIGHT / 2) - 80, GameConstants.WINDOW_WIDTH, 50);
-        overlay.add(failedLabel);
-
-        JLabel failedLabel2 = new JLabel("Failed", JLabel.CENTER);
-        failedLabel2.setFont(pixelifySansFont.deriveFont(50f));
-        failedLabel2.setForeground(Color.WHITE);
-        failedLabel2.setBounds(0, (GameConstants.WINDOW_HEIGHT / 2) - 30, GameConstants.WINDOW_WIDTH, 50);
-        overlay.add(failedLabel2);
-
-        // Create buttons with same styling as pause menu
-        AnimatedButton restartButton = new AnimatedButton("RESTART", 
-            resourceManager.getImage("/gameproject/resources/NormalButton.png"),
-            resourceManager.getImage("/gameproject/resources/HoverButton.png"),
-            resourceManager.getImage("/gameproject/resources/ClickedButton.png"));
-        restartButton.setFont(pixelifySansFont.deriveFont(28f));
-        restartButton.setForeground(Color.WHITE);
-        restartButton.setBounds((GameConstants.WINDOW_WIDTH / 2) - 220, (GameConstants.WINDOW_HEIGHT / 2) + 50, 200, 60);
-        restartButton.addActionListener(e -> {
-            remove(overlay);
-            resetPhase();
-        });
-        overlay.add(restartButton);
-
-        AnimatedButton menuButton = new AnimatedButton("MAIN MENU", 
-            resourceManager.getImage("/gameproject/resources/NormalButton.png"),
-            resourceManager.getImage("/gameproject/resources/HoverButton.png"),
-            resourceManager.getImage("/gameproject/resources/ClickedButton.png"));
-        menuButton.setFont(pixelifySansFont.deriveFont(28f));
-        menuButton.setForeground(Color.WHITE);
-        menuButton.setBounds((GameConstants.WINDOW_WIDTH / 2) + 20, (GameConstants.WINDOW_HEIGHT / 2) + 50, 200, 60);
-        menuButton.addActionListener(e -> {
-            remove(overlay);
-            controller.showMainMenu();
-        });
-        overlay.add(menuButton);
-
-        revalidate();
-        repaint();
-    }
-    
     /**
      * Generate ingredients for the grid
      */
@@ -1310,53 +1152,7 @@ public class TimSortVisualization extends JPanel {
         repaint();
     }
     
-    /**
-     * Move ingredient between groups in Phase 2
-     */
-    private void moveIngredientToGroup(IngredientItem ingredient) {
-        if (!ingredient.isSelected()) {
-            return;
-        }
-        
-        // Determine target group
-        if (leftGroup.contains(ingredient)) {
-            // Move from left to right if right has space
-            if (rightGroup.size() < GROUP_SIZE) {
-                leftGroup.remove(ingredient);
-                rightGroup.add(ingredient);
-                
-                // Sort right group
-                sortGroup(rightGroup);
-                updateGroupDisplay();
-            }
-        } else if (rightGroup.contains(ingredient)) {
-            // Move from right to left if left has space
-            if (leftGroup.size() < GROUP_SIZE) {
-                rightGroup.remove(ingredient);
-                leftGroup.add(ingredient);
-                
-                // Sort left group
-                sortGroup(leftGroup);
-                updateGroupDisplay();
-            }
-        } else {
-            // Add to left group if it has space
-            if (leftGroup.size() < GROUP_SIZE) {
-                leftGroup.add(ingredient);
-                sortGroup(leftGroup);
-                updateGroupDisplay();
-            } 
-            // Otherwise add to right group if it has space
-            else if (rightGroup.size() < GROUP_SIZE) {
-                rightGroup.add(ingredient);
-                sortGroup(rightGroup);
-                updateGroupDisplay();
-            }
-        }
-        
-        // Check if both groups are full and sorted
-        checkButton.setEnabled(leftGroup.size() == GROUP_SIZE && rightGroup.size() == GROUP_SIZE);
-    }
+    
     
     /**
     * Improved sort group method that does a thorough sort
@@ -1366,32 +1162,6 @@ public class TimSortVisualization extends JPanel {
         Collections.sort(group, (a, b) -> Integer.compare(a.getValue(), b.getValue()));
     }
     
-    /**
-     * Update the display of groups in Phase 2
-     */
-    private void updateGroupDisplay() {
-        // Update left group display
-        for (int i = 0; i < leftGroup.size(); i++) {
-            IngredientItem ingredient = leftGroup.get(i);
-            
-            // Position in left group
-            ingredient.setLocation(
-                50 + (i * INGREDIENT_SIZE),
-                250  // Moved from 200 to 250
-            );
-        }
-        
-        // Update right group display
-        for (int i = 0; i < rightGroup.size(); i++) {
-            IngredientItem ingredient = rightGroup.get(i);
-            
-            // Position in right group
-            ingredient.setLocation(
-                450 + (i * INGREDIENT_SIZE),
-                250  // Moved from 200 to 250
-            );
-        }
-    }
     
     /**
     * Select a potion group in Phase 3
@@ -2090,24 +1860,6 @@ public class TimSortVisualization extends JPanel {
     }
     
     
-    /**
-    * Get the appropriate color for a potion type
-    */
-    private Color getPotionColor(String potionType) {
-        switch (potionType) {
-            case "Fire Resistance":
-                return new Color(255, 80, 80); // Red
-            case "Cold Resistance":
-                return new Color(80, 80, 255); // Blue
-            case "Strength":
-                return new Color(255, 140, 0); // Orange
-            case "Dexterity":
-                return new Color(0, 200, 0); // Green
-            default:
-                return Color.WHITE; // Default color
-        }
-    }
-    
     
     
     
@@ -2665,27 +2417,7 @@ public class TimSortVisualization extends JPanel {
         gridPanel.repaint();
     }
     
-    
-    
-    
-    
-    /**
-    * Helper method to convert color name string to Color object
-    */
-    private Color getColorForName(String colorName) {
-        switch (colorName.toUpperCase()) {
-            case "RED": return Color.RED;
-            case "GREEN": return new Color(0, 180, 0);  // Brighter green
-            case "BLUE": return Color.BLUE;
-            case "CYAN": return Color.CYAN;
-            case "YELLOW": return new Color(255, 215, 0);  // Gold yellow
-            case "ORANGE": return new Color(255, 165, 0);  // Orange
-            case "PURPLE": return new Color(128, 0, 128);  // Purple
-            default: return Color.WHITE;
-        }
-    }
-    
-    
+
     
     /**
     * Modified check phase completion to account for automatic sorting
@@ -2718,7 +2450,6 @@ public class TimSortVisualization extends JPanel {
                         "Try Again",
                         JOptionPane.WARNING_MESSAGE
                     );
-                    loseLife();
                 }
             }
         } else if (currentPhase == 2) {
@@ -2825,7 +2556,6 @@ public class TimSortVisualization extends JPanel {
                     "Try Again",
                     JOptionPane.WARNING_MESSAGE
                 );
-                loseLife();
                 isLeftGroupSorted = false;
                 isRightGroupSorted = false;
             }
@@ -3350,45 +3080,8 @@ public class TimSortVisualization extends JPanel {
         );
     }
     
-    /**
-     * Update the timer - counting down from 5 minutes
-     */
-    private void updateTimer() {
-        if (timeRemaining > 0) {
-            timeRemaining--;
-            updateTimerDisplay();
 
-            // Check if time is up
-            if (timeRemaining <= 0) {
-                gameTimer.stop();
-                showLevelFailedScreen();
-            }
-        }
-    }
-    
-    /**
-     * Update the timer display
-     */
-    private void updateTimerDisplay() {
-        // Add this check to prevent null pointer exceptions
-        if (timerLabel == null) {
-            System.out.println("WARNING: timerLabel is null, skipping timer update");
-            return;
-        }
 
-        int minutes = timeRemaining / 60;
-        int seconds = timeRemaining % 60;
-        timerLabel.setText(String.format("%02d:%02d", minutes, seconds));
-    }
-    
-    /**
-     * Start the timer for this phase
-     */
-    public void startTimer() {
-        timeRemaining = 300; // Reset to 5 minutes
-        updateTimerDisplay();
-        gameTimer.start();
-    }
     
     /**
      * Create a styled button
@@ -3425,7 +3118,6 @@ public class TimSortVisualization extends JPanel {
 
         // Draw the background image to fill the entire panel
         if (backgroundImage != null) {
-            System.out.println("DEBUG: Drawing background for phase " + currentPhase);
             g.drawImage(backgroundImage.getImage(), 0, 0, getWidth(), getHeight(), this);
         } else {
             // Fallback to solid color if image is not available
@@ -3929,8 +3621,6 @@ public class TimSortVisualization extends JPanel {
 
             // For group labels (used in Phase 3), draw just text without any colored box
             if (isGroupLabel) {
-                // MODIFIED: No more colored backgrounds for potion labels
-                // Just draw the potion name text directly
 
                 // Get text color based on potion type (kept for text only)
                 Color textColor = Color.WHITE; // Default white text
@@ -3959,6 +3649,37 @@ public class TimSortVisualization extends JPanel {
                     y += fm.getHeight();
                 }
             }
+            
+            // Only show value for regular ingredients, not group labels
+            if (!isGroupLabel) {
+                // Define circle size and position
+                int circleSize = 28; // Size of the circle
+                int circleX = getWidth() - circleSize - 5; // 5px from right edge
+                int circleY = getHeight() - circleSize - 5; // 5px from bottom edge
+
+                // Draw circle with semi-transparent background
+                g2d.setColor(new Color(0, 0, 0, 180)); // Semi-transparent black
+                g2d.fillOval(circleX, circleY, circleSize, circleSize);
+
+                // Draw circle border
+                g2d.setColor(new Color(255, 255, 255, 200)); // Semi-transparent white
+                g2d.setStroke(new BasicStroke(1.5f));
+                g2d.drawOval(circleX, circleY, circleSize, circleSize);
+
+                // Draw value text
+                g2d.setFont(new Font("Arial", Font.BOLD, 12));
+                g2d.setColor(Color.WHITE);
+
+                // Center the text in the circle
+                String valueText = String.valueOf(value);
+                FontMetrics fm = g2d.getFontMetrics();
+                int textX = circleX + (circleSize - fm.stringWidth(valueText)) / 2;
+                int textY = circleY + ((circleSize + fm.getAscent()) / 2);
+
+                g2d.drawString(valueText, textX, textY);
+            }
+            
+            
         }
 
         // Getters and setters
@@ -4023,26 +3744,7 @@ public class TimSortVisualization extends JPanel {
         }
     }
     
-    
-    /**
-    * Get the description for a specific potion type
-    */
-    private String getPotionDescription(String potionType) {
-        switch (potionType) {
-            case "Fire Resistance":
-                return "Protects against fire attacks and extreme heat.";
-            case "Cold Resistance":
-                return "Protects against ice attacks and freezing temperatures.";
-            case "Strength":
-                return "Enhances physical strength and combat abilities.";
-            case "Dexterity":
-                return "Improves agility, reflexes, and precision.";
-            default:
-                return "A mysterious potion with unknown effects.";
-        }
-    }
-    
-    
+ 
     
     /**
     * Add this method to TimSortVisualization class to show phase dialogues
@@ -4176,10 +3878,7 @@ public class TimSortVisualization extends JPanel {
     * Pause game elements during dialogue
     */
     private void pauseDuringDialogue() {
-        // Pause any active timers
-        if (gameTimer != null && gameTimer.isRunning()) {
-            gameTimer.stop();
-        }
+
 
         // Disable buttons during dialogue
         abilityButton.setEnabled(false);
@@ -4193,10 +3892,7 @@ public class TimSortVisualization extends JPanel {
     * Resume game elements after dialogue ends
     */
     private void resumeAfterDialogue() {
-        // Resume timers if they were active before
-        if (gameTimer != null) {
-            gameTimer.start();
-        }
+
 
         // Re-enable buttons
         abilityButton.setEnabled(true);
@@ -4256,10 +3952,6 @@ public class TimSortVisualization extends JPanel {
         instructionLabel.setText("Use your 'Eye of Pattern' ability to identify ingredient sequences (runs).");
         checkButton.setEnabled(false);
 
-        // IMPORTANT: Make sure timer is stopped to prevent NPE
-        if (gameTimer != null && gameTimer.isRunning()) {
-            gameTimer.stop();
-        }
 
         // Force UI refresh
         revalidate();
@@ -4345,11 +4037,7 @@ public class TimSortVisualization extends JPanel {
         revalidate();
         repaint();
     }
-    
-    
-    
-    
-    
+ 
     
     
     

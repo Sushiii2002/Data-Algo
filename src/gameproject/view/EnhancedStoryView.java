@@ -46,20 +46,20 @@ public class EnhancedStoryView extends JPanel {
 
         // Level 2 backgrounds (placeholders for now)
         Map<String, String> level2Backgrounds = new HashMap<>();
-        level2Backgrounds.put("prologue", "/gameproject/resources/story_bg.png");
-        level2Backgrounds.put("phase1", "/gameproject/resources/story_bg.png");
-        level2Backgrounds.put("phase2", "/gameproject/resources/story_bg.png");
-        level2Backgrounds.put("phase3", "/gameproject/resources/story_bg.png");
-        level2Backgrounds.put("boss", "/gameproject/resources/story_bg.png");
+        level2Backgrounds.put("prologue", "/gameproject/resources/backgrounds/market_bg.png");
+        level2Backgrounds.put("phase1", "/gameproject/resources/backgrounds/mountain_bg.png");
+        level2Backgrounds.put("phase2", "/gameproject/resources/backgrounds/scholars_library_bg.png");
+        level2Backgrounds.put("phase3", "/gameproject/resources/backgrounds/lab_bg.png");
+        level2Backgrounds.put("boss", "/gameproject/resources/backgrounds/toxitar_battle_scene.png");
         BACKGROUND_PATHS.put(2, level2Backgrounds);
 
         // Level 3 backgrounds (placeholders for now)
         Map<String, String> level3Backgrounds = new HashMap<>();
-        level3Backgrounds.put("prologue", "/gameproject/resources/story_bg.png");
-        level3Backgrounds.put("phase1", "/gameproject/resources/story_bg.png");
-        level3Backgrounds.put("phase2", "/gameproject/resources/story_bg.png");
-        level3Backgrounds.put("phase3", "/gameproject/resources/story_bg.png");
-        level3Backgrounds.put("boss", "/gameproject/resources/story_bg.png");
+        level3Backgrounds.put("prologue", "/gameproject/resources/backgrounds/castle_bg.png");
+        level3Backgrounds.put("phase1", "/gameproject/resources/backgrounds/desert_bg.png");
+        level3Backgrounds.put("phase2", "/gameproject/resources/backgrounds/scholars_library_bg.png");
+        level3Backgrounds.put("phase3", "/gameproject/resources/backgrounds/alchemy_bg.png");
+        level3Backgrounds.put("boss", "/gameproject/resources/backgrounds/lord_chaosa_battle_scene.png");
         BACKGROUND_PATHS.put(3, level3Backgrounds);
     }
     
