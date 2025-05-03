@@ -501,8 +501,9 @@ public class EnhancedStoryView extends JPanel {
     * Show boss battle result with dynamic dialogue and proper fade transitions
     */
     public void showBossBattleResult(boolean success, int bossLevel) {
-        // Load the boss battle background
+        // Load the boss battle background - IMPORTANT CHANGE
         loadBackground("boss");
+        System.out.println("DEBUG: Loaded boss battle background for level " + currentLevel);
 
         // Get the selected potion
         String selectedPotion = controller.model.getSelectedPotion();
@@ -573,8 +574,6 @@ public class EnhancedStoryView extends JPanel {
 
                                 // Wait for 1 second with black screen
                                 Timer blackScreenTimer = new Timer(1000, ev -> {
-                                    // Now start fade IN for transition dialogue
-
                                     // CRITICAL FIX: Record progress for Level 1 completion here
                                     // This is the important line to add:
                                     controller.progressTracker.completeLevel("Beginner", 1, 3);
@@ -911,19 +910,29 @@ public class EnhancedStoryView extends JPanel {
             System.out.println("DEBUG: Retrieved selected potion from model: " + selectedPotion);
         }
 
+        // IMPORTANT: Load the Toxitar boss battle background
+        currentLevel = 2; // Ensure correct level is set
+        loadBackground("boss");
+        System.out.println("DEBUG: Loaded Toxitar boss battle background");
+
         setVisible(true);
 
         // Get dynamic dialogue from NarrativeSystem
         List<NarrativeSystem.DialogueEntry> battleDialogues = 
             narrativeSystem.getToxitarBattleOutcomeDialogue(success, selectedPotion);
 
-        // IMPORTANT: Make sure dialogueManager is visible and on top
-        dialogueManager.setVisible(true);
-        if (getComponentZOrder(dialogueManager) != 0) {
-            setComponentZOrder(dialogueManager, 0);
-        }
+        // CRITICAL FIX: Create a fresh dialogue manager to ensure proper rendering
+        remove(dialogueManager);
+        dialogueManager = new DialogueManager(controller);
+        dialogueManager.setBounds(0, 0, GameConstants.WINDOW_WIDTH, GameConstants.WINDOW_HEIGHT);
+        add(dialogueManager);
 
-        // CRITICAL FIX: Set the boss battle result flag before starting dialogue
+        // CRITICAL FIX: Ensure this panel is on top and visible
+        setComponentZOrder(dialogueManager, 0);
+        dialogueManager.setVisible(true);
+        System.out.println("DEBUG: Created fresh dialogue manager and set to visible");
+
+        // Set the boss battle result flag
         dialogueManager.setBossBattleResultDialogue(true);
 
         // Handle successful battle with a black screen transition
@@ -981,7 +990,7 @@ public class EnhancedStoryView extends JPanel {
                                     }
 
                                     // CRITICAL FIX: Create a fresh dialogue manager for level 2 to 3 transition
-                                    remove(dialogueManager);  // Remove old dialogue manager
+                                    remove(dialogueManager);
                                     dialogueManager = new DialogueManager(controller);
                                     dialogueManager.setBounds(0, 0, GameConstants.WINDOW_WIDTH, GameConstants.WINDOW_HEIGHT);
                                     add(dialogueManager);
@@ -1008,6 +1017,10 @@ public class EnhancedStoryView extends JPanel {
 
                                                 // Remove black screen when completely faded in
                                                 remove(blackScreen);
+
+                                                // Load the proper background for transition dialogue
+                                                currentLevel = 2; // Ensure correct level is set
+                                                loadBackground("prologue");
 
                                                 // Get Level 2 to Level 3 transition dialogue
                                                 List<NarrativeSystem.DialogueEntry> transitionDialogues = 
@@ -1062,17 +1075,16 @@ public class EnhancedStoryView extends JPanel {
 
         // Set game state and start dialogue
         controller.model.setCurrentState(GameState.STORY_MODE);
+
+        // CRITICAL FIX: Add debugging to trace dialogue starting
+        System.out.println("DEBUG: Starting battle dialogue with " + battleDialogues.size() + " entries");
         dialogueManager.startDialogue(battleDialogues);
 
-        // Force repaint
+        // CRITICAL FIX: Ensure UI is updated
         revalidate();
         repaint();
     }
 
-
-
-    
-    
     
     /**
     * Start dynamic dialogue for a specific phase in Level 2
@@ -1269,20 +1281,29 @@ public class EnhancedStoryView extends JPanel {
             System.out.println("DEBUG: Retrieved selected potion from model: " + selectedPotion);
         }
 
+        // IMPORTANT: Load the Lord Chaosa boss battle background
+        currentLevel = 3; // Ensure correct level is set
+        loadBackground("boss");
+        System.out.println("DEBUG: Loaded Lord Chaosa boss battle background");
+
         setVisible(true);
 
         // Get dynamic dialogue from NarrativeSystem
         List<NarrativeSystem.DialogueEntry> battleDialogues = 
             narrativeSystem.getLordChaosaBattleOutcomeDialogue(success, selectedPotion);
 
+        // CRITICAL FIX: Create a fresh dialogue manager to ensure proper rendering
+        remove(dialogueManager);
+        dialogueManager = new DialogueManager(controller);
+        dialogueManager.setBounds(0, 0, GameConstants.WINDOW_WIDTH, GameConstants.WINDOW_HEIGHT);
+        add(dialogueManager);
 
-        // IMPORTANT: Make sure dialogueManager is visible and on top
+        // CRITICAL FIX: Ensure this panel is on top and visible
+        setComponentZOrder(dialogueManager, 0);
         dialogueManager.setVisible(true);
-        if (getComponentZOrder(dialogueManager) != 0) {
-            setComponentZOrder(dialogueManager, 0);
-        }
+        System.out.println("DEBUG: Created fresh dialogue manager and set to visible");
 
-        // CRITICAL FIX: Set the boss battle result flag before starting dialogue
+        // Set the boss battle result flag
         dialogueManager.setBossBattleResultDialogue(true);
 
         // Handle successful battle with a black screen transition
@@ -1290,6 +1311,8 @@ public class EnhancedStoryView extends JPanel {
             dialogueManager.setDialogueEndListener(new DialogueManager.DialogueEndListener() {
                 @Override
                 public void onDialogueEnd() {
+                    // Rest of the code remains the same...
+                    // [Existing transition code continues here]
                     System.out.println("DEBUG: Battle success dialogue ended, now showing game completion with fade transition");
 
                     // Create a black screen overlay with initial transparency of 0
@@ -1368,6 +1391,10 @@ public class EnhancedStoryView extends JPanel {
                                                 // Remove black screen when completely faded in
                                                 remove(blackScreen);
 
+                                                // Load the castle background for the completion dialogue
+                                                currentLevel = 3; // Ensure correct level is set
+                                                loadBackground("prologue");
+
                                                 // Record completion
                                                 controller.progressTracker.completeLevel("Advanced", 1, 3);
 
@@ -1420,9 +1447,12 @@ public class EnhancedStoryView extends JPanel {
 
         // Set game state and start dialogue
         controller.model.setCurrentState(GameState.STORY_MODE);
+
+        // CRITICAL FIX: Add debugging to trace dialogue starting
+        System.out.println("DEBUG: Starting battle dialogue with " + battleDialogues.size() + " entries");
         dialogueManager.startDialogue(battleDialogues);
 
-        // Force repaint
+        // CRITICAL FIX: Ensure UI is updated
         revalidate();
         repaint();
     }
