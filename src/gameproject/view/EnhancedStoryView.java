@@ -11,6 +11,8 @@ import java.awt.*;
 import java.awt.event.*;
 import java.util.List;
 import java.awt.image.BufferedImage;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Enhanced story view that integrates with the NarrativeSystem
@@ -24,6 +26,45 @@ public class EnhancedStoryView extends JPanel {
     
     // Background elements
     private ImageIcon backgroundImage;
+    
+    // Background management
+    private Map<String, ImageIcon> backgroundCache = new HashMap<>();
+    private ImageIcon currentBackground;
+    private int currentLevel = 1; // Default to Level 1
+    
+    // Background paths for different phases and levels
+    private static final Map<Integer, Map<String, String>> BACKGROUND_PATHS = new HashMap<>();
+    static {
+        // Level 1 backgrounds
+        Map<String, String> level1Backgrounds = new HashMap<>();
+        level1Backgrounds.put("prologue", "/gameproject/resources/backgrounds/village_bg.png");
+        level1Backgrounds.put("phase1", "/gameproject/resources/backgrounds/forest_bg.png");
+        level1Backgrounds.put("phase2", "/gameproject/resources/backgrounds/scholars_library_bg.png");
+        level1Backgrounds.put("phase3", "/gameproject/resources/backgrounds/alchemy_laboratory_bg.png");
+        level1Backgrounds.put("boss", "/gameproject/resources/backgrounds/village_destroyed_bg.png");
+        BACKGROUND_PATHS.put(1, level1Backgrounds);
+        
+        // Level 2 backgrounds (placeholders for now)
+        Map<String, String> level2Backgrounds = new HashMap<>();
+        level2Backgrounds.put("prologue", "/gameproject/resources/story_bg.png");
+        level2Backgrounds.put("phase1", "/gameproject/resources/story_bg.png");
+        level2Backgrounds.put("phase2", "/gameproject/resources/story_bg.png");
+        level2Backgrounds.put("phase3", "/gameproject/resources/story_bg.png");
+        level2Backgrounds.put("boss", "/gameproject/resources/story_bg.png");
+        BACKGROUND_PATHS.put(2, level2Backgrounds);
+        
+        // Level 3 backgrounds (placeholders for now)
+        Map<String, String> level3Backgrounds = new HashMap<>();
+        level3Backgrounds.put("prologue", "/gameproject/resources/story_bg.png");
+        level3Backgrounds.put("phase1", "/gameproject/resources/story_bg.png");
+        level3Backgrounds.put("phase2", "/gameproject/resources/story_bg.png");
+        level3Backgrounds.put("phase3", "/gameproject/resources/story_bg.png");
+        level3Backgrounds.put("boss", "/gameproject/resources/story_bg.png");
+        BACKGROUND_PATHS.put(3, level3Backgrounds);
+    }
+    
+    
+    
     private JLabel titleLabel;
     private JPanel storyContentPanel;
     
@@ -57,9 +98,6 @@ public class EnhancedStoryView extends JPanel {
         // Use null layout for precise component positioning
         setLayout(null);
         
-        // Load resources
-        loadResources();
-        
         // Initialize UI components
         initializeUI();
         
@@ -70,6 +108,9 @@ public class EnhancedStoryView extends JPanel {
         
         // Set up animation timers
         setupAnimationTimers();
+        
+        // Load initial background
+        loadBackground("prologue");
     }
     
     /**
@@ -187,6 +228,79 @@ public class EnhancedStoryView extends JPanel {
         });
     }
     
+    
+    
+    
+    
+    
+    /**
+     * Load the background for a specific game phase
+     */
+    private void loadBackground(String phase) {
+        // Get the current level from the controller
+        currentLevel = controller.model.getGameLevel();
+        if (currentLevel < 1 || currentLevel > 3) {
+            currentLevel = 1; // Default to Level 1 if invalid
+        }
+        
+        // Get the background path for this level and phase
+        Map<String, String> levelBackgrounds = BACKGROUND_PATHS.get(currentLevel);
+        if (levelBackgrounds == null) {
+            System.err.println("No backgrounds defined for level " + currentLevel);
+            return;
+        }
+        
+        String backgroundPath = levelBackgrounds.get(phase);
+        if (backgroundPath == null) {
+            System.err.println("No background defined for phase " + phase + " in level " + currentLevel);
+            return;
+        }
+        
+        // Check if we've already loaded this background
+        if (backgroundCache.containsKey(backgroundPath)) {
+            currentBackground = backgroundCache.get(backgroundPath);
+            return;
+        }
+        
+        // Load the background image
+        ImageIcon background = resourceManager.getImage(backgroundPath);
+        
+        // If background image is not found, create a fallback gradient
+        if (background == null) {
+            System.err.println("Failed to load background: " + backgroundPath);
+            
+            // Create a fallback gradient background
+            int width = GameConstants.WINDOW_WIDTH;
+            int height = GameConstants.WINDOW_HEIGHT;
+            
+            java.awt.image.BufferedImage fallbackImage = new java.awt.image.BufferedImage(
+                width, height, java.awt.image.BufferedImage.TYPE_INT_RGB);
+            Graphics2D g2d = fallbackImage.createGraphics();
+            
+            // Create gradient from dark blue to lighter blue
+            GradientPaint gradient = new GradientPaint(
+                0, 0, new Color(20, 30, 60),
+                0, height, new Color(50, 70, 120)
+            );
+            
+            g2d.setPaint(gradient);
+            g2d.fillRect(0, 0, width, height);
+            g2d.dispose();
+            
+            background = new ImageIcon(fallbackImage);
+        }
+        
+        // Cache and set the background
+        backgroundCache.put(backgroundPath, background);
+        currentBackground = background;
+    }
+    
+    
+    
+    
+    
+    
+    
     /**
      * Start the story presentation
      */
@@ -202,6 +316,9 @@ public class EnhancedStoryView extends JPanel {
         titleLabel.setVisible(false);
         storyContentPanel.setVisible(false);
         phaseIndicatorsPanel.setVisible(false);
+
+        // Load the prologue background
+        loadBackground("prologue");
 
         // Start fade in animation
         isFadingIn = true;
@@ -238,6 +355,14 @@ public class EnhancedStoryView extends JPanel {
         delayTimer.setRepeats(false);
         delayTimer.start();
     }
+    
+    
+    
+    
+    
+    
+    
+    
     
     /**
      * Handle dialogue sequence end event
@@ -277,6 +402,10 @@ public class EnhancedStoryView extends JPanel {
     */
     public void startDynamicPhaseDialogue(int phase) {
         currentPhase = phase;
+
+        // Load the appropriate background for this phase
+        String phaseKey = "phase" + phase;
+        loadBackground(phaseKey);
 
         // Get the potion types from the model
         String leftPotionType = controller.model.getLeftPotionType();
@@ -329,6 +458,9 @@ public class EnhancedStoryView extends JPanel {
     * Show boss battle result with dynamic dialogue and proper fade transitions
     */
     public void showBossBattleResult(boolean success, int bossLevel) {
+        // Load the boss battle background
+        loadBackground("boss");
+
         // Get the selected potion
         String selectedPotion = controller.model.getSelectedPotion();
         System.out.println("DEBUG: Selected potion: " + selectedPotion);
@@ -437,6 +569,9 @@ public class EnhancedStoryView extends JPanel {
                                                 // Remove black screen when completely faded in
                                                 remove(blackScreen);
 
+                                                // Load transition dialogue background
+                                                loadBackground("prologue");  // Use village background for transition dialogue too
+
                                                 // CRUCIAL FIX: Don't call onBossBattleComplete again!
                                                 // Instead, directly show the level transition dialogue
                                                 List<NarrativeSystem.DialogueEntry> transitionDialogues = 
@@ -502,6 +637,10 @@ public class EnhancedStoryView extends JPanel {
      * Complete transition to next phase after fade out
      */
     private void transitionToNextPhase() {
+        // Load the background for the new phase
+        String phaseKey = "phase" + currentPhase;
+        loadBackground(phaseKey);
+        
         // Update UI for the new phase
         titleLabel.setText(phaseNames[currentPhase]);
         
@@ -544,7 +683,7 @@ public class EnhancedStoryView extends JPanel {
         dialogueDelayTimer.setRepeats(false);
         dialogueDelayTimer.start();
     }
-    
+      
     /**
      * Start the specific phase dialogue (used when returning from gameplay)
      */
@@ -595,9 +734,9 @@ public class EnhancedStoryView extends JPanel {
             g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, alphaLevel));
         }
         
-        // Draw background image
-        if (backgroundImage != null) {
-            g2d.drawImage(backgroundImage.getImage(), 0, 0, getWidth(), getHeight(), this);
+        // Draw current background image
+        if (currentBackground != null) {
+            g2d.drawImage(currentBackground.getImage(), 0, 0, getWidth(), getHeight(), this);
         }
         
         // Restore original composite
