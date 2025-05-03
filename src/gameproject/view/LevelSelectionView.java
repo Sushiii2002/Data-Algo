@@ -28,6 +28,7 @@ public class LevelSelectionView extends JPanel {
     private static final int STAR_SPACING = 5;
     private static final int STARS_TOP_MARGIN = 15;
     
+    
     // Store star labels to update them
     private JLabel[][] starLabels = new JLabel[3][3]; // [level][star]
     private BackgroundPanel mainPanel;
