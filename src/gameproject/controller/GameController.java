@@ -6,7 +6,7 @@ import gameproject.model.LevelConfig;
 import gameproject.model.ProgressTracker;
 import gameproject.model.NarrativeSystem;
 import gameproject.view.*;
-import gameproject.ui.TimSortVisualization; // This import is correct
+import gameproject.ui.TimSortVisualization;
 import gameproject.ui.TimSortVisualization.LevelProgressData;
 import gameproject.util.ResourceManager;
 import gameproject.util.GameConstants;
@@ -166,9 +166,7 @@ public class GameController {
         inLevelTransition = true;
         System.out.println("DEBUG: Starting Phase " + phase + " gameplay for level " + model.getGameLevel());
 
-        
-        
-         // IMPORTANT: Ensure the visualization is properly reset and reinitialized for the current game level
+        // IMPORTANT: Ensure the visualization is properly reset and reinitialized for the current game level
         timSortVisualization.resetAllPhases();
         timSortVisualization.setGameLevel(model.getGameLevel());
         timSortVisualization.setPhase(phase);
@@ -179,6 +177,8 @@ public class GameController {
         // Additional debugging
         System.out.println("DEBUG: Switched to timSortVisualization panel");
 
+        // CRITICAL FIX: Ensure the ability button is enabled
+        timSortVisualization.setAbilityButtonEnabled(true);
     
         switch (phase) {
             case 1:
@@ -218,13 +218,13 @@ public class GameController {
                 break;
         }
     
-    // Reset transition flag after a short delay
-    Timer resetTimer = new Timer(500, e -> {
-        inLevelTransition = false;
-    });
-    resetTimer.setRepeats(false);
-    resetTimer.start();
-}
+        // Reset transition flag after a short delay
+        Timer resetTimer = new Timer(500, e -> {
+            inLevelTransition = false;
+        });
+        resetTimer.setRepeats(false);
+        resetTimer.start();
+    }
 
     
     /**
@@ -369,7 +369,7 @@ public class GameController {
                 // No saved progress, start from beginning
                 startLevel3FromSelection();
             }
-        }
+        } 
         // Special handling for Level 2
         else if (difficulty.equals("Intermediate") && level == 1) {
             // This is Level 2 in the game
@@ -636,6 +636,7 @@ public class GameController {
     
     /**
     * Start Level 2 directly from level selection
+    * FIX: Modified to properly handle the ability button
     */
     public void startLevel2FromSelection() {
         // Set Level 2 in the model
@@ -645,7 +646,12 @@ public class GameController {
 
         // Reset TimSort visualization for Level 2
         timSortVisualization.resetAllPhases();
+        timSortVisualization.resetForLevel2();
         timSortVisualization.setGameLevel(2);
+
+        // CRITICAL FIX: Pre-initialize the TimSort visualization
+        // Make sure the ability button is properly enabled
+        timSortVisualization.setAbilityButtonEnabled(true);
 
         // Show Level 2 story introduction
         cardLayout.show(mainPanel, "enhancedStory");
@@ -705,6 +711,7 @@ public class GameController {
     
     /**
     * Start Level 3 directly from level selection
+    * FIX: Modified to properly handle the ability button
     */
     public void startLevel3FromSelection() {
         // Set Level 3 in the model
@@ -716,13 +723,12 @@ public class GameController {
         timSortVisualization.resetAllPhases();
         timSortVisualization.setGameLevel(3);
 
+        // CRITICAL FIX: Pre-initialize the TimSort visualization
+        // Make sure the ability button is properly enabled
+        timSortVisualization.setAbilityButtonEnabled(true);
+        
         // Show Level 3 story introduction
         cardLayout.show(mainPanel, "enhancedStory");
         enhancedStoryView.startLevel3Story();
     }
-
-    
 }
-
-
-

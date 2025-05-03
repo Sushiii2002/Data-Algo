@@ -11,6 +11,7 @@ import java.awt.*;
 import java.awt.event.*;
 import java.util.List;
 import java.awt.image.BufferedImage;
+import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -243,6 +244,8 @@ public class EnhancedStoryView extends JPanel {
             currentLevel = 1; // Default to Level 1 if invalid
         }
 
+        System.out.println("DEBUG: Loading background for Level " + currentLevel + ", phase " + phase);
+
         // Get the background path for this level and phase
         Map<String, String> levelBackgrounds = BACKGROUND_PATHS.get(currentLevel);
         if (levelBackgrounds == null) {
@@ -256,18 +259,41 @@ public class EnhancedStoryView extends JPanel {
             return;
         }
 
+        System.out.println("DEBUG: Attempting to load background: " + backgroundPath);
+
         // Check if we've already loaded this background
         if (backgroundCache.containsKey(backgroundPath)) {
             currentBackground = backgroundCache.get(backgroundPath);
+            System.out.println("DEBUG: Using cached background: " + backgroundPath);
             return;
         }
 
-        // Load the background image
-        ImageIcon background = resourceManager.getImage(backgroundPath);
+        // Load the background image and force a fresh load (don't use cache)
+        ImageIcon background = null;
+        try {
+            // First try directly with resource manager
+            background = resourceManager.getImage(backgroundPath);
+
+            // If not found, check for file existence and report
+            if (background == null) {
+                System.err.println("Failed to load background through resource manager: " + backgroundPath);
+                String resourcePath = getClass().getResource(backgroundPath).getPath();
+                File file = new File(resourcePath);
+                if (file.exists()) {
+                    System.out.println("DEBUG: File exists but could not be loaded: " + resourcePath);
+                } else {
+                    System.out.println("DEBUG: File does not exist: " + resourcePath);
+                }
+            } else {
+                System.out.println("DEBUG: Successfully loaded background: " + backgroundPath);
+            }
+        } catch (Exception e) {
+            System.err.println("Error loading background: " + e.getMessage());
+        }
 
         // If background image is not found, create a fallback gradient
         if (background == null) {
-            System.err.println("Failed to load background: " + backgroundPath);
+            System.err.println("Failed to load background: " + backgroundPath + " - Using fallback gradient");
 
             // Create a fallback gradient background
             int width = GameConstants.WINDOW_WIDTH;
@@ -278,9 +304,26 @@ public class EnhancedStoryView extends JPanel {
             Graphics2D g2d = fallbackImage.createGraphics();
 
             // Create gradient from dark blue to lighter blue
+            Color startColor, endColor;
+
+            // Use different colors based on level and phase for visual distinction
+            if (currentLevel == 2) {
+                // Level 2 - greenish for Toxitar
+                startColor = new Color(10, 50, 20);
+                endColor = new Color(30, 80, 40);
+            } else if (currentLevel == 3) {
+                // Level 3 - purplish for Lord Chaosa
+                startColor = new Color(40, 10, 50);
+                endColor = new Color(60, 30, 80);
+            } else {
+                // Level 1 - bluish default
+                startColor = new Color(20, 30, 60);
+                endColor = new Color(50, 70, 120);
+            }
+
             GradientPaint gradient = new GradientPaint(
-                0, 0, new Color(20, 30, 60),
-                0, height, new Color(50, 70, 120)
+                0, 0, startColor,
+                0, height, endColor
             );
 
             g2d.setPaint(gradient);
@@ -294,7 +337,7 @@ public class EnhancedStoryView extends JPanel {
         backgroundCache.put(backgroundPath, background);
         currentBackground = background;
     }
-    
+
     
     
     
@@ -757,10 +800,19 @@ public class EnhancedStoryView extends JPanel {
         alphaLevel = 0.0f;
         currentPhase = -1;
 
+        // Clear the background cache to force reload
+        backgroundCache.clear();
+
         // Make all components invisible initially
         titleLabel.setVisible(false);
         storyContentPanel.setVisible(false);
         phaseIndicatorsPanel.setVisible(false);
+
+        // Explicitly set current level
+        currentLevel = 2;
+
+        // Load the prologue background for Level 2
+        loadBackground("prologue");
 
         // Start fade in animation
         isFadingIn = true;
@@ -798,7 +850,7 @@ public class EnhancedStoryView extends JPanel {
         delayTimer.setRepeats(false);
         delayTimer.start();
     }
-    
+
     
     
     
@@ -1096,10 +1148,19 @@ public class EnhancedStoryView extends JPanel {
         alphaLevel = 0.0f;
         currentPhase = -1;
 
+        // Clear the background cache to force reload
+        backgroundCache.clear();
+
         // Make all components invisible initially
         titleLabel.setVisible(false);
         storyContentPanel.setVisible(false);
         phaseIndicatorsPanel.setVisible(false);
+
+        // Explicitly set current level
+        currentLevel = 3;
+
+        // Load the prologue background
+        loadBackground("prologue");
 
         // Start fade in animation
         isFadingIn = true;
