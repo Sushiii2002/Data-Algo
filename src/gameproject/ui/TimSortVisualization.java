@@ -173,10 +173,12 @@ public class TimSortVisualization extends JPanel {
         
         // Load eye of pattern icons
         System.out.println("DEBUG: Attempting to load eye_of_pattern_active.png");
-        eyeActiveIcon = resourceManager.getImage("/gameproject/resources/eye_of_pattern_active.png");
+        eyeActiveIcon = resourceManager.getImage("/gameproject/resources/abilities/eye_of_pattern_active.png");
         System.out.println("DEBUG: Attempting to load eye_of_pattern_disabled.png");
-        eyeDisabledIcon = resourceManager.getImage("/gameproject/resources/eye_of_pattern_disabled.png");
-  
+        eyeDisabledIcon = resourceManager.getImage("/gameproject/resources/abilities/eye_of_pattern_disabled.png");
+
+        
+        
         // Create scaled versions if needed
         if (eyeActiveIcon != null) {
             System.out.println("DEBUG: Successfully loaded eye_of_pattern_active.png");
@@ -313,19 +315,16 @@ public class TimSortVisualization extends JPanel {
             @Override
             protected void paintComponent(Graphics g) {
                 super.paintComponent(g);
-                // Optional: draw a border to see the panel area
-                g.setColor(new Color(255, 255, 255, 50)); // Semi-transparent white
-                g.drawRect(0, 0, getWidth()-1, getHeight()-1);
             }
         };
         customAbilityButtonPanel.setOpaque(false);
 
         // Position it in the bottom left with enough space
-        customAbilityButtonPanel.setBounds(20, GameConstants.WINDOW_HEIGHT - 150, 120, 120);
+        customAbilityButtonPanel.setBounds(20, GameConstants.WINDOW_HEIGHT - 220, 150, 150);
 
         // Create icon label for the button with a border
         abilityIconLabel = new JLabel(eyeActiveIcon);
-        abilityIconLabel.setBounds(20, 0, 80, 80);
+        abilityIconLabel.setBounds(20, 0, 100, 180);
         abilityIconLabel.setCursor(new Cursor(Cursor.HAND_CURSOR));
         abilityIconLabel.addMouseListener(new MouseAdapter() {
             @Override
@@ -335,24 +334,12 @@ public class TimSortVisualization extends JPanel {
                     useAbility();
                 }
             }
-
-            @Override
-            public void mouseEntered(MouseEvent e) {
-                // Optional: Add a hover effect
-                abilityIconLabel.setBorder(BorderFactory.createLineBorder(Color.WHITE, 2));
-            }
-
-            @Override
-            public void mouseExited(MouseEvent e) {
-                abilityIconLabel.setBorder(BorderFactory.createLineBorder(Color.GREEN, 1));
-            }
         });
 
         customAbilityButtonPanel.add(abilityIconLabel);
 
         // Create label for the ability name
         abilityNameLabel = new JLabel("Eye of Pattern", JLabel.CENTER);
-        // Load the custom font
         Font abilityFont = resourceManager.getFont("/gameproject/resources/PixelifySans.ttf", 16f);
         if (abilityFont != null) {
             abilityNameLabel.setFont(abilityFont);
@@ -360,8 +347,12 @@ public class TimSortVisualization extends JPanel {
             abilityNameLabel.setFont(new Font("Arial", Font.BOLD, 14));
         }
         abilityNameLabel.setForeground(Color.WHITE);
-        abilityNameLabel.setBounds(0, 85, 120, 25);
-        abilityNameLabel.setBorder(BorderFactory.createLineBorder(Color.WHITE, 1)); // For debugging
+        // Adjust position to be centered under the larger icon
+        abilityNameLabel.setBounds(0, 130, 140, 25);
+        // Remove the border
+        abilityNameLabel.setBorder(null);
+        
+        
         customAbilityButtonPanel.add(abilityNameLabel);
 
         // Important: Add the custom panel LAST to ensure it appears on top
@@ -3426,6 +3417,20 @@ public class TimSortVisualization extends JPanel {
                 gridPanel.setBounds(gridX, gridY, totalWidth, totalHeight);
             }
 
+            
+            // Update ability button text based on phase
+            switch (phase) {
+                case 1:
+                    updateAbilityButtonText("Use Eye of Pattern");
+                    break;
+                case 2:
+                    updateAbilityButtonText("Use Hand of Balance");
+                    break;
+                case 3:
+                    updateAbilityButtonText("Use Mind of Unity");
+                    break;
+            }
+            
             // Then initialize the proper phase UI
             initializePhaseUI();
 
