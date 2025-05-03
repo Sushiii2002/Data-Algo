@@ -89,10 +89,9 @@ public class TimSortVisualization extends JPanel {
     private String[] toxitarHints = new String[3]; 
     private String[] lordChaosaHints = new String[3];
     
-    
-    
-    
-    private DialogueManager phaseDialogueManager; // Dialogue manager for phases
+
+   // Add a list to track all active timers
+    private List<Timer> activeTimers = new ArrayList<>();
     
     /**
      * Constructor - Initialize the TimSort visualization
@@ -1769,7 +1768,7 @@ public class TimSortVisualization extends JPanel {
     /**
     * Apply the Hand of Balance ability to sort ingredients
     */
-    private void applyHandOfBalanceAbility() {
+    private void applyHandOfBalanceAbility() {   
         // Determine potion types based on the ingredients in each group
         leftGroupPotionType = determinePotionType(leftGroup);
         rightGroupPotionType = determinePotionType(rightGroup);
@@ -1985,9 +1984,7 @@ public class TimSortVisualization extends JPanel {
     
     
     
-    /**
-    * Animate an ingredient using insertion sort visualization
-    */
+    // In TimSortVisualization.java, modify the animateIngredientInsertionSort method:
     private void animateIngredientInsertionSort(
         IngredientItem ingredient, 
         int targetX, 
@@ -1999,106 +1996,53 @@ public class TimSortVisualization extends JPanel {
     ) {
         Point start = ingredient.getLocation();
 
-        // If this is the current item being inserted, we'll use a 3-phase animation
-        // Phase 1: Move up (highlight)
-        // Phase 2: Shift to position
-        // Phase 3: Move down into final position
+        // Use a FIXED number of frames and a faster timing
+        final int FRAMES = 15; // fewer frames = faster animation
+        final int FRAME_DURATION = 15; // milliseconds (faster refresh rate)
 
-        final int FRAMES = Math.max(20, duration / 30); // At least 20 frames, targeting ~30fps
         final int[] currentFrame = {0};
-        final int[] currentPhase = {isCurrentInsert ? 0 : 3}; // Skip to direct move if not current insert
 
-        // Calculate temp positions for the lift-up animation
-        final int liftHeight = 40;
-        final int tempY = targetY - liftHeight;
-
-        Timer animationTimer = new Timer(duration / FRAMES, new ActionListener() {
+        // Use a direct animation instead of three phases
+        Timer animationTimer = new Timer(FRAME_DURATION, new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 currentFrame[0]++;
                 float progress = (float)currentFrame[0] / FRAMES;
 
-                // Apply easing function
-                float easedProgress;
-                if (progress < 0.5) {
-                    easedProgress = 2 * progress * progress;
-                } else {
-                    easedProgress = 1 - Math.abs(1 - progress) * 2 * Math.abs(1 - progress);
-                }
+                // Simple easing function
+                float easedProgress = (float)(1 - Math.cos(progress * Math.PI)) / 2;
 
-                // Process based on current phase
-                if (currentPhase[0] == 0) {
-                    // Phase 0: Move up
-                    int newY = (int)(start.y + (tempY - start.y) * easedProgress);
-                    ingredient.setLocation(start.x, newY);
+                // Direct path with slight arc
+                int newX = (int)(start.x + (targetX - start.x) * easedProgress);
 
-                    if (progress >= 1.0) {
-                        // Transition to phase 1 (shifting)
-                        currentPhase[0] = 1;
-                        currentFrame[0] = 0;
-                        start.y = tempY; // Update start for next phase
-                    }
-                } 
-                else if (currentPhase[0] == 1) {
-                    // Phase 1: Shift horizontally
-                    int newX = (int)(start.x + (targetX - start.x) * easedProgress);
-                    ingredient.setLocation(newX, tempY);
+                // Add a slight arc for visual appeal
+                int arcHeight = 30;
+                float arcFactor = (float)(Math.sin(Math.PI * easedProgress) * arcHeight);
+                int newY = (int)(start.y + (targetY - start.y) * easedProgress - arcFactor);
 
-                    if (progress >= 1.0) {
-                        // Transition to phase 2 (moving down)
-                        currentPhase[0] = 2;
-                        currentFrame[0] = 0;
-                        start.x = targetX; // Update start for next phase
+                ingredient.setLocation(newX, newY);
+
+                // Force immediate repaint of just this component
+                gridPanel.repaint(new Rectangle(newX-5, newY-5, 
+                              ingredient.getWidth()+10, ingredient.getHeight()+10));
+
+                if (currentFrame[0] >= FRAMES) {
+                    ((Timer)e.getSource()).stop();
+
+                    // Ensure final position is exact
+                    ingredient.setLocation(targetX, targetY);
+
+                    // Call completion callback
+                    if (onComplete != null) {
+                        SwingUtilities.invokeLater(onComplete);
                     }
                 }
-                else if (currentPhase[0] == 2) {
-                    // Phase 2: Move down to final position
-                    int newY = (int)(tempY + (targetY - tempY) * easedProgress);
-                    ingredient.setLocation(targetX, newY);
-
-                    if (progress >= 1.0) {
-                        // Animation complete
-                        ((Timer)e.getSource()).stop();
-
-                        // Ensure final position is exact
-                        ingredient.setLocation(targetX, targetY);
-
-                        // Call completion callback
-                        if (onComplete != null) {
-                            onComplete.run();
-                        }
-                    }
-                }
-                else if (currentPhase[0] == 3) {
-                    // Direct move (for already processed items)
-                    int newX = (int)(start.x + (targetX - start.x) * easedProgress);
-                    int newY = (int)(start.y + (targetY - start.y) * easedProgress);
-                    ingredient.setLocation(newX, newY);
-
-                    if (progress >= 1.0) {
-                        // Animation complete
-                        ((Timer)e.getSource()).stop();
-
-                        // Ensure final position is exact
-                        ingredient.setLocation(targetX, targetY);
-
-                        // Call completion callback
-                        if (onComplete != null) {
-                            onComplete.run();
-                        }
-                    }
-                }
-
-                // Make sure the ingredient stays on top
-                gridPanel.setComponentZOrder(ingredient, 0);
-                gridPanel.repaint();
             }
         });
 
         // Start the animation
         animationTimer.start();
     }
-
 
 
 
@@ -2970,6 +2914,17 @@ public class TimSortVisualization extends JPanel {
      * Advance to the next phase
      */
     private void advanceToNextPhase() {
+        // Stop all active timers first
+        for (Timer timer : activeTimers) {
+            if (timer.isRunning()) {
+                timer.stop();
+            }
+        }
+        activeTimers.clear();
+        
+        
+        
+        
         currentPhase++;
         phaseCompleted = false;
 
@@ -3058,9 +3013,9 @@ public class TimSortVisualization extends JPanel {
      * Update the timer display
      */
     private void updateTimerDisplay() {
-        // IMPORTANT: Add null check to prevent NPE
+        // Add this check to prevent null pointer exceptions
         if (timerLabel == null) {
-            System.out.println("WARNING: timerLabel is null, cannot update timer display");
+            System.out.println("WARNING: timerLabel is null, skipping timer update");
             return;
         }
 
@@ -3715,6 +3670,12 @@ public class TimSortVisualization extends JPanel {
     * Add this method to TimSortVisualization class to show phase dialogues
     */
     private void showPhaseDialogue(String baseDialogueKey) {
+        // IMPORTANT: Clean up any active timers first
+        stopAllTimers();
+        
+        
+        
+        
         // IMPORTANT: Remove any existing dialogue overlays first
         for (Component comp : getComponents()) {
             if (comp instanceof JPanel && comp.getName() != null && 
@@ -4101,8 +4062,63 @@ public class TimSortVisualization extends JPanel {
     
     
     
-    
+ 
+    // Modify the timer creation to track all timers
+    private Timer createTrackedTimer(int delay, ActionListener listener) {
+        Timer timer = new Timer(delay, listener);
+        activeTimers.add(timer);
+        return timer;
+    }
 
+    // Add a method to clean up timers
+    private void stopAllTimers() {
+        for (Timer timer : activeTimers) {
+            if (timer.isRunning()) {
+                timer.stop();
+            }
+        }
+        activeTimers.clear();
+    }
+    
+    
+    
+    
+    // Add this method to completely reset the visualization's state
+    public void fullReset() {
+        // Stop all timers
+        stopAllTimers();
+
+        // Reset phase tracking
+        currentPhase = 1;
+        phaseCompleted = false;
+
+        // Clear all data structures
+        allIngredients.clear();
+        selectedIngredients.clear();
+        identifiedRuns.clear();
+        leftGroup.clear();
+        rightGroup.clear();
+        mergedItems.clear();
+        craftedPotion = null;
+
+        // Reset UI state
+        abilityButton.setText("Use Eye of Pattern");
+        instructionLabel.setText("Use your 'Eye of Pattern' ability to identify ingredient sequences (runs).");
+        checkButton.setEnabled(false);
+
+        // Clear grid panel
+        gridPanel.removeAll();
+
+        // Force UI refresh
+        revalidate();
+        repaint();
+    }
+
+    
+    
+    
+    
+    
     
 //end of timsortvisualization class
 }
