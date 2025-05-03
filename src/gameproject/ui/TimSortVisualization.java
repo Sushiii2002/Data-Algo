@@ -567,11 +567,10 @@ public class TimSortVisualization extends JPanel {
     public void setGameLevel(int level) {
         this.gameLevel = level;
         System.out.println("DEBUG: TimSortVisualization game level set to: " + this.gameLevel);
-    
 
         // Load the appropriate background
         loadBackground(currentPhase);
-        
+
         // Update boss-specific elements
         if (level == 3) {
             // Level 3 - Lord Chaosa
@@ -636,6 +635,9 @@ public class TimSortVisualization extends JPanel {
                 instructionLabel.setText("Use your 'Mind of Unity' to choose which potion to craft.");
             }
         }
+
+        // CRITICAL FIX: Make sure ability button is enabled for this level
+        setAbilityButtonEnabled(true);
     }
 
     
@@ -1307,8 +1309,9 @@ public class TimSortVisualization extends JPanel {
     * Animate the potion options appearing without any backgrounds or overlays
     */
     private void animatePotionOptions() {
-        // First, disable ability button to prevent multiple animations
-        abilityButton.setEnabled(false);
+        // First, ensure ability button is enabled and in correct state before animation
+        setAbilityButtonEnabled(true);
+        System.out.println("DEBUG: Ability button enabled at start of animatePotionOptions");
 
         // Separate lists for different types of components
         List<JComponent> textElements = new ArrayList<>();     // Text labels & descriptions (no scaling)
@@ -1445,12 +1448,19 @@ public class TimSortVisualization extends JPanel {
                     }
                     instructionLabel.setText("Choose which potion to craft by clicking on it. Consider what would be most effective against " + bossReference + ".");
 
+                    // CRITICAL FIX: Ensure ability button remains enabled after animation
+                    setAbilityButtonEnabled(true);
+                    System.out.println("DEBUG: Ability button enabled at end of animation");
+
                     // Force refresh
                     gridPanel.revalidate();
                     gridPanel.repaint();
                 }
             }
         });
+
+        // Add to active timers list
+        activeTimers.add(animationTimer);
 
         // Start animation
         animationTimer.start();
@@ -2175,10 +2185,8 @@ public class TimSortVisualization extends JPanel {
         String leftPotionType = leftGroupPotionType;
         String rightPotionType = rightGroupPotionType;
 
-        
         System.out.println("DEBUG: Displaying potion options - Left: " + leftPotionType + ", Right: " + rightPotionType);
-        
-        
+
         // Define potion information lookup
         Map<String, String[]> potionInfo = new HashMap<>();
         potionInfo.put("Fire Resistance", new String[]{"Fire Resistance Potion", 
@@ -2244,7 +2252,7 @@ public class TimSortVisualization extends JPanel {
                     "Protects against fire attacks and extreme heat - ideal against Flameclaw.",
                     "/gameproject/resources/potions/fire_resistance_potion.png"});
             }
-}
+        }
 
         // Get position for left potion
         int leftX = GameConstants.WINDOW_WIDTH / 4 - (POTION_IMAGE_SIZE / 2);
@@ -2362,9 +2370,10 @@ public class TimSortVisualization extends JPanel {
             instructionLabel.setText("Use your 'Mind of Unity' to choose which potion to craft. Click the button below.");
         }
 
-        // Enable ability button
+        // CRITICAL FIX: Explicitly enable ability button
         abilityButton.setText("Use Mind of Unity");
-        abilityButton.setEnabled(true);
+        setAbilityButtonEnabled(true);
+        System.out.println("DEBUG: Ability button explicitly enabled in displayPotionOptions");
 
         // Disable check button until a potion is selected
         checkButton.setEnabled(false);
@@ -2412,11 +2421,10 @@ public class TimSortVisualization extends JPanel {
             }
         });
 
-        // Update UI
+        // Force UI update
         gridPanel.revalidate();
         gridPanel.repaint();
-    }
-    
+    }    
 
     
     /**
@@ -3269,13 +3277,13 @@ public class TimSortVisualization extends JPanel {
     public void setPhase(int phase) {
         if (phase >= 1 && phase <= 3) {
             System.out.println("DEBUG: Setting phase to " + phase);
-            
+
             // First reset everything
             gridPanel.removeAll();
 
             // Set the new phase
             currentPhase = phase;
-            
+
             // Load the appropriate background for this phase
             loadBackground(phase);
 
@@ -3303,6 +3311,9 @@ public class TimSortVisualization extends JPanel {
             String buttonText = "Use " + getAbilityNameForPhase(phase);
             updateAbilityButtonText(buttonText);
 
+            // CRITICAL FIX: Explicitly enable the ability button
+            setAbilityButtonEnabled(true);
+
             // Then initialize the proper phase UI
             initializePhaseUI();
 
@@ -3323,6 +3334,9 @@ public class TimSortVisualization extends JPanel {
             });
             dialogueTimer.setRepeats(false);
             dialogueTimer.start();
+
+            // Add this timer to the active timers list
+            activeTimers.add(dialogueTimer);
         }
     }
 
@@ -3396,7 +3410,7 @@ public class TimSortVisualization extends JPanel {
     
     
 
-   /**
+    /**
     * Initialize UI for the current phase
     */
     private void initializePhaseUI() {
@@ -3434,8 +3448,6 @@ public class TimSortVisualization extends JPanel {
             case 3:
                 // Set up Phase 3 - but don't display potions yet
                 displayPotionOptions();
-                // Enable the ability button explicitly
-                abilityButton.setEnabled(true);
                 break;
         }
 
@@ -3443,16 +3455,15 @@ public class TimSortVisualization extends JPanel {
         checkButton.setEnabled(false);
         phaseCompleted = false;
 
+        // CRITICAL FIX: Make sure ability button is enabled
+        setAbilityButtonEnabled(true);
+        System.out.println("DEBUG: Ability button enabled in initializePhaseUI for phase " + currentPhase);
+
         // Force complete UI refresh
         revalidate();
         repaint();
     }
 
-    
-    
-    
-    
-    
     
     
     
@@ -3963,80 +3974,67 @@ public class TimSortVisualization extends JPanel {
     * Reset all phases for Level 2
     */
     public void resetForLevel2() {
-        // Set game level to 2
-        gameLevel = 2;
+    // Set game level to 2
+    gameLevel = 2;
 
-        // Reset phase tracking
-        currentPhase = 1;
-        phaseCompleted = false;
+    // Reset phase tracking
+    currentPhase = 1;
+    phaseCompleted = false;
 
-        // Clear all data structures
-        allIngredients.clear();
-        selectedIngredients.clear();
-        identifiedRuns.clear();
-        leftGroup.clear();
-        rightGroup.clear();
-        mergedItems.clear();
-        craftedPotion = null;
+    // Clear all data structures
+    allIngredients.clear();
+    selectedIngredients.clear();
+    identifiedRuns.clear();
+    leftGroup.clear();
+    rightGroup.clear();
+    mergedItems.clear();
+    craftedPotion = null;
 
-        // Set Toxitar as the current boss
-        currentBossName = "Toxitar";
+    // Set Toxitar as the current boss
+    currentBossName = "Toxitar";
 
-        // Clear UI
-        gridPanel.removeAll();
+    // Clear UI
+    gridPanel.removeAll();
 
-        
-        
-        
-        // CRITICAL FIX: Explicitly reset grid panel position to match Level 1
-        // CRITICAL FIX: Explicitly reset grid panel position to match Level 1
-        int cellSize = INGREDIENT_SIZE;
-        int gridWidth = GRID_COLS * cellSize;
-        int gridHeight = GRID_ROWS * cellSize;
-        int GRID_PADDING = 12;
+    // Reset UI state
+    abilityButton.setText("Use Eye of Pattern");
+    instructionLabel.setText("Identify ingredients that enhance agility to evade Toxitar's poison.");
+    checkButton.setEnabled(false);
 
-        // Add padding for border/frame
-        int totalWidth = gridWidth + (GRID_PADDING * 2);
-        int totalHeight = gridHeight + (GRID_PADDING * 2);
+    // Update phase label
+    phaseLabel.setText("Phase 1: The Eye of Pattern (Toxitar)");
 
-        // Center the grid on screen
-        int gridX = (GameConstants.WINDOW_WIDTH - totalWidth) / 2;
-        int gridY = 135;
+    // Update the hints for Toxitar
+    toxitarHints = new String[] {
+        "Look for ingredients with green coloring and light properties - these enhance agility.",
+        "Sort each group from lightest to heaviest. The proper sequence is crucial for dexterity potions.",
+        "Against poison that fills the air, quick movement is better than raw strength."
+    };
+    
+    // CRITICAL FIX: Reset grid panel dimensions
+    int cellSize = INGREDIENT_SIZE;
+    int gridWidth = GRID_COLS * cellSize;
+    int gridHeight = GRID_ROWS * cellSize;
+    int GRID_PADDING = 12;
+    int totalWidth = gridWidth + (GRID_PADDING * 2);
+    int totalHeight = gridHeight + (GRID_PADDING * 2);
+    int gridX = (GameConstants.WINDOW_WIDTH - totalWidth) / 2;
+    int gridY = 135;
+    gridPanel.setBounds(gridX, gridY, totalWidth, totalHeight);
+    
+    // Ensure the grid panel is visible and has null layout
+    gridPanel.setLayout(null);
+    gridPanel.setOpaque(false);
+    gridPanel.setVisible(true);
+    
+    // CRITICAL FIX: Make sure ability button is enabled
+    setAbilityButtonEnabled(true);
+    System.out.println("DEBUG: Ability button enabled in resetForLevel2");
 
-        // Reset the grid panel position
-        gridPanel.setBounds(gridX, gridY, totalWidth, totalHeight);
-        
-        // Ensure the grid panel is visible and has null layout
-        gridPanel.setLayout(null);
-        gridPanel.setOpaque(false);
-        gridPanel.setVisible(true);
-
-
-        
-        
-        // Reset UI state
-        abilityButton.setText("Use Eye of Pattern");
-        instructionLabel.setText("Identify ingredients that enhance agility to evade Toxitar's poison.");
-        checkButton.setEnabled(false);
-
-        // Update phase label
-        phaseLabel.setText("Phase 1: The Eye of Pattern (Toxitar)");
-
-        // Update the hints for Toxitar
-        toxitarHints = new String[] {
-            "Look for ingredients with green coloring and light properties - these enhance agility.",
-            "Sort each group from lightest to heaviest. The proper sequence is crucial for dexterity potions.",
-            "Against poison that fills the air, quick movement is better than raw strength."
-        };
-           
-        
-        // If there's a custom background for Level 2, ensure it's using the correct dimensions
-        // For now, use the same grid dimensions as Level 1
-
-        // Force complete UI refresh before generating ingredients
-        revalidate();
-        repaint();
-    }
+    // Force complete UI refresh before generating ingredients
+    revalidate();
+    repaint();
+}
  
     
     
