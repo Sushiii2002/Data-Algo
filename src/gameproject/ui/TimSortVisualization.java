@@ -1773,7 +1773,7 @@ public class TimSortVisualization extends JPanel {
         // Determine potion types based on the ingredients in each group
         leftGroupPotionType = determinePotionType(leftGroup);
         rightGroupPotionType = determinePotionType(rightGroup);
-        
+
         // First, sort both groups using our existing method
         sortGroup(leftGroup);
         sortGroup(rightGroup);
@@ -1829,7 +1829,7 @@ public class TimSortVisualization extends JPanel {
 
         // Disable the ability button during animation
         abilityButton.setEnabled(false);
-        
+
         // Update boss-specific headers for Level 3
         if (gameLevel == 3) {
             // Set potion type relevant to Lord Chaosa
@@ -1850,12 +1850,6 @@ public class TimSortVisualization extends JPanel {
                 }
             }
         }
-        
-        
-        
-        
-        
-        
 
         // Define Y positions for the rows with proper spacing
         int ingredientsY1 = 220;   // First ingredients row
@@ -1871,108 +1865,247 @@ public class TimSortVisualization extends JPanel {
         int totalWidth2 = (rightGroup.size() * INGREDIENT_SIZE) + ((rightGroup.size() - 1) * 10);
         int startX2 = screenCenterX - (totalWidth2 / 2);
 
-        // Create animation timer
-        final int animationDuration = 2000; // 2 seconds
-        final int fps = 60; // frames per second
-        final int totalFrames = animationDuration / (1000 / fps);
-        final int[] currentFrame = {0};
+        // Animation parameters
+        final int ANIMATION_DELAY = 400; // ms between ingredients
+        final int ANIMATION_DURATION = 800; // ms for each ingredient animation
 
-        Timer animationTimer = new Timer(1000 / fps, new ActionListener() {
+        // --- INSERTION SORT ANIMATION ---
+        // We'll do one group at a time
+
+        // Create a list to track which ingredients have been animated
+        final List<IngredientItem> animatedLeft = new ArrayList<>();
+        final List<IngredientItem> animatedRight = new ArrayList<>();
+
+        // Create and start a timer for the insertion sort animation
+        final int[] leftIndex = {0};
+        final int[] rightIndex = {0};
+        final boolean[] isAnimatingLeft = {true}; // Start with left group
+
+        Timer insertionTimer = new Timer(ANIMATION_DELAY, new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if (isAnimatingLeft[0]) {
+                    // Animate left group
+                    if (leftIndex[0] < leftGroup.size()) {
+                        // Get current ingredient
+                        IngredientItem ingredient = leftGroup.get(leftIndex[0]);
+
+                        // Store the original position if not already set
+                        if (ingredient.getOriginalPosition() == null) {
+                            ingredient.setOriginalPosition(ingredient.getLocation());
+                        }
+
+                        // Calculate final position
+                        int finalX = startX1 + (leftIndex[0] * (INGREDIENT_SIZE + 10));
+
+                        // Add to animated list
+                        animatedLeft.add(ingredient);
+
+                        // Make sure it's visible and on top
+                        ingredient.setSelected(true);
+                        gridPanel.setComponentZOrder(ingredient, 0);
+
+                        // Create animation
+                        animateIngredientInsertionSort(
+                            ingredient, 
+                            finalX, 
+                            ingredientsY1, 
+                            ANIMATION_DURATION,
+                            true,  // This is the currently inserted item
+                            animatedLeft, 
+                            () -> {
+                                ingredient.setSelected(false);
+                                leftIndex[0]++;
+                            }
+                        );
+
+                    } else {
+                        // Left group complete, switch to right group
+                        isAnimatingLeft[0] = false;
+                    }
+                } else {
+                    // Animate right group
+                    if (rightIndex[0] < rightGroup.size()) {
+                        // Get current ingredient
+                        IngredientItem ingredient = rightGroup.get(rightIndex[0]);
+
+                        // Store the original position if not already set
+                        if (ingredient.getOriginalPosition() == null) {
+                            ingredient.setOriginalPosition(ingredient.getLocation());
+                        }
+
+                        // Calculate final position
+                        int finalX = startX2 + (rightIndex[0] * (INGREDIENT_SIZE + 10));
+
+                        // Add to animated list
+                        animatedRight.add(ingredient);
+
+                        // Make sure it's visible and on top
+                        ingredient.setSelected(true);
+                        gridPanel.setComponentZOrder(ingredient, 0);
+
+                        // Create animation
+                        animateIngredientInsertionSort(
+                            ingredient, 
+                            finalX, 
+                            ingredientsY2, 
+                            ANIMATION_DURATION,
+                            true,  // This is the currently inserted item
+                            animatedRight, 
+                            () -> {
+                                ingredient.setSelected(false);
+                                rightIndex[0]++;
+                            }
+                        );
+
+                    } else {
+                        // Animation complete
+                        ((Timer)e.getSource()).stop();
+
+                        // Enable check button
+                        checkButton.setEnabled(true);
+
+                        // Update instruction text
+                        instructionLabel.setText("The ingredients have been sorted using insertion sort. Check your results.");
+
+                        // Force repaint to ensure everything is visible
+                        gridPanel.revalidate();
+                        gridPanel.repaint();
+                    }
+                }
+            }
+        });
+
+        // Start the animation
+        insertionTimer.start();
+    }
+
+
+
+    
+    
+    
+    /**
+    * Animate an ingredient using insertion sort visualization
+    */
+    private void animateIngredientInsertionSort(
+        IngredientItem ingredient, 
+        int targetX, 
+        int targetY, 
+        int duration,
+        boolean isCurrentInsert,
+        List<IngredientItem> animatedGroup,
+        Runnable onComplete
+    ) {
+        Point start = ingredient.getLocation();
+
+        // If this is the current item being inserted, we'll use a 3-phase animation
+        // Phase 1: Move up (highlight)
+        // Phase 2: Shift to position
+        // Phase 3: Move down into final position
+
+        final int FRAMES = Math.max(20, duration / 30); // At least 20 frames, targeting ~30fps
+        final int[] currentFrame = {0};
+        final int[] currentPhase = {isCurrentInsert ? 0 : 3}; // Skip to direct move if not current insert
+
+        // Calculate temp positions for the lift-up animation
+        final int liftHeight = 40;
+        final int tempY = targetY - liftHeight;
+
+        Timer animationTimer = new Timer(duration / FRAMES, new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 currentFrame[0]++;
+                float progress = (float)currentFrame[0] / FRAMES;
 
-                // Calculate animation progress (0.0 to 1.0)
-                float progress = (float) currentFrame[0] / totalFrames;
-
-                // Apply easing function (ease out)
-                float easedProgress = 1.0f - (1.0f - progress) * (1.0f - progress);
-
-                // Animate left group to their final positions (centered in row 2)
-                for (int i = 0; i < leftGroup.size(); i++) {
-                    IngredientItem ingredient = leftGroup.get(i);
-                    if (ingredient.getOriginalPosition() == null) continue;
-
-                    Point originalPos = ingredient.getOriginalPosition();
-                    int targetX = startX1 + (i * (INGREDIENT_SIZE + 10));
-                    int targetY = ingredientsY1;
-
-                    // Calculate current position based on progress
-                    int currentX = originalPos.x + (int)((targetX - originalPos.x) * easedProgress);
-                    int currentY = originalPos.y + (int)((targetY - originalPos.y) * easedProgress);
-
-                    ingredient.setLocation(currentX, currentY);
-
-                    // Increase size slightly during animation
-                    if (currentFrame[0] == 1) { // Only do this once at the start
-                        ingredient.setSize(INGREDIENT_SIZE + 15, INGREDIENT_SIZE + 15);
-                    }
-
-                    // Ensure ingredient is visible by bringing it to front
-                    gridPanel.setComponentZOrder(ingredient, 0);
+                // Apply easing function
+                float easedProgress;
+                if (progress < 0.5) {
+                    easedProgress = 2 * progress * progress;
+                } else {
+                    easedProgress = 1 - Math.abs(1 - progress) * 2 * Math.abs(1 - progress);
                 }
 
-                // Animate right group to their final positions (centered in row 4)
-                for (int i = 0; i < rightGroup.size(); i++) {
-                    IngredientItem ingredient = rightGroup.get(i);
-                    if (ingredient.getOriginalPosition() == null) continue;
+                // Process based on current phase
+                if (currentPhase[0] == 0) {
+                    // Phase 0: Move up
+                    int newY = (int)(start.y + (tempY - start.y) * easedProgress);
+                    ingredient.setLocation(start.x, newY);
 
-                    Point originalPos = ingredient.getOriginalPosition();
-                    int targetX = startX2 + (i * (INGREDIENT_SIZE + 10));
-                    int targetY = ingredientsY2;
-
-                    // Calculate current position based on progress
-                    int currentX = originalPos.x + (int)((targetX - originalPos.x) * easedProgress);
-                    int currentY = originalPos.y + (int)((targetY - originalPos.y) * easedProgress);
-
-                    ingredient.setLocation(currentX, currentY);
-
-                    // Increase size slightly during animation
-                    if (currentFrame[0] == 1) { // Only do this once at the start
-                        ingredient.setSize(INGREDIENT_SIZE + 15, INGREDIENT_SIZE + 15);
+                    if (progress >= 1.0) {
+                        // Transition to phase 1 (shifting)
+                        currentPhase[0] = 1;
+                        currentFrame[0] = 0;
+                        start.y = tempY; // Update start for next phase
                     }
+                } 
+                else if (currentPhase[0] == 1) {
+                    // Phase 1: Shift horizontally
+                    int newX = (int)(start.x + (targetX - start.x) * easedProgress);
+                    ingredient.setLocation(newX, tempY);
 
-                    // Ensure ingredient is visible by bringing it to front
-                    gridPanel.setComponentZOrder(ingredient, 0);
+                    if (progress >= 1.0) {
+                        // Transition to phase 2 (moving down)
+                        currentPhase[0] = 2;
+                        currentFrame[0] = 0;
+                        start.x = targetX; // Update start for next phase
+                    }
+                }
+                else if (currentPhase[0] == 2) {
+                    // Phase 2: Move down to final position
+                    int newY = (int)(tempY + (targetY - tempY) * easedProgress);
+                    ingredient.setLocation(targetX, newY);
+
+                    if (progress >= 1.0) {
+                        // Animation complete
+                        ((Timer)e.getSource()).stop();
+
+                        // Ensure final position is exact
+                        ingredient.setLocation(targetX, targetY);
+
+                        // Call completion callback
+                        if (onComplete != null) {
+                            onComplete.run();
+                        }
+                    }
+                }
+                else if (currentPhase[0] == 3) {
+                    // Direct move (for already processed items)
+                    int newX = (int)(start.x + (targetX - start.x) * easedProgress);
+                    int newY = (int)(start.y + (targetY - start.y) * easedProgress);
+                    ingredient.setLocation(newX, newY);
+
+                    if (progress >= 1.0) {
+                        // Animation complete
+                        ((Timer)e.getSource()).stop();
+
+                        // Ensure final position is exact
+                        ingredient.setLocation(targetX, targetY);
+
+                        // Call completion callback
+                        if (onComplete != null) {
+                            onComplete.run();
+                        }
+                    }
                 }
 
-                // If animation is complete
-                if (currentFrame[0] >= totalFrames) {
-                    ((Timer)e.getSource()).stop();
-
-                    // Double-check sorting one more time for safety
-                    if (!isGroupSorted(leftGroup) || !isGroupSorted(rightGroup)) {
-                        // This is a fallback in case sorting somehow fails
-                        System.err.println("WARNING: Groups still not sorted after animation!");
-
-                        // Force resort - last chance fix
-                        Collections.sort(leftGroup, (a, b) -> Integer.compare(a.getValue(), b.getValue()));
-                        Collections.sort(rightGroup, (a, b) -> Integer.compare(a.getValue(), b.getValue()));
-
-                        // Set flags regardless - we've done our best
-                        isLeftGroupSorted = true;
-                        isRightGroupSorted = true;
-                    }
-
-                    // Enable check button
-                    checkButton.setEnabled(true);
-
-                    // Update instructional text
-                    instructionLabel.setText("The ingredients have been sorted. Check your results.");
-
-                    // Force repaint to ensure everything is visible
-                    gridPanel.revalidate();
-                    gridPanel.repaint();
-                }
-
-                // Repaint
+                // Make sure the ingredient stays on top
+                gridPanel.setComponentZOrder(ingredient, 0);
                 gridPanel.repaint();
             }
         });
 
-        // Start animation
+        // Start the animation
         animationTimer.start();
     }
+
+
+
+
+    
+    
+    
+    
     
     
     
