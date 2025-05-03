@@ -624,32 +624,7 @@ public class GameController {
         enhancedStoryView.showTransitionDialogue(transitionDialogues, this::startLevel2);
     }
     
-    
-    /**
-    * Transition from Level 1 to Level 2 after defeating Flameclaw
-    */
-    private void transitionToLevel2() {
-        // Update game level in model
-        model.setGameLevel(2);
-        model.setCurrentLevel(1); // Reset to first phase
 
-        // Show transition dialogue
-        List<NarrativeSystem.DialogueEntry> transitionDialogues = 
-            narrativeSystem.getDialogueSequence("level1to2_transition");
-
-        if (transitionDialogues != null && !transitionDialogues.isEmpty()) {
-            cardLayout.show(mainPanel, "enhancedStory");
-            enhancedStoryView.showTransitionDialogue(transitionDialogues, () -> {
-                startLevel2();
-            });
-        } else {
-            // Fallback if dialogue is missing
-            startLevel2();
-        }
-    }
-    
-    
-    
     /**
     * Get the number of stars earned for a level
     */
@@ -745,52 +720,7 @@ public class GameController {
         cardLayout.show(mainPanel, "enhancedStory");
         enhancedStoryView.startLevel3Story();
     }
-    
-    
-    
-    /**
-    * Transition from Level 2 to Level 3 after defeating Toxitar
-    */
-    private void transitionToLevel3() {
-        // Update game level in model
-        model.setGameLevel(3);
-        model.setCurrentLevel(1); // Reset to first phase
 
-        // Show transition dialogue
-        List<NarrativeSystem.DialogueEntry> transitionDialogues = 
-            narrativeSystem.getDialogueSequence("level2to3_transition");
-
-        if (transitionDialogues != null && !transitionDialogues.isEmpty()) {
-            cardLayout.show(mainPanel, "enhancedStory");
-            enhancedStoryView.showTransitionDialogue(transitionDialogues, () -> {
-                startLevel3();
-            });
-        } else {
-            // Fallback if dialogue is missing
-            startLevel3();
-        }
-    }
-    
-    
-    
-    
-    /**
-    * Show game completion dialogue and return to main menu
-    */
-    private void showGameCompletion() {
-        // Get completion dialogue
-        List<NarrativeSystem.DialogueEntry> completionDialogues = 
-            narrativeSystem.getDialogueSequence("game_completion");
-
-        // Show the enhanced story view
-        cardLayout.show(mainPanel, "enhancedStory");
-
-        // Show completion dialogue with transition to main menu
-        enhancedStoryView.showCompletionDialogue(completionDialogues, () -> {
-            showMainMenu();
-        });
-    }
-    
     
 }
 

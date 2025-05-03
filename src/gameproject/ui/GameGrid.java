@@ -1,14 +1,13 @@
 package gameproject.ui;
 
 import gameproject.model.LevelConfig;
-import gameproject.model.GameState;
+
 import gameproject.util.ResourceManager;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
-import java.util.ArrayList;
-import java.util.List;
+
 
 /**
  * Grid-based game board for sorting challenges

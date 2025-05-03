@@ -4,7 +4,6 @@ package gameproject.view;
 
 import gameproject.controller.GameController;
 import gameproject.model.LevelConfig;
-import gameproject.model.GameState;
 import gameproject.ui.GameGrid;
 import gameproject.util.GameConstants;
 import gameproject.util.ResourceManager;
@@ -13,8 +12,6 @@ import javax.swing.plaf.basic.BasicButtonUI;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.List;
@@ -24,8 +21,6 @@ import java.util.List;
 public class GameView extends JPanel {
    private GameController controller;
     private ResourceManager resourceManager;
-    private JPanel heartsPanel;
-    private JLabel[] heartLabels;
     private JLabel instructionsLabel;
     private JLabel timerLabel;
     private JButton pauseButton;
@@ -35,9 +30,6 @@ public class GameView extends JPanel {
     private GameGrid gameGrid;
     
     private LevelConfig currentLevel;
-    private Timer gameTimer;
-    private int timeRemaining = 300; // 5 minutes in seconds
-    private int livesRemaining = 3;
     private boolean levelCompleted = false;
     private ImageIcon backgroundImage;
     private Font pixelifySansFont;
@@ -47,8 +39,6 @@ public class GameView extends JPanel {
     private ImageIcon pauseHoverIcon;
     private ImageIcon hintNormalIcon;
     private ImageIcon hintHoverIcon;
-    private ImageIcon heartFilledIcon;
-    private ImageIcon heartEmptyIcon;
     
     /**
      * Constructor - Initialize the enhanced game view
@@ -66,13 +56,7 @@ public class GameView extends JPanel {
         // Create UI components
         createUIComponents();
         
-        // Initialize timer to count down from 5 minutes
-        gameTimer = new Timer(1000, new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                updateTimer();
-            }
-        });
+        
     }
     
     /**
@@ -116,39 +100,14 @@ public class GameView extends JPanel {
             hintHoverIcon = new ImageIcon(img);
         }
         
-        // Load heart images
-        heartFilledIcon = resourceManager.getImage("/gameproject/resources/heart_filled.png");
-        heartEmptyIcon = resourceManager.getImage("/gameproject/resources/heart_empty.png");
         
-        // Scale heart images to 70x70 pixels
-        if (heartFilledIcon != null) {
-            Image img = heartFilledIcon.getImage().getScaledInstance(70, 70, Image.SCALE_SMOOTH);
-            heartFilledIcon = new ImageIcon(img);
-        }
-        
-        if (heartEmptyIcon != null) {
-            Image img = heartEmptyIcon.getImage().getScaledInstance(70, 70, Image.SCALE_SMOOTH);
-            heartEmptyIcon = new ImageIcon(img);
-        }
     }
     
     /**
     * Create and position all UI components - with updated button positions
     */
     private void createUIComponents() {
-      // Hearts panel for lives - place directly on background with proper spacing
-      heartsPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
-      heartsPanel.setBounds(20, 20, 240, 70);
-      heartsPanel.setOpaque(false);
-      add(heartsPanel);
 
-      // Initialize hearts with proper spacing
-      heartLabels = new JLabel[3];
-      for (int i = 0; i < 3; i++) {
-          heartLabels[i] = new JLabel(heartFilledIcon);
-          heartLabels[i].setOpaque(false);
-          heartsPanel.add(heartLabels[i]);
-      }
 
       // Timer display centered at the top without any background and larger font
       timerLabel = new JLabel("05:00", JLabel.CENTER); // Removed "Time: " prefix
@@ -240,8 +199,7 @@ public class GameView extends JPanel {
     * Display pause menu overlay - with semi-transparent dark background
     */
     private void showPauseMenu() {
-       // Pause the timer
-       gameTimer.stop();
+
 
        // Create semi-transparent dark overlay panel
        JPanel overlay = new JPanel() {
@@ -278,8 +236,7 @@ public class GameView extends JPanel {
        resumeButton.addActionListener(e -> {
            remove(overlay);
            repaint();
-           // Resume the timer when Resume button is pressed
-           gameTimer.start();
+
        });
 
        AnimatedButton restartButton = new AnimatedButton("RESTART", 
@@ -437,89 +394,13 @@ public class GameView extends JPanel {
            super.paintComponent(g);
        }
    }
-   
-   
-   
-   
-    
-    /**
-    * Show level failed screen with semi-transparent dark overlay
-    */
-    private void showLevelFailedScreen() {
-       // Stop the timer
-       gameTimer.stop();
 
-       // Create semi-transparent dark overlay panel
-       JPanel overlay = new JPanel() {
-           @Override
-           protected void paintComponent(Graphics g) {
-               super.paintComponent(g);
-               // Semi-transparent dark overlay (60% opacity black)
-               g.setColor(new Color(0, 0, 0, 153)); // 153 is ~60% opacity
-               g.fillRect(0, 0, getWidth(), getHeight());
-           }
-       };
-       overlay.setLayout(null);
-       overlay.setBounds(0, 0, GameConstants.WINDOW_WIDTH, GameConstants.WINDOW_HEIGHT);
-       overlay.setOpaque(false);
-       add(overlay, 0);
-
-       // Create "Level Failed" text
-       JLabel failedLabel = new JLabel("Level", JLabel.CENTER);
-       failedLabel.setFont(pixelifySansFont.deriveFont(50f));
-       failedLabel.setForeground(Color.WHITE);
-       failedLabel.setBounds(0, (GameConstants.WINDOW_HEIGHT / 2) - 80, GameConstants.WINDOW_WIDTH, 50);
-       overlay.add(failedLabel);
-
-       JLabel failedLabel2 = new JLabel("Failed", JLabel.CENTER);
-       failedLabel2.setFont(pixelifySansFont.deriveFont(50f));
-       failedLabel2.setForeground(Color.WHITE);
-       failedLabel2.setBounds(0, (GameConstants.WINDOW_HEIGHT / 2) - 30, GameConstants.WINDOW_WIDTH, 50);
-       overlay.add(failedLabel2);
-
-       // Create buttons with same styling as pause menu
-       AnimatedButton restartButton = new AnimatedButton("RESTART", 
-           resourceManager.getImage("/gameproject/resources/NormalButton.png"),
-           resourceManager.getImage("/gameproject/resources/HoverButton.png"),
-           resourceManager.getImage("/gameproject/resources/ClickedButton.png"));
-       restartButton.setFont(pixelifySansFont.deriveFont(28f));
-       restartButton.setForeground(Color.WHITE);
-       restartButton.setBounds((GameConstants.WINDOW_WIDTH / 2) - 220, (GameConstants.WINDOW_HEIGHT / 2) + 50, 200, 60);
-       restartButton.addActionListener(e -> {
-           remove(overlay);
-           resetLevel();
-       });
-       overlay.add(restartButton);
-
-       AnimatedButton menuButton = new AnimatedButton("MAIN MENU", 
-           resourceManager.getImage("/gameproject/resources/NormalButton.png"),
-           resourceManager.getImage("/gameproject/resources/HoverButton.png"),
-           resourceManager.getImage("/gameproject/resources/ClickedButton.png"));
-       menuButton.setFont(pixelifySansFont.deriveFont(28f));
-       menuButton.setForeground(Color.WHITE);
-       menuButton.setBounds((GameConstants.WINDOW_WIDTH / 2) + 20, (GameConstants.WINDOW_HEIGHT / 2) + 50, 200, 60);
-       menuButton.addActionListener(e -> {
-           remove(overlay);
-           controller.showMainMenu();
-       });
-       overlay.add(menuButton);
-
-       revalidate();
-       repaint();
-    }
-    
-    
     
     /**
      * Reset the current level completely
      */
     private void resetLevel() {
-        // Reset lives
-        resetLives();
-        
-        // Reset timer
-        timeRemaining = 300; // 5 minutes
-        updateTimerDisplay();
+
         
         // Restart the level
         controller.restartLevel();
@@ -529,12 +410,6 @@ public class GameView extends JPanel {
      * Update the level information display
      */
     public void updateLevelInfo(String difficulty, int level) {
-        // Reset lives to full
-        resetLives();
-        
-        // Reset timer to 5 minutes
-        timeRemaining = 300;
-        updateTimerDisplay();
         
         // Get the level configuration
         List<LevelConfig> allLevels = LevelConfig.createAllLevels();
@@ -552,8 +427,7 @@ public class GameView extends JPanel {
             // Initialize the level
             initializeLevel();
             
-            // Start timer automatically
-            gameTimer.start();
+
         }
     }
     
@@ -587,31 +461,8 @@ public class GameView extends JPanel {
        repaint();
     }
     
-    /**
-     * Reset lives to full
-     */
-    private void resetLives() {
-        livesRemaining = 3;
-        for (int i = 0; i < 3; i++) {
-            heartLabels[i].setIcon(heartFilledIcon);
-        }
-    }
-    
-    /**
-    * Lose a life and check if all hearts are gone
-    */
-    private void loseLife() {
-        if (livesRemaining > 0) {
-            livesRemaining--;
-            heartLabels[livesRemaining].setIcon(heartEmptyIcon);
 
-            // Check if all hearts are depleted
-            if (livesRemaining == 0) {
-                // Show level failed screen when all hearts are gone
-                showLevelFailedScreen();
-            }
-        }
-    }
+
     
     /**
      * Apply consistent styling to buttons
@@ -639,74 +490,12 @@ public class GameView extends JPanel {
         boolean isCorrect = currentLevel.validateSolution(currentArray);
 
         if (isCorrect) {
-            // Stop timer
-            gameTimer.stop();
 
-            // Calculate stars based on time and steps
-            int stars = calculateStars();
 
             // Mark level as completed
             levelCompleted = true;
-            nextLevelButton.setEnabled(true);
-
-            // Show success message
-            JOptionPane.showMessageDialog(this,
-                    "Congratulations! You've completed this level with " + stars + " stars!",
-                    "Success", JOptionPane.INFORMATION_MESSAGE);
-
-            // Record progress
-            controller.completeLevelWithStars(currentLevel.getDifficulty(), 
-                    currentLevel.getLevelNumber(), stars);
-        } else {
-            // Lose a life
-            loseLife();
-
-            // Only show error message if not showing level failed screen
-            if (livesRemaining > 0) {
-                JOptionPane.showMessageDialog(this,
-                        "Not quite right yet. Keep trying!\nLives remaining: " + livesRemaining,
-                        "Try Again", JOptionPane.INFORMATION_MESSAGE);
-            }
+            nextLevelButton.setEnabled(true);    
         }
-    }
-    
-    /**
-     * Calculate stars based on performance
-     */
-    private int calculateStars() {
-        // Base stars - completing gives at least 1 star
-        int stars = 1;
-        
-        // Add stars based on lives remaining
-        stars += livesRemaining;
-        
-        // Cap at 3 stars
-        return Math.min(stars, 3);
-    }
-    
-    /**
-     * Update the timer - now counting down from 5 minutes
-     */
-    private void updateTimer() {
-        if (timeRemaining > 0) {
-            timeRemaining--;
-            updateTimerDisplay();
-            
-            // Check if time is up
-            if (timeRemaining <= 0) {
-                gameTimer.stop();
-                showLevelFailedScreen();
-            }
-        }
-    }
-    
-    /**
-    * Update the timer display - no "Time: " prefix
-    */
-    private void updateTimerDisplay() {
-       int minutes = timeRemaining / 60;
-       int seconds = timeRemaining % 60;
-       timerLabel.setText(String.format("%02d:%02d", minutes, seconds)); // Removed "Time: " prefix
     }
 
     
