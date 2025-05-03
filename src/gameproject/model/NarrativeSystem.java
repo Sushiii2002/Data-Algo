@@ -525,8 +525,7 @@ public class NarrativeSystem {
         }
 
         return battleDialogues;
-    }
-    
+    }    
 
     
     
@@ -1025,14 +1024,14 @@ public class NarrativeSystem {
 
         if (success) {
             // Strength potion was used successfully
-            battleDialogues.add(new DialogueEntry("LordChaosa", "REALITY BENDS TO MY WILL! YOUR WORLD IS MINE!", "attacking"));
+            battleDialogues.add(new DialogueEntry("LordChaosa", "REALITY IS MINE TO COMMAND! YOUR WORLD WILL DISSOLVE!", "attacking"));
             battleDialogues.add(new DialogueEntry("Tima", "Your chaos cannot withstand true strength!", "determined"));
             battleDialogues.add(new DialogueEntry("LordChaosa", "IMPOSSIBLE! MY DISTORTIONS... FAILING!", "weakened"));
             battleDialogues.add(new DialogueEntry("Tima", "The " + selectedPotion + " gives me the power to break through your illusions!", "triumphant"));
             battleDialogues.add(new DialogueEntry("MasterOrdin", "Excellent choice with the " + selectedPotion + "! Your enhanced strength allows you to cut through the reality distortions!", "praising"));
         } else {
             // Wrong potion was selected
-            battleDialogues.add(new DialogueEntry("LordChaosa", "REALITY BENDS TO MY WILL! YOUR WORLD IS MINE!", "attacking"));
+            battleDialogues.add(new DialogueEntry("LordChaosa", "REALITY IS MINE TO COMMAND! YOUR WORLD WILL DISSOLVE!", "attacking"));
             battleDialogues.add(new DialogueEntry("Tima", "Your chaos ends here!", "determined"));
 
             if (selectedPotion.contains("Cold")) {
