@@ -7,6 +7,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.awt.image.BufferedImage;
 
 /**
  * View for the level selection screen with improved centering and star display
@@ -19,6 +20,7 @@ public class LevelSelectionView extends JPanel {
     private ImageIcon backArrowIcon;
     private ImageIcon filledStarIcon;
     private ImageIcon emptyStarIcon;
+    private ImageIcon lockedLevelIcon; // New: level locked icon
     
     // Constants for sizing
     private static final int LEVEL_BOX_SIZE = 190;
@@ -31,6 +33,7 @@ public class LevelSelectionView extends JPanel {
     
     // Store star labels to update them
     private JLabel[][] starLabels = new JLabel[3][3]; // [level][star]
+    private JLabel[] lockIcons = new JLabel[3]; // New: store lock overlays
     private BackgroundPanel mainPanel;
     
     /**
@@ -102,6 +105,13 @@ public class LevelSelectionView extends JPanel {
             // Add box image to level box
             levelBox.add(boxImageLabel, BorderLayout.CENTER);
             
+            // Add the lock icon overlay (initially invisible)
+            lockIcons[i] = new JLabel(lockedLevelIcon);
+            lockIcons[i].setBounds(boxX, boxesY, LEVEL_BOX_SIZE, LEVEL_BOX_SIZE);
+            // Only level 1 is unlocked by default
+            lockIcons[i].setVisible(i > 0);
+            mainPanel.add(lockIcons[i]);
+            
             // Make box clickable
             levelBox.setCursor(new Cursor(Cursor.HAND_CURSOR));
             levelBox.addMouseListener(new MouseAdapter() {
@@ -153,7 +163,7 @@ public class LevelSelectionView extends JPanel {
         });
         mainPanel.add(backButton);
         
-        // Update the stars display initially
+        // Update the stars display and lock icons initially
         updateLevelStatus();
     }
     
@@ -197,12 +207,50 @@ public class LevelSelectionView extends JPanel {
                 Image scaledImage = originalIcon.getImage().getScaledInstance(LEVEL_BOX_SIZE, LEVEL_BOX_SIZE, Image.SCALE_SMOOTH);
                 levelBoxIcons[i] = new ImageIcon(scaledImage);
             }
+            
+            // Load and resize level locked image
+            ImageIcon originalLockedIcon = new ImageIcon(getClass().getResource("/gameproject/resources/level_locked.png"));
+            Image scaledLockedImage = originalLockedIcon.getImage().getScaledInstance(LEVEL_BOX_SIZE, LEVEL_BOX_SIZE, Image.SCALE_SMOOTH);
+            lockedLevelIcon = new ImageIcon(scaledLockedImage);
+            
         } catch (Exception e) {
             System.err.println("Error loading resources: " + e.getMessage());
             e.printStackTrace();
             
             // Fallback to default font
             pixelifyFont = new Font("Arial", Font.BOLD, 12);
+            
+            // Create fallback level locked icon if not found
+            if (lockedLevelIcon == null) {
+                // Create a simple lock icon with chains
+                BufferedImage lockImg = new BufferedImage(LEVEL_BOX_SIZE, LEVEL_BOX_SIZE, BufferedImage.TYPE_INT_ARGB);
+                Graphics2D g2d = lockImg.createGraphics();
+                
+                // Semi-transparent dark overlay
+                g2d.setColor(new Color(0, 0, 0, 180));
+                g2d.fillRect(0, 0, LEVEL_BOX_SIZE, LEVEL_BOX_SIZE);
+                
+                // Draw a lock and chains
+                g2d.setColor(Color.GRAY);
+                g2d.fillRoundRect(LEVEL_BOX_SIZE/2 - 25, LEVEL_BOX_SIZE/2 - 15, 50, 60, 10, 10);
+                g2d.setColor(Color.DARK_GRAY);
+                g2d.fillRoundRect(LEVEL_BOX_SIZE/2 - 15, LEVEL_BOX_SIZE/2 - 5, 30, 40, 5, 5);
+                
+                // Chains
+                g2d.setColor(Color.LIGHT_GRAY);
+                g2d.setStroke(new BasicStroke(4f));
+                // Left chain
+                for (int i = 0; i < 3; i++) {
+                    g2d.drawOval(30 + (i*15), 50, 10, 15);
+                }
+                // Right chain
+                for (int i = 0; i < 3; i++) {
+                    g2d.drawOval(LEVEL_BOX_SIZE - 40 - (i*15), 50, 10, 15);
+                }
+                
+                g2d.dispose();
+                lockedLevelIcon = new ImageIcon(lockImg);
+            }
         }
     }
     
@@ -245,6 +293,18 @@ public class LevelSelectionView extends JPanel {
                 for (int j = 0; j < 3; j++) {
                     starLabels[i][j].setIcon(emptyStarIcon);
                 }
+            }
+            
+            // Update lock icons visibility
+            if (i == 0) {
+                // Level 1 is always unlocked
+                lockIcons[i].setVisible(false);
+            } else if (i == 1) {
+                // Level 2 is unlocked if Level 1 is completed
+                lockIcons[i].setVisible(!controller.isLevelCompleted("Beginner", 1));
+            } else if (i == 2) {
+                // Level 3 is unlocked if Level 2 is completed
+                lockIcons[i].setVisible(!controller.isLevelCompleted("Intermediate", 1));
             }
         }
 

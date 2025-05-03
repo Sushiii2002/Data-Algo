@@ -100,13 +100,19 @@ public class TimSortVisualization extends JPanel {
     // Stores the custom button images
     private ImageIcon eyeActiveIcon;
     private ImageIcon eyeDisabledIcon;
+    private ImageIcon handActiveIcon;
+    private ImageIcon handDisabledIcon;
+    private ImageIcon mindActiveIcon;
+    private ImageIcon mindDisabledIcon;
+
     private JPanel customAbilityButtonPanel;
     private JLabel abilityIconLabel;
     private JLabel abilityNameLabel;
     private boolean abilityButtonEnabled = true;
 
-    
-    
+    // Current active ability icons (changes based on phase)
+    private ImageIcon currentActiveIcon;
+    private ImageIcon currentDisabledIcon;
     
     /**
      * Constructor - Initialize the TimSort visualization
@@ -147,7 +153,7 @@ public class TimSortVisualization extends JPanel {
         hintNormalIcon = resourceManager.getImage("/gameproject/resources/hint_normal.png");
         hintHoverIcon = resourceManager.getImage("/gameproject/resources/hint_hover.png");
 
-        
+
         // Scale button icons to 70x70 pixels
         if (pauseNormalIcon != null) {
             Image img = pauseNormalIcon.getImage().getScaledInstance(70, 70, Image.SCALE_SMOOTH);
@@ -168,53 +174,190 @@ public class TimSortVisualization extends JPanel {
             Image img = hintHoverIcon.getImage().getScaledInstance(70, 70, Image.SCALE_SMOOTH);
             hintHoverIcon = new ImageIcon(img);
         }
-        
-        
-        
+
+
         // Load eye of pattern icons
         System.out.println("DEBUG: Attempting to load eye_of_pattern_active.png");
         eyeActiveIcon = resourceManager.getImage("/gameproject/resources/abilities/eye_of_pattern_active.png");
         System.out.println("DEBUG: Attempting to load eye_of_pattern_disabled.png");
         eyeDisabledIcon = resourceManager.getImage("/gameproject/resources/abilities/eye_of_pattern_disabled.png");
 
-        
-        
-        // Create scaled versions if needed
+
+        // Create scaled versions - INCREASED SIZE to 150x150 (from 80x80)
         if (eyeActiveIcon != null) {
             System.out.println("DEBUG: Successfully loaded eye_of_pattern_active.png");
-            Image img = eyeActiveIcon.getImage().getScaledInstance(80, 80, Image.SCALE_SMOOTH);
+            Image img = eyeActiveIcon.getImage().getScaledInstance(150, 150, Image.SCALE_SMOOTH);
             eyeActiveIcon = new ImageIcon(img);
         } else {
             System.out.println("WARNING: Could not load eye_of_pattern_active.png");
             // Create a fallback icon so we can still see something
-            BufferedImage fallbackImg = new BufferedImage(80, 80, BufferedImage.TYPE_INT_ARGB);
+            BufferedImage fallbackImg = new BufferedImage(150, 150, BufferedImage.TYPE_INT_ARGB);
             Graphics2D g2d = fallbackImg.createGraphics();
             g2d.setColor(Color.GREEN);
-            g2d.fillOval(10, 10, 60, 60);
+            g2d.fillOval(15, 15, 120, 120);
             g2d.setColor(Color.WHITE);
-            g2d.drawString("Eye", 30, 40);
+            g2d.setFont(new Font("Arial", Font.BOLD, 30)); // Increased font size
+            g2d.drawString("Eye", 55, 80);
             g2d.dispose();
             eyeActiveIcon = new ImageIcon(fallbackImg);
         }
-        
+
         if (eyeDisabledIcon != null) {
             System.out.println("DEBUG: Successfully loaded eye_of_pattern_disabled.png");
-            Image img = eyeDisabledIcon.getImage().getScaledInstance(80, 80, Image.SCALE_SMOOTH);
+            Image img = eyeDisabledIcon.getImage().getScaledInstance(150, 150, Image.SCALE_SMOOTH);
             eyeDisabledIcon = new ImageIcon(img);
         } else {
             System.out.println("WARNING: Could not load eye_of_pattern_disabled.png");
             // Create a fallback icon
-            BufferedImage fallbackImg = new BufferedImage(80, 80, BufferedImage.TYPE_INT_ARGB);
+            BufferedImage fallbackImg = new BufferedImage(150, 150, BufferedImage.TYPE_INT_ARGB);
             Graphics2D g2d = fallbackImg.createGraphics();
             g2d.setColor(Color.GRAY);
-            g2d.fillOval(10, 10, 60, 60);
+            g2d.fillOval(15, 15, 120, 120);
             g2d.setColor(Color.WHITE);
-            g2d.drawString("Eye", 30, 40);
+            g2d.setFont(new Font("Arial", Font.BOLD, 30)); // Increased font size
+            g2d.drawString("Eye", 55, 80);
             g2d.dispose();
             eyeDisabledIcon = new ImageIcon(fallbackImg);
         }
-        
+        loadPhaseAbilityIcons(1);
     }
+    
+    
+    // Add a new method to load ability icons for a specific phase
+    private void loadPhaseAbilityIcons(int phase) {
+        // Clear any previously loaded icons to save memory
+        currentActiveIcon = null;
+        currentDisabledIcon = null;
+
+        System.out.println("DEBUG: Loading ability icons for phase " + phase);
+
+        // Load the appropriate icons based on phase
+        if (phase == 1) {
+            // Eye of Pattern
+            eyeActiveIcon = resourceManager.getImage("/gameproject/resources/abilities/eye_of_pattern_active.png");
+            eyeDisabledIcon = resourceManager.getImage("/gameproject/resources/abilities/eye_of_pattern_disabled.png");
+
+            currentActiveIcon = eyeActiveIcon;
+            currentDisabledIcon = eyeDisabledIcon;
+
+            System.out.println("DEBUG: Loaded Eye of Pattern icons");
+        } 
+        else if (phase == 2) {
+            // Hand of Balance
+            handActiveIcon = resourceManager.getImage("/gameproject/resources/abilities/hand_of_balance_active.png");
+            handDisabledIcon = resourceManager.getImage("/gameproject/resources/abilities/hand_of_balance_disabled.png");
+
+            currentActiveIcon = handActiveIcon;
+            currentDisabledIcon = handDisabledIcon;
+
+            System.out.println("DEBUG: Loaded Hand of Balance icons");
+        } 
+        else if (phase == 3) {
+            // Mind of Unity
+            mindActiveIcon = resourceManager.getImage("/gameproject/resources/abilities/mind_of_unity_active.png");
+            mindDisabledIcon = resourceManager.getImage("/gameproject/resources/abilities/mind_of_unity_disabled.png");
+
+            currentActiveIcon = mindActiveIcon;
+            currentDisabledIcon = mindDisabledIcon;
+
+            System.out.println("DEBUG: Loaded Mind of Unity icons");
+        }
+
+        // Create scaled versions of the icons
+        if (currentActiveIcon != null) {
+            Image img = currentActiveIcon.getImage().getScaledInstance(150, 150, Image.SCALE_SMOOTH);
+            currentActiveIcon = new ImageIcon(img);
+        } else {
+            // Create fallback icon if loading fails
+            createFallbackIcon(phase, true);
+        }
+
+        if (currentDisabledIcon != null) {
+            Image img = currentDisabledIcon.getImage().getScaledInstance(150, 150, Image.SCALE_SMOOTH);
+            currentDisabledIcon = new ImageIcon(img);
+        } else {
+            // Create fallback icon if loading fails
+            createFallbackIcon(phase, false);
+        }
+
+        // Update the ability icon label if it exists
+        if (abilityIconLabel != null) {
+            if (abilityButtonEnabled) {
+                abilityIconLabel.setIcon(currentActiveIcon);
+            } else {
+                abilityIconLabel.setIcon(currentDisabledIcon);
+            }
+        }
+
+        // Update the ability name text
+        String abilityName = getAbilityNameForPhase(phase);
+        if (abilityNameLabel != null) {
+            abilityNameLabel.setText(abilityName);
+        }
+    }
+    
+    
+    
+    // Helper method to get ability name based on phase
+    private String getAbilityNameForPhase(int phase) {
+        switch (phase) {
+            case 1: return "Eye of Pattern";
+            case 2: return "Hand of Balance";
+            case 3: return "Mind of Unity";
+            default: return "Unknown Ability";
+        }
+    }
+    
+    
+    // Helper method to create fallback icons if loading fails
+    private void createFallbackIcon(int phase, boolean isActive) {
+        String iconText;
+        Color bgColor;
+
+        // Determine icon text and color based on phase
+        if (phase == 1) {
+            iconText = "Eye";
+            bgColor = isActive ? new Color(60, 150, 200) : Color.GRAY; // Blue for Eye
+        } else if (phase == 2) {
+            iconText = "Hand";
+            bgColor = isActive ? new Color(200, 80, 160) : Color.GRAY; // Purple for Hand
+        } else {
+            iconText = "Mind";
+            bgColor = isActive ? new Color(80, 200, 80) : Color.GRAY; // Green for Mind
+        }
+
+        // Create fallback image
+        BufferedImage fallbackImg = new BufferedImage(150, 150, BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g2d = fallbackImg.createGraphics();
+        g2d.setColor(bgColor);
+        g2d.fillOval(15, 15, 120, 120);
+        g2d.setColor(Color.WHITE);
+        g2d.setFont(new Font("Arial", Font.BOLD, 30));
+        g2d.drawString(iconText, 45, 85);
+        g2d.dispose();
+
+        // Assign to the appropriate icon
+        if (isActive) {
+            currentActiveIcon = new ImageIcon(fallbackImg);
+        } else {
+            currentDisabledIcon = new ImageIcon(fallbackImg);
+        }
+
+        System.out.println("DEBUG: Created fallback icon for phase " + phase);
+    }
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     /**
      * Initialize all UI components
@@ -295,12 +438,12 @@ public class TimSortVisualization extends JPanel {
         controlPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 20, 10));
         controlPanel.setBounds(0, GameConstants.WINDOW_HEIGHT - 100, GameConstants.WINDOW_WIDTH, 80);
         controlPanel.setOpaque(false);   
-        
+
          // Ability button - KEEP IT but make it invisible
         abilityButton = createStyledButton("Use Eye of Pattern");
         abilityButton.addActionListener(e -> useAbility());
 
-        
+
         // Check button
         checkButton = createStyledButton("Check Selection");
         checkButton.addActionListener(e -> checkPhaseCompletion());
@@ -308,9 +451,9 @@ public class TimSortVisualization extends JPanel {
         controlPanel.add(checkButton);
 
         add(controlPanel);
-        
-        
-        // Create custom ability button panel in the lower left with a border for debugging
+
+
+        // Create custom ability button panel in the lower left
         customAbilityButtonPanel = new JPanel(null) {
             @Override
             protected void paintComponent(Graphics g) {
@@ -319,12 +462,13 @@ public class TimSortVisualization extends JPanel {
         };
         customAbilityButtonPanel.setOpaque(false);
 
-        // Position it in the bottom left with enough space
-        customAbilityButtonPanel.setBounds(20, GameConstants.WINDOW_HEIGHT - 220, 150, 150);
+        // Position it in the bottom left with INCREASED SIZE BY 50 PIXELS
+        // Original: 150x150, now 200x200
+        customAbilityButtonPanel.setBounds(20, GameConstants.WINDOW_HEIGHT - 240, 200, 200);
 
-        // Create icon label for the button with a border
+        // Create icon label for the button with INCREASED SIZE
         abilityIconLabel = new JLabel(eyeActiveIcon);
-        abilityIconLabel.setBounds(20, 0, 100, 180);
+        abilityIconLabel.setBounds(25, 0, 150, 150); // Centered within the 200px wide panel
         abilityIconLabel.setCursor(new Cursor(Cursor.HAND_CURSOR));
         abilityIconLabel.addMouseListener(new MouseAdapter() {
             @Override
@@ -338,21 +482,19 @@ public class TimSortVisualization extends JPanel {
 
         customAbilityButtonPanel.add(abilityIconLabel);
 
-        // Create label for the ability name
+        // Create label for the ability name - REPOSITIONED for larger icon
         abilityNameLabel = new JLabel("Eye of Pattern", JLabel.CENTER);
-        Font abilityFont = resourceManager.getFont("/gameproject/resources/PixelifySans.ttf", 16f);
+        Font abilityFont = resourceManager.getFont("/gameproject/resources/PixelifySans.ttf", 18f); // Slightly larger font
         if (abilityFont != null) {
             abilityNameLabel.setFont(abilityFont);
         } else {
-            abilityNameLabel.setFont(new Font("Arial", Font.BOLD, 14));
+            abilityNameLabel.setFont(new Font("Arial", Font.BOLD, 16));
         }
         abilityNameLabel.setForeground(Color.WHITE);
         // Adjust position to be centered under the larger icon
-        abilityNameLabel.setBounds(0, 130, 140, 25);
-        // Remove the border
+        abilityNameLabel.setBounds(0, 160, 200, 30); // Wider and positioned under the image
         abilityNameLabel.setBorder(null);
-        
-        
+
         customAbilityButtonPanel.add(abilityNameLabel);
 
         // Important: Add the custom panel LAST to ensure it appears on top
@@ -362,7 +504,7 @@ public class TimSortVisualization extends JPanel {
         System.out.println("DEBUG: Custom ability button panel added at " + 
                            customAbilityButtonPanel.getBounds().toString());
     }
-    
+
     // Override the setEnabled method for abilityButton to also update our custom button
     @Override
     public void setEnabled(boolean enabled) {
@@ -388,10 +530,10 @@ public class TimSortVisualization extends JPanel {
         if (abilityIconLabel != null) {
             System.out.println("DEBUG: Setting ability icon enabled: " + enabled);
             if (enabled) {
-                abilityIconLabel.setIcon(eyeActiveIcon);
+                abilityIconLabel.setIcon(currentActiveIcon);
                 abilityIconLabel.setCursor(new Cursor(Cursor.HAND_CURSOR));
             } else {
-                abilityIconLabel.setIcon(eyeDisabledIcon);
+                abilityIconLabel.setIcon(currentDisabledIcon);
                 abilityIconLabel.setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
             }
         }
@@ -3104,10 +3246,7 @@ public class TimSortVisualization extends JPanel {
             }
         }
         activeTimers.clear();
-        
-        
-        
-        
+
         currentPhase++;
         phaseCompleted = false;
 
@@ -3117,7 +3256,12 @@ public class TimSortVisualization extends JPanel {
         // Update phase label
         if (currentPhase == 2) {
             phaseLabel.setText("Phase 2: The Hand of Balance");
-            abilityButton.setText("Use Hand of Balance");
+
+            // Load Hand of Balance ability icons
+            loadPhaseAbilityIcons(2);
+
+            // Update button text
+            updateAbilityButtonText("Use Hand of Balance");
 
             // Update the controller about the phase change for dynamic dialogue
             controller.onPhaseAdvance(currentPhase, leftGroupPotionType, rightGroupPotionType);
@@ -3126,7 +3270,12 @@ public class TimSortVisualization extends JPanel {
             arrangeIngredientsForSorting();
         } else if (currentPhase == 3) {
             phaseLabel.setText("Phase 3: The Mind of Unity");
-            abilityButton.setText("Use Mind of Unity");
+
+            // Load Mind of Unity ability icons
+            loadPhaseAbilityIcons(3);
+
+            // Update button text
+            updateAbilityButtonText("Use Mind of Unity");
 
             // Update the controller about the phase change for dynamic dialogue
             controller.onPhaseAdvance(currentPhase, leftGroupPotionType, rightGroupPotionType);
@@ -3400,6 +3549,9 @@ public class TimSortVisualization extends JPanel {
             // Set the new phase
             currentPhase = phase;
 
+            // Load the appropriate ability icons for this phase
+            loadPhaseAbilityIcons(phase);
+
             // Update phase label
             updatePhaseLabel();
 
@@ -3417,20 +3569,10 @@ public class TimSortVisualization extends JPanel {
                 gridPanel.setBounds(gridX, gridY, totalWidth, totalHeight);
             }
 
-            
             // Update ability button text based on phase
-            switch (phase) {
-                case 1:
-                    updateAbilityButtonText("Use Eye of Pattern");
-                    break;
-                case 2:
-                    updateAbilityButtonText("Use Hand of Balance");
-                    break;
-                case 3:
-                    updateAbilityButtonText("Use Mind of Unity");
-                    break;
-            }
-            
+            String buttonText = "Use " + getAbilityNameForPhase(phase);
+            updateAbilityButtonText(buttonText);
+
             // Then initialize the proper phase UI
             initializePhaseUI();
 
@@ -4056,6 +4198,9 @@ public class TimSortVisualization extends JPanel {
         currentPhase = 1;
         phaseCompleted = false;
 
+        // Reset to Eye of Pattern ability
+        loadPhaseAbilityIcons(1);
+
         // Clear all data structures
         allIngredients.clear();
         selectedIngredients.clear();
@@ -4069,7 +4214,7 @@ public class TimSortVisualization extends JPanel {
         gridPanel.removeAll();
 
         // Reset UI state
-        abilityButton.setText("Use Eye of Pattern");
+        updateAbilityButtonText("Use Eye of Pattern");
         instructionLabel.setText("Use your 'Eye of Pattern' ability to identify ingredient sequences (runs).");
         checkButton.setEnabled(false);
 
